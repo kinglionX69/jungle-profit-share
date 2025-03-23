@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +10,10 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, Coins, ArrowRight, Loader } from 'lucide-react';
+import { Upload, Coins, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { depositToEscrowWallet } from '@/api/adminApi';
 
 const TokenDeposit: React.FC = () => {
   const [amount, setAmount] = useState('');
@@ -34,13 +34,22 @@ const TokenDeposit: React.FC = () => {
     
     setProcessing(true);
     
-    // In a real implementation, this would submit to your backend
-    // and likely involve a blockchain transaction
-    setTimeout(() => {
-      toast.success(`Successfully deposited ${amount} ${selectedToken.toUpperCase()} to the escrow wallet`);
-      setAmount('');
+    try {
+      const success = await depositToEscrowWallet(
+        selectedToken,
+        Number(amount),
+        Number(payoutAmount)
+      );
+      
+      if (success) {
+        setAmount('');
+      }
+    } catch (error) {
+      console.error("Error depositing tokens:", error);
+      toast.error("Failed to deposit tokens");
+    } finally {
       setProcessing(false);
-    }, 2000);
+    }
   };
   
   return (

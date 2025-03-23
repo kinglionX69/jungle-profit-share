@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIsAdmin } from "@/api/adminApi";
+import { upsertUser } from "@/api/userApi";
 
 interface WalletContextType {
   connected: boolean;
@@ -42,7 +44,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           if (address) {
             setAddress(address);
             setConnected(true);
-            checkAdminStatus(address);
+            
+            // Insert user in database
+            await upsertUser(address);
+            
+            // Check if the wallet is an admin
+            const adminStatus = await checkIsAdmin(address);
+            setIsAdmin(adminStatus);
           }
         } catch (error) {
           console.error("Error checking connection:", error);
@@ -66,21 +74,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   }, [address]);
   
-  const checkAdminStatus = async (walletAddress: string) => {
-    try {
-      const { data, error } = await supabase.rpc('is_admin', { wallet_address: walletAddress });
-      
-      if (error) {
-        console.error("Error checking admin status:", error);
-        return;
-      }
-      
-      setIsAdmin(data === true);
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-    }
-  };
-  
   const connect = async () => {
     setConnecting(true);
     
@@ -91,14 +84,28 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const { address } = await window.aptos.connect();
         setAddress(address);
         setConnected(true);
-        checkAdminStatus(address);
+        
+        // Insert user in database
+        await upsertUser(address);
+        
+        // Check if the wallet is an admin
+        const adminStatus = await checkIsAdmin(address);
+        setIsAdmin(adminStatus);
+        
         toast.success("Wallet connected!");
       } else if (window.martian) {
         // Martian wallet
         const response = await window.martian.connect();
         setAddress(response.address);
         setConnected(true);
-        checkAdminStatus(response.address);
+        
+        // Insert user in database
+        await upsertUser(response.address);
+        
+        // Check if the wallet is an admin
+        const adminStatus = await checkIsAdmin(response.address);
+        setIsAdmin(adminStatus);
+        
         toast.success("Wallet connected!");
       } else {
         toast.error("No Aptos wallet found. Please install Petra, Martian, or another Aptos wallet");
