@@ -10,7 +10,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
-import { sendVerificationEmail } from '@/api/userApi';
+import { sendVerificationEmail, verifyEmail } from '@/api/userApi';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -21,11 +23,12 @@ const otpSchema = z.object({
 });
 
 const EmailVerification = () => {
-  const { email, isVerified, setEmail, verifyEmail } = useUser();
+  const { email, isVerified, setEmail, verifyEmail: contextVerifyEmail } = useUser();
   const { address } = useWallet();
   const [showOTP, setShowOTP] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [verifyingOTP, setVerifyingOTP] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
@@ -47,9 +50,13 @@ const EmailVerification = () => {
       return;
     }
     
+    setEmailError(null);
     setSendingEmail(true);
+    
     try {
       setEmail(values.email);
+      
+      console.log(`Sending verification email to ${values.email} for wallet ${address}`);
       
       // Call API to send verification email
       const result = await sendVerificationEmail(address, values.email);
@@ -60,11 +67,15 @@ const EmailVerification = () => {
         
         // In development mode, the API might return the OTP for easier testing
         if (result) {
+          console.log(`Auto-filling OTP: ${result}`);
           otpForm.setValue('otp', result);
         }
+      } else {
+        setEmailError('Failed to send verification email. Please try again.');
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
+      setEmailError('An unexpected error occurred. Please try again.');
       toast.error('Failed to send verification email');
     } finally {
       setSendingEmail(false);
@@ -79,9 +90,12 @@ const EmailVerification = () => {
     
     setVerifyingOTP(true);
     try {
-      const success = await verifyEmail(values.otp);
+      console.log(`Verifying OTP ${values.otp} for email ${email} and wallet ${address}`);
+      
+      const success = await verifyEmail(address, email, values.otp);
       
       if (success) {
+        await contextVerifyEmail(values.otp);
         toast.success('Email verified successfully!');
       } else {
         toast.error('Invalid verification code');
@@ -91,6 +105,27 @@ const EmailVerification = () => {
       toast.error('Failed to verify email');
     } finally {
       setVerifyingOTP(false);
+    }
+  };
+  
+  const handleResendCode = async () => {
+    if (!email || !address) return;
+    
+    setSendingEmail(true);
+    try {
+      const result = await sendVerificationEmail(address, email);
+      if (result) {
+        toast.success('Verification code resent');
+        // Auto-fill OTP in development mode
+        if (result) {
+          otpForm.setValue('otp', result);
+        }
+      }
+    } catch (error) {
+      console.error('Error resending code:', error);
+      toast.error('Failed to resend verification code');
+    } finally {
+      setSendingEmail(false);
     }
   };
   
@@ -106,6 +141,14 @@ const EmailVerification = () => {
   return (
     <div className="rounded-lg border p-4 bg-card">
       <h3 className="text-lg font-medium mb-4">Verify Your Email</h3>
+      
+      {emailError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{emailError}</AlertDescription>
+        </Alert>
+      )}
+      
       {!showOTP ? (
         <>
           <p className="text-sm text-muted-foreground mb-4">
@@ -159,18 +202,30 @@ const EmailVerification = () => {
                   </FormItem>
                 )}
               />
-              <div className="flex gap-2">
+              <div className="flex justify-between items-center">
                 <Button 
                   type="button" 
-                  variant="outline"
-                  onClick={() => setShowOTP(false)}
-                  disabled={verifyingOTP}
+                  variant="link" 
+                  size="sm" 
+                  onClick={handleResendCode}
+                  disabled={sendingEmail}
                 >
-                  Back
+                  {sendingEmail ? 'Sending...' : 'Resend code'}
                 </Button>
-                <Button type="submit" disabled={verifyingOTP}>
-                  {verifyingOTP ? 'Verifying...' : 'Verify Email'}
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setShowOTP(false)}
+                    disabled={verifyingOTP}
+                  >
+                    Back
+                  </Button>
+                  <Button type="submit" disabled={verifyingOTP}>
+                    {verifyingOTP ? 'Verifying...' : 'Verify Email'}
+                  </Button>
+                </div>
               </div>
             </form>
           </Form>

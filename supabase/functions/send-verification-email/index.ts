@@ -22,16 +22,23 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
     
+    console.log("Starting send-verification-email function");
+    
     if (!resendApiKey) {
+      console.error("Missing RESEND_API_KEY environment variable");
       throw new Error("Missing RESEND_API_KEY environment variable");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const resend = new Resend(resendApiKey);
 
-    const { email, walletAddress } = await req.json();
+    const requestData = await req.json();
+    const { email, walletAddress } = requestData;
+
+    console.log(`Processing request for email: ${email}, wallet: ${walletAddress}`);
 
     if (!email || !walletAddress) {
+      console.error("Missing required fields", { email, walletAddress });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -43,9 +50,11 @@ serve(async (req) => {
 
     // Generate a random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`Generated OTP: ${otp} for ${email}`);
     
     // Send actual email with the OTP using Resend
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    console.log("Attempting to send email via Resend");
+    const emailResult = await resend.emails.send({
       from: "PLS Pride Share <onboarding@resend.dev>",
       to: email,
       subject: "Verify your email for Proud Lion Studios Pride Share",
@@ -64,10 +73,13 @@ serve(async (req) => {
       `,
     });
     
-    if (emailError) {
-      console.error("Error sending email:", emailError);
+    if (!emailResult || emailResult.error) {
+      console.error("Error sending email via Resend:", emailResult?.error || "Unknown error");
       return new Response(
-        JSON.stringify({ error: "Failed to send verification email" }),
+        JSON.stringify({ 
+          error: "Failed to send verification email", 
+          details: emailResult?.error || "Unknown error" 
+        }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -116,7 +128,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in send-verification-email function:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", details: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

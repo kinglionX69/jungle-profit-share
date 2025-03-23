@@ -69,22 +69,25 @@ export const sendVerificationEmail = async (
   email: string
 ): Promise<string | null> => {
   try {
+    console.log(`Calling send-verification-email for ${email}, wallet: ${walletAddress}`);
+    
     const { data, error } = await supabase.functions.invoke('send-verification-email', {
-      body: { walletAddress, email }
+      body: { email, walletAddress }
     });
     
     if (error) {
-      console.error("Error sending verification email:", error);
+      console.error("Error invoking send-verification-email function:", error);
       toast.error("Failed to send verification email");
       return null;
     }
     
-    if (data.success) {
-      toast.success("Verification code sent to your email");
-      // If we're in development, the OTP will be returned for easier testing
-      return data.otp || null;
+    console.log("Response from send-verification-email:", data);
+    
+    if (data && data.success) {
+      return data.otp || null; // OTP only included in development
     } else {
-      toast.error(data.message || "Failed to send verification email");
+      console.error("Email sending failed:", data?.error || "Unknown error");
+      toast.error(data?.message || "Failed to send verification email");
       return null;
     }
   } catch (error) {
@@ -106,26 +109,31 @@ export const verifyEmail = async (
   otp: string
 ): Promise<boolean> => {
   try {
+    console.log(`Calling verify-email for ${email}, wallet: ${walletAddress}, OTP: ${otp}`);
+    
     const { data, error } = await supabase.functions.invoke('verify-email', {
       body: { walletAddress, email, otp }
     });
     
     if (error) {
-      console.error("Error verifying email:", error);
+      console.error("Error invoking verify-email function:", error);
       toast.error("Failed to verify email");
       return false;
     }
     
-    if (data.success) {
+    console.log("Response from verify-email:", data);
+    
+    if (data && data.success) {
       toast.success("Email verified successfully!");
       return true;
     } else {
-      toast.error(data.message || "Failed to verify email");
+      console.error("Email verification failed:", data?.error || "Unknown error");
+      toast.error(data?.message || "Failed to verify email");
       return false;
     }
   } catch (error) {
     console.error("Error verifying email:", error);
-    toast.error("Failed to verify email");
+    toast.error("Failed to verify email: " + (error.message || "Unknown error"));
     return false;
   }
 };

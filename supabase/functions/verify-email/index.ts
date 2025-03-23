@@ -21,10 +21,16 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { email, otp, walletAddress } = await req.json();
+    console.log("Starting verify-email function");
+    
+    const requestData = await req.json();
+    const { email, otp, walletAddress } = requestData;
+
+    console.log(`Processing verification: Email: ${email}, OTP: ${otp}, Wallet: ${walletAddress}`);
 
     // Validate required fields
     if (!otp || !email || !walletAddress) {
+      console.error("Missing required fields", { email, otp, walletAddress });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -36,6 +42,7 @@ serve(async (req) => {
 
     // Check that OTP is a 6-digit number
     if (!/^\d{6}$/.test(otp)) {
+      console.error("Invalid OTP format", { otp });
       return new Response(
         JSON.stringify({ error: "Invalid OTP format. Must be 6 digits" }),
         {
@@ -50,6 +57,7 @@ serve(async (req) => {
     // In production, you would store the OTP in a table with an expiration time
 
     // Update user in the database as verified
+    console.log(`Updating user ${walletAddress} as verified`);
     const { data, error } = await supabase
       .from("users")
       .update({ 
@@ -63,7 +71,7 @@ serve(async (req) => {
     if (error) {
       console.error("Error updating user:", error);
       return new Response(
-        JSON.stringify({ error: "Failed to verify email" }),
+        JSON.stringify({ error: "Failed to verify email", details: error.message }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -71,6 +79,7 @@ serve(async (req) => {
       );
     }
 
+    console.log("Email verification successful");
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -85,7 +94,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in verify-email function:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", details: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
