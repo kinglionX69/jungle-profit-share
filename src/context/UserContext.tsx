@@ -26,6 +26,7 @@ interface UserContextType {
   loadingNfts: boolean;
   loadingClaimHistory: boolean;
   claim: () => Promise<void>;
+  fetchUserData: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -68,7 +69,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, [connected, address]);
   
   const fetchUserData = async () => {
-    if (!address) return;
+    if (!address) {
+      console.error("Cannot fetch user data: No wallet address available");
+      return;
+    }
     
     setLoadingNfts(true);
     setLoadingClaimHistory(true);
@@ -83,11 +87,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
       
       // Fetch NFTs and calculate claimable amount
+      console.log("Fetching NFTs for address:", address);
       const userNfts = await fetchNFTs(address);
       setNfts(userNfts);
       
       const claimable = await calculateClaimableAmount(userNfts);
       setClaimableAmount(claimable);
+      
+      console.log(`Fetched ${userNfts.length} NFTs with ${claimable} claimable amount`);
       
       setLoadingNfts(false);
       
@@ -165,7 +172,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         verifyEmail: handleVerifyEmail,
         loadingNfts,
         loadingClaimHistory,
-        claim
+        claim,
+        fetchUserData
       }}
     >
       {children}

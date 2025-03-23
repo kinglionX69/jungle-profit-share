@@ -12,11 +12,13 @@ import ClaimHistory from '@/components/Claim/ClaimHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/context/UserContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, InfoIcon, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { connected, address } = useWallet();
-  const { isVerified, nfts, email } = useUser();
+  const { isVerified, nfts, email, fetchUserData, loadingNfts } = useUser();
   const navigate = useNavigate();
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
@@ -44,6 +46,13 @@ const Dashboard = () => {
       console.log("- NFTs:", nfts);
     }
   }, [connected, address, isVerified, nfts]);
+
+  const handleRefreshNFTs = () => {
+    if (fetchUserData) {
+      toast.info("Refreshing NFT data...");
+      fetchUserData();
+    }
+  };
   
   if (!connected) {
     return (
@@ -60,11 +69,17 @@ const Dashboard = () => {
     <>
       <Header />
       <PageContainer>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            View your NFTs and claim your rewards
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
+              View your NFTs and claim your rewards
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleRefreshNFTs}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh NFTs
+          </Button>
         </div>
         
         {showDebugInfo && (
@@ -77,6 +92,7 @@ const Dashboard = () => {
                 <p><strong>Email:</strong> {email || 'Not set'}</p>
                 <p><strong>Email Verified:</strong> {isVerified ? 'Yes' : 'No'}</p>
                 <p><strong>NFTs Loaded:</strong> {nfts.length}</p>
+                <p><strong>Loading State:</strong> {loadingNfts ? 'Loading...' : 'Completed'}</p>
               </div>
             </AlertDescription>
           </Alert>
@@ -96,12 +112,24 @@ const Dashboard = () => {
                 <TabsTrigger value="all">All NFTs</TabsTrigger>
               </TabsList>
               <TabsContent value="eligible" className="space-y-6">
-                <h2 className="text-xl font-medium">Eligible for Claim</h2>
-                <NFTGrid />
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-medium">Eligible for Claim</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setShowDebugInfo(!showDebugInfo)}>
+                    <InfoIcon className="h-4 w-4 mr-2" />
+                    {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
+                  </Button>
+                </div>
+                <NFTGrid filterEligible={true} />
               </TabsContent>
               <TabsContent value="all" className="space-y-6">
-                <h2 className="text-xl font-medium">All Your NFTs</h2>
-                <NFTGrid />
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-medium">All Your NFTs</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setShowDebugInfo(!showDebugInfo)}>
+                    <InfoIcon className="h-4 w-4 mr-2" />
+                    {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
+                  </Button>
+                </div>
+                <NFTGrid filterEligible={false} />
               </TabsContent>
             </Tabs>
           </div>

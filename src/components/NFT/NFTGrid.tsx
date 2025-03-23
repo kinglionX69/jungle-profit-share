@@ -5,7 +5,11 @@ import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const NFTGrid: React.FC = () => {
+interface NFTGridProps {
+  filterEligible?: boolean;
+}
+
+const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
   const { nfts, loadingNfts } = useUser();
   
   // Format time remaining as DD:HH:MM
@@ -24,6 +28,11 @@ const NFTGrid: React.FC = () => {
     return `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
   
+  // Filter NFTs based on the filterEligible prop
+  const filteredNfts = filterEligible 
+    ? nfts.filter(nft => nft.isEligible)
+    : nfts;
+  
   if (loadingNfts) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -40,19 +49,23 @@ const NFTGrid: React.FC = () => {
     );
   }
   
-  if (nfts.length === 0) {
+  if (filteredNfts.length === 0) {
     return (
       <div className="space-y-4">
         <Alert variant="default">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertTitle>No NFTs Found</AlertTitle>
           <AlertDescription>
-            We couldn't find any Proud Lions Club NFTs in your wallet. This could be due to:
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>You don't own any NFTs from the Proud Lions Club collection</li>
-              <li>There might be connection issues with the Aptos blockchain</li>
-              <li>The wallet might not be properly connected</li>
-            </ul>
+            {filterEligible ? 
+              "We couldn't find any eligible NFTs for claiming. This could be because all your NFTs are currently locked or you don't own any NFTs from the Proud Lions Club collection." :
+              "We couldn't find any Proud Lions Club NFTs in your wallet. This could be due to:"}
+            {!filterEligible && (
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>You don't own any NFTs from the Proud Lions Club collection</li>
+                <li>There might be connection issues with the Aptos blockchain</li>
+                <li>The wallet might not be properly connected</li>
+              </ul>
+            )}
           </AlertDescription>
         </Alert>
         
@@ -61,21 +74,29 @@ const NFTGrid: React.FC = () => {
           <p className="text-muted-foreground mt-2">
             Check the browser console for more details (F12 &gt; Console)
           </p>
+          <p className="text-xs text-muted-foreground mt-4">
+            Try adding ?debug=true to the URL for more information
+          </p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {nfts.map((nft) => (
-        <div key={nft.tokenId} className="rounded-lg border overflow-hidden bg-card hover:shadow-soft transition-all hover-lift">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {filteredNfts.map((nft) => (
+        <div key={nft.tokenId} className="rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px]">
           <div className="relative">
             <img 
               src={nft.imageUrl} 
               alt={nft.name} 
               className="w-full h-48 object-cover"
               loading="lazy"
+              onError={(e) => {
+                // Fallback if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = `https://picsum.photos/seed/${nft.tokenId}/300/300`;
+              }}
             />
             
             {/* Status overlay */}
@@ -114,13 +135,13 @@ const NFTGrid: React.FC = () => {
                   : 'bg-warning/20 text-warning'
               }`}
             >
-              {nft.isEligible ? 'Eligible' : 'Locked'}
+              {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
             </div>
           </div>
           
           <div className="p-4">
             <h3 className="font-medium truncate">{nft.name}</h3>
-            <p className="text-sm text-muted-foreground mt-1">Token ID: {nft.tokenId}</p>
+            <p className="text-sm text-muted-foreground mt-1">Token ID: {nft.tokenId.substring(0, 12)}...</p>
             
             <div className="flex items-center mt-2">
               {nft.isEligible ? (

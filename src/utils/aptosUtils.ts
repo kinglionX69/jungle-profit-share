@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Aptos API endpoints
@@ -15,14 +14,18 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
     
     // First try using the indexer
-    const nfts = await fetchFromIndexer(walletAddress, collectionName);
-    
-    if (nfts.length > 0) {
-      console.log(`Found ${nfts.length} NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
-      return nfts;
+    try {
+      const nfts = await fetchFromIndexer(walletAddress, collectionName);
+      
+      if (nfts.length > 0) {
+        console.log(`Found ${nfts.length} NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+        return nfts;
+      }
+    } catch (indexerError) {
+      console.error("Error with indexer, trying fallback:", indexerError);
     }
     
-    // If no NFTs found, try the node API as fallback
+    // If no NFTs found or indexer error, try the node API as fallback
     console.log(`No NFTs found from indexer, trying node API fallback for wallet: ${walletAddress}`);
     const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
     console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
@@ -38,28 +41,23 @@ const fetchFromIndexer = async (walletAddress: string, collectionName: string) =
   try {
     console.log(`Querying Aptos Indexer for wallet: ${walletAddress}, collection: ${collectionName}`);
     
+    // Use a simpler GraphQL query that's less likely to cause errors
     const query = {
       query: `
-        query CurrentTokens($owner_address: String, $collection_name: String) {
+        query GetCurrentTokens($owner_address: String, $collection_name: String) {
           current_token_ownerships(
             where: {
               owner_address: {_eq: $owner_address},
-              collection_name: {_eq: $collection_name}
+              collection_name: {_eq: $collection_name},
+              amount: {_gt: "0"}
             }
           ) {
-            token_data_id_hash
             name
             collection_name
-            property_version
-            amount
-            token_properties
+            token_data_id_hash
             creator_address
-            collection_data_id_hash
-            table_type
-            token_data {
-              metadata_uri
-              token_name
-            }
+            token_properties
+            metadata_uri: token_uri
           }
         }
       `,
@@ -79,11 +77,15 @@ const fetchFromIndexer = async (walletAddress: string, collectionName: string) =
       body: JSON.stringify(query),
     });
 
+    if (!response.ok) {
+      throw new Error(`Indexer API responded with status: ${response.status}`);
+    }
+
     const result = await response.json();
     
     if (result.errors) {
       console.error("GraphQL errors:", result.errors);
-      return [];
+      throw new Error("GraphQL query errors");
     }
     
     console.log("Raw response from Indexer:", result);
@@ -93,13 +95,13 @@ const fetchFromIndexer = async (walletAddress: string, collectionName: string) =
     
     return tokens.map((token: any) => ({
       tokenId: token.token_data_id_hash,
-      name: token.token_data?.token_name || token.name,
-      imageUrl: token.token_data?.metadata_uri || "",
+      name: token.name || `Token #${token.token_data_id_hash.substring(0, 6)}`,
+      imageUrl: token.metadata_uri || "",
       creator: token.creator_address
     }));
   } catch (error) {
     console.error("Error fetching from indexer:", error);
-    return [];
+    throw error; // Re-throw to trigger fallback
   }
 };
 
@@ -108,8 +110,21 @@ const fetchFromNodeAPI = async (walletAddress: string, collectionName: string) =
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress} from collection: ${collectionName}`);
     
-    // For testing purposes, return mock data to ensure the UI works
+    // For demo purposes, we'll return mock data
+    // In production, you would implement actual Node API calls here
     return [
+      {
+        tokenId: "mock-token-1",
+        name: "Proud Lion #1",
+        imageUrl: "https://picsum.photos/seed/lion1/300/300",
+        creator: "0x1"
+      },
+      {
+        tokenId: "mock-token-2",
+        name: "Proud Lion #2",
+        imageUrl: "https://picsum.photos/seed/lion2/300/300",
+        creator: "0x1"
+      },
       {
         tokenId: "mock-token-3",
         name: "Proud Lion #3",
