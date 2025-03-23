@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +9,7 @@ import { useWallet } from '@/context/WalletContext';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { connected } = useWallet();
+  const { connected, connect, connecting } = useWallet();
   
   const features = [
     {
@@ -66,10 +65,11 @@ const Index = () => {
                 ) : (
                   <Button 
                     size="lg" 
-                    onClick={() => navigate('/dashboard')}
+                    onClick={connect}
                     className="min-w-[200px]"
+                    disabled={connecting}
                   >
-                    Get Started
+                    {connecting ? 'Connecting...' : 'Connect Wallet'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
