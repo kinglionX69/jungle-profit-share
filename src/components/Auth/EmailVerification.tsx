@@ -3,11 +3,14 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/context/UserContext';
+import { useWallet } from '@/context/WalletContext'; 
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { Mail, Check, Loader } from 'lucide-react';
 
 const EmailVerification: React.FC = () => {
   const { email, setEmail, isVerified, verifyEmail } = useUser();
+  const { address } = useWallet();
   const [inputEmail, setInputEmail] = useState(email || '');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -25,19 +28,43 @@ const EmailVerification: React.FC = () => {
       return;
     }
     
+    if (!address) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
     setSendingOtp(true);
     
-    // In a real application, this would send an OTP to the user's email
-    // For this demo, we'll simulate an API call
-    setTimeout(() => {
-      setEmail(inputEmail);
-      setOtpSent(true);
-      setSendingOtp(false);
-      toast.success("OTP sent to your email");
+    try {
+      // Save email to Supabase
+      const { error } = await supabase
+        .from('users')
+        .upsert({ 
+          wallet_address: address,
+          email: inputEmail,
+          updated_at: new Date().toISOString()
+        });
       
-      // Store in localStorage for the demo
-      localStorage.setItem(`user_${inputEmail}`, inputEmail);
-    }, 1500);
+      if (error) {
+        console.error("Error saving email:", error);
+        toast.error("Failed to save email. Please try again.");
+        setSendingOtp(false);
+        return;
+      }
+      
+      // In a real application, this would send an OTP to the user's email
+      // For this demo, we'll simulate an API call
+      setTimeout(() => {
+        setEmail(inputEmail);
+        setOtpSent(true);
+        setSendingOtp(false);
+        toast.success("OTP sent to your email");
+      }, 1500);
+    } catch (error) {
+      console.error("Error saving email:", error);
+      toast.error("Failed to save email. Please try again.");
+      setSendingOtp(false);
+    }
   };
   
   const handleVerifyOtp = async () => {

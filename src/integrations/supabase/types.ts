@@ -9,30 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_config: {
+        Row: {
+          admin_wallet_address: string
+          created_at: string | null
+          escrow_wallet_address: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_wallet_address: string
+          created_at?: string | null
+          escrow_wallet_address?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_wallet_address?: string
+          created_at?: string | null
+          escrow_wallet_address?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       claim_history: {
         Row: {
           amount: number
-          claim_date: string
+          claim_date: string | null
           id: string
-          token_id: string
+          token_ids: string[]
           token_name: string
           transaction_hash: string | null
           wallet_address: string
         }
         Insert: {
           amount: number
-          claim_date?: string
+          claim_date?: string | null
           id?: string
-          token_id: string
+          token_ids: string[]
           token_name: string
           transaction_hash?: string | null
           wallet_address: string
         }
         Update: {
           amount?: number
-          claim_date?: string
+          claim_date?: string | null
           id?: string
-          token_id?: string
+          token_ids?: string[]
           token_name?: string
           transaction_hash?: string | null
           wallet_address?: string
@@ -42,54 +66,57 @@ export type Database = {
       nft_claims: {
         Row: {
           amount: number
-          claim_date: string
+          claim_date: string | null
           id: string
-          nft_id: string
           token_id: string
           transaction_hash: string | null
+          unlock_date: string | null
           wallet_address: string
         }
         Insert: {
           amount: number
-          claim_date?: string
+          claim_date?: string | null
           id?: string
-          nft_id: string
           token_id: string
           transaction_hash?: string | null
+          unlock_date?: string | null
           wallet_address: string
         }
         Update: {
           amount?: number
-          claim_date?: string
+          claim_date?: string | null
           id?: string
-          nft_id?: string
           token_id?: string
           transaction_hash?: string | null
+          unlock_date?: string | null
           wallet_address?: string
         }
         Relationships: []
       }
-      user_emails: {
+      token_payouts: {
         Row: {
-          created_at: string
-          email: string
+          created_at: string | null
+          created_by: string
           id: string
-          updated_at: string
-          wallet_address: string
+          payout_per_nft: number
+          token_name: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
-          email: string
+          created_at?: string | null
+          created_by: string
           id?: string
-          updated_at?: string
-          wallet_address: string
+          payout_per_nft: number
+          token_name: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
-          email?: string
+          created_at?: string | null
+          created_by?: string
           id?: string
-          updated_at?: string
-          wallet_address?: string
+          payout_per_nft?: number
+          token_name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -97,6 +124,7 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string | null
+          email_verified: boolean | null
           id: string
           updated_at: string | null
           wallet_address: string
@@ -104,6 +132,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           email?: string | null
+          email_verified?: boolean | null
           id?: string
           updated_at?: string | null
           wallet_address: string
@@ -111,36 +140,10 @@ export type Database = {
         Update: {
           created_at?: string | null
           email?: string | null
+          email_verified?: boolean | null
           id?: string
           updated_at?: string | null
           wallet_address?: string
-        }
-        Relationships: []
-      }
-      wallet_config: {
-        Row: {
-          created_at: string | null
-          id: string
-          network: string
-          updated_at: string | null
-          wallet_address: string
-          wallet_type: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          network?: string
-          updated_at?: string | null
-          wallet_address: string
-          wallet_type: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          network?: string
-          updated_at?: string | null
-          wallet_address?: string
-          wallet_type?: string
         }
         Relationships: []
       }
@@ -149,6 +152,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_admin: {
+        Args: {
+          wallet_address: string
+        }
+        Returns: boolean
+      }
       reset_monthly_nft_claims: {
         Args: Record<PropertyKey, never>
         Returns: undefined

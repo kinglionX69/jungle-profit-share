@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WalletContextType {
   connected: boolean;
@@ -29,9 +30,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
-  
-  // Admin wallet address for comparison
-  const ADMIN_WALLET = "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500";
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Check if wallet is already connected
   useEffect(() => {
@@ -43,6 +42,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           if (address) {
             setAddress(address);
             setConnected(true);
+            checkAdminStatus(address);
           }
         } catch (error) {
           console.error("Error checking connection:", error);
@@ -52,6 +52,34 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     
     checkConnection();
   }, []);
+  
+  // When address changes, update Supabase headers
+  useEffect(() => {
+    if (address) {
+      // Set the wallet address in Supabase headers for RLS policies
+      supabase.realtime.setAuth(address);
+      
+      // Configure custom headers for RLS policies
+      (supabase as any).headers = {
+        'wallet-address': address
+      };
+    }
+  }, [address]);
+  
+  const checkAdminStatus = async (walletAddress: string) => {
+    try {
+      const { data, error } = await supabase.rpc('is_admin', { wallet_address: walletAddress });
+      
+      if (error) {
+        console.error("Error checking admin status:", error);
+        return;
+      }
+      
+      setIsAdmin(data === true);
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+    }
+  };
   
   const connect = async () => {
     setConnecting(true);
@@ -63,12 +91,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const { address } = await window.aptos.connect();
         setAddress(address);
         setConnected(true);
+        checkAdminStatus(address);
         toast.success("Wallet connected!");
       } else if (window.martian) {
         // Martian wallet
         const response = await window.martian.connect();
         setAddress(response.address);
         setConnected(true);
+        checkAdminStatus(response.address);
         toast.success("Wallet connected!");
       } else {
         toast.error("No Aptos wallet found. Please install Petra, Martian, or another Aptos wallet");
@@ -90,10 +120,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     
     setAddress(null);
     setConnected(false);
+    setIsAdmin(false);
     toast.info("Wallet disconnected");
   };
-  
-  const isAdmin = address?.toLowerCase() === ADMIN_WALLET.toLowerCase();
   
   return (
     <WalletContext.Provider
