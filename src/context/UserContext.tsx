@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useWallet } from "./WalletContext";
 import { toast } from "sonner";
 import { 
-  verifyEmail, 
+  verifyEmail as verifyEmailApi, 
   getUserData 
 } from "@/api/userApi";
 import {
@@ -43,6 +43,7 @@ interface UserProviderProps {
 }
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
+  // Get wallet information from WalletContext
   const { connected, address } = useWallet();
   
   const [email, setEmail] = useState<string | null>(null);
@@ -106,7 +107,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const handleVerifyEmail = async (otp: string): Promise<boolean> => {
     if (!address || !email) return false;
     
-    const success = await verifyEmail(address, email, otp);
+    const success = await verifyEmailApi(address, email, otp);
     if (success) {
       setIsVerified(true);
     }

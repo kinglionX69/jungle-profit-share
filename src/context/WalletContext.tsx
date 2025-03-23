@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin } from "@/api/adminApi";
 import { upsertUser } from "@/api/userApi";
 
+// Define the shape of our wallet context
 interface WalletContextType {
   connected: boolean;
   connecting: boolean;
@@ -14,8 +15,10 @@ interface WalletContextType {
   isAdmin: boolean;
 }
 
+// Create the context with undefined as default value
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+// Custom hook to use the wallet context
 export const useWallet = () => {
   const context = useContext(WalletContext);
   if (!context) {
@@ -24,10 +27,12 @@ export const useWallet = () => {
   return context;
 };
 
+// Props for the WalletProvider component
 interface WalletProviderProps {
   children: ReactNode;
 }
 
+// The WalletProvider component that will wrap our application
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
