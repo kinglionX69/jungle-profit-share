@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { useUser } from '@/context/UserContext';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const NFTGrid: React.FC = () => {
   const { nfts, loadingNfts } = useUser();
@@ -41,11 +42,26 @@ const NFTGrid: React.FC = () => {
   
   if (nfts.length === 0) {
     return (
-      <div className="text-center py-10 border rounded-lg bg-card">
-        <h3 className="text-lg font-medium">No NFTs Found</h3>
-        <p className="text-muted-foreground mt-2">
-          We couldn't find any Proud Lions Club NFTs in your wallet.
-        </p>
+      <div className="space-y-4">
+        <Alert variant="default">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertTitle>No NFTs Found</AlertTitle>
+          <AlertDescription>
+            We couldn't find any Proud Lions Club NFTs in your wallet. This could be due to:
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>You don't own any NFTs from the Proud Lions Club collection</li>
+              <li>There might be connection issues with the Aptos blockchain</li>
+              <li>The wallet might not be properly connected</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+        
+        <div className="text-center py-10 border rounded-lg bg-card">
+          <h3 className="text-lg font-medium">Debugging Information</h3>
+          <p className="text-muted-foreground mt-2">
+            Check the browser console for more details (F12 &gt; Console)
+          </p>
+        </div>
       </div>
     );
   }

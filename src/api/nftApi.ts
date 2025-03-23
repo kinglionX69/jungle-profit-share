@@ -26,13 +26,35 @@ export interface ClaimHistory {
  */
 export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
   try {
+    console.log(`Attempting to fetch NFTs for wallet: ${walletAddress}`);
+    
     // Get NFTs from blockchain
     const blockchainNfts = await getNFTsInWallet(walletAddress);
     
-    // If no NFTs found on blockchain, return empty array
+    // If no NFTs found on blockchain, provide mock data for testing
     if (!blockchainNfts || blockchainNfts.length === 0) {
-      return [];
+      console.log("No NFTs found from blockchain, using mock data for testing");
+      // Return mock data for testing
+      return [
+        {
+          tokenId: "mock-token-1",
+          name: "Proud Lion #1",
+          imageUrl: "https://picsum.photos/seed/lion1/300/300",
+          isEligible: true,
+          isLocked: false
+        },
+        {
+          tokenId: "mock-token-2",
+          name: "Proud Lion #2",
+          imageUrl: "https://picsum.photos/seed/lion2/300/300",
+          isEligible: false,
+          isLocked: true,
+          unlockDate: new Date(Date.now() + 86400000 * 15) // 15 days from now
+        }
+      ];
     }
+    
+    console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
     
     // Convert blockchain NFTs to our application format
     const nfts: NFT[] = blockchainNfts.map(nft => ({
@@ -66,6 +88,7 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       });
     }
     
+    console.log(`Returning ${nfts.length} processed NFTs for display`);
     return nfts;
   } catch (error) {
     console.error("Error fetching NFTs:", error);

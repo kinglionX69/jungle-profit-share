@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
@@ -11,11 +11,14 @@ import ClaimCard from '@/components/Claim/ClaimCard';
 import ClaimHistory from '@/components/Claim/ClaimHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/context/UserContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const Dashboard = () => {
-  const { connected } = useWallet();
+  const { connected, address } = useWallet();
   const { isVerified, nfts, email } = useUser();
   const navigate = useNavigate();
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Redirect to home if not connected
   useEffect(() => {
@@ -23,6 +26,24 @@ const Dashboard = () => {
       navigate('/');
     }
   }, [connected, navigate]);
+  
+  useEffect(() => {
+    // Check for query parameter to show debug info
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+      setShowDebugInfo(true);
+    }
+    
+    // Log debug info
+    if (connected) {
+      console.log("Dashboard debug info:");
+      console.log("- Wallet connected:", connected);
+      console.log("- Wallet address:", address);
+      console.log("- Email verified:", isVerified);
+      console.log("- NFTs loaded:", nfts.length);
+      console.log("- NFTs:", nfts);
+    }
+  }, [connected, address, isVerified, nfts]);
   
   if (!connected) {
     return (
@@ -45,6 +66,21 @@ const Dashboard = () => {
             View your NFTs and claim your rewards
           </p>
         </div>
+        
+        {showDebugInfo && (
+          <Alert className="mb-8" variant="default">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Debug Information</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2">
+                <p><strong>Wallet Address:</strong> {address}</p>
+                <p><strong>Email:</strong> {email || 'Not set'}</p>
+                <p><strong>Email Verified:</strong> {isVerified ? 'Yes' : 'No'}</p>
+                <p><strong>NFTs Loaded:</strong> {nfts.length}</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         
         {!isVerified && (
           <div className="mb-8 max-w-md">
