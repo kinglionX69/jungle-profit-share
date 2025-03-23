@@ -14,12 +14,14 @@ import { Upload, Coins, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { depositToEscrowWallet } from '@/api/adminApi';
+import { useWallet } from '@/context/WalletContext';
 
 const TokenDeposit: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
   const [payoutAmount, setPayoutAmount] = useState('2');
   const [processing, setProcessing] = useState(false);
+  const { address } = useWallet();
   
   const handleDeposit = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -38,7 +40,8 @@ const TokenDeposit: React.FC = () => {
       const success = await depositToEscrowWallet(
         selectedToken,
         Number(amount),
-        Number(payoutAmount)
+        Number(payoutAmount),
+        address || undefined
       );
       
       if (success) {

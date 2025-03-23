@@ -192,11 +192,22 @@ export const getClaimStatistics = async () => {
 export const depositToEscrowWallet = async (
   tokenName: string,
   amount: number,
-  payoutPerNft: number
+  payoutPerNft: number,
+  walletAddress?: string
 ): Promise<boolean> => {
   try {
     // In a real implementation, this would call the blockchain
     // Here we just simulate success and update the token payout
+    
+    // Get the current user's wallet address if not provided
+    let creatorWalletAddress = walletAddress;
+    
+    if (!creatorWalletAddress) {
+      // Since we can't access headers directly, we'll need to get this from somewhere else
+      // For example, it could be passed from the component that calls this function
+      // For now, we'll use 'unknown' if no wallet address is provided
+      creatorWalletAddress = 'unknown';
+    }
     
     // Update the token payout configuration
     const { error } = await supabase
@@ -204,7 +215,7 @@ export const depositToEscrowWallet = async (
       .insert({
         token_name: tokenName.toUpperCase(),
         payout_per_nft: payoutPerNft,
-        created_by: supabase.headers?.['wallet-address'] || 'unknown'
+        created_by: creatorWalletAddress
       });
     
     if (error) {

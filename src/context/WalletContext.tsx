@@ -67,10 +67,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Set the wallet address in Supabase headers for RLS policies
       supabase.realtime.setAuth(address);
       
-      // Configure custom headers for RLS policies
-      (supabase as any).headers = {
-        'wallet-address': address
-      };
+      // We don't directly set headers anymore since it's protected
+      // Instead, we'll pass the wallet address directly to API functions that need it
     }
   }, [address]);
   
