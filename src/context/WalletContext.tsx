@@ -13,6 +13,7 @@ interface WalletContextType {
   connect: () => Promise<void>;
   disconnect: () => void;
   isAdmin: boolean;
+  signTransaction: (transaction: any) => Promise<any>;
 }
 
 // Create the context with undefined as default value
@@ -42,23 +43,48 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   // Check if wallet is already connected
   useEffect(() => {
     const checkConnection = async () => {
-      // Check if window.aptos is available (Petra wallet)
+      // Detect available wallet providers
       if (window.aptos) {
         try {
-          const { address } = await window.aptos.account();
-          if (address) {
-            setAddress(address);
-            setConnected(true);
-            
-            // Insert user in database
-            await upsertUser(address);
-            
-            // Check if the wallet is an admin
-            const adminStatus = await checkIsAdmin(address);
-            setIsAdmin(adminStatus);
+          const isConnected = await window.aptos.isConnected();
+          if (isConnected) {
+            const { address } = await window.aptos.account();
+            if (address) {
+              console.log("Found connected Petra wallet:", address);
+              setAddress(address);
+              setConnected(true);
+              
+              // Insert user in database
+              await upsertUser(address);
+              
+              // Check if the wallet is an admin
+              const adminStatus = await checkIsAdmin(address);
+              setIsAdmin(adminStatus);
+            }
           }
         } catch (error) {
-          console.error("Error checking connection:", error);
+          console.error("Error checking Petra connection:", error);
+        }
+      } else if (window.martian) {
+        try {
+          const isConnected = await window.martian.isConnected();
+          if (isConnected) {
+            const { address } = await window.martian.getAccount();
+            if (address) {
+              console.log("Found connected Martian wallet:", address);
+              setAddress(address);
+              setConnected(true);
+              
+              // Insert user in database
+              await upsertUser(address);
+              
+              // Check if the wallet is an admin
+              const adminStatus = await checkIsAdmin(address);
+              setIsAdmin(adminStatus);
+            }
+          }
+        } catch (error) {
+          console.error("Error checking Martian connection:", error);
         }
       }
     };
@@ -71,9 +97,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     if (address) {
       // Set the wallet address in Supabase headers for RLS policies
       supabase.realtime.setAuth(address);
-      
-      // We don't directly set headers anymore since it's protected
-      // Instead, we'll pass the wallet address directly to API functions that need it
     }
   }, [address]);
   
@@ -95,7 +118,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const adminStatus = await checkIsAdmin(address);
         setIsAdmin(adminStatus);
         
-        toast.success("Wallet connected!");
+        toast.success("Petra wallet connected!");
       } else if (window.martian) {
         // Martian wallet
         const response = await window.martian.connect();
@@ -109,9 +132,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const adminStatus = await checkIsAdmin(response.address);
         setIsAdmin(adminStatus);
         
-        toast.success("Wallet connected!");
+        toast.success("Martian wallet connected!");
       } else {
-        toast.error("No Aptos wallet found. Please install Petra, Martian, or another Aptos wallet");
+        toast.error("No Aptos wallet found. Please install Petra, Martian, or another Aptos wallet extension");
       }
     } catch (error: any) {
       console.error("Connection error:", error);
@@ -134,6 +157,27 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     toast.info("Wallet disconnected");
   };
   
+  const signTransaction = async (transaction: any): Promise<any> => {
+    if (!connected || !address) {
+      toast.error("Wallet not connected");
+      throw new Error("Wallet not connected");
+    }
+    
+    try {
+      if (window.aptos) {
+        return await window.aptos.signAndSubmitTransaction(transaction);
+      } else if (window.martian) {
+        return await window.martian.signAndSubmitTransaction(transaction);
+      } else {
+        throw new Error("No wallet provider available");
+      }
+    } catch (error: any) {
+      console.error("Transaction signing error:", error);
+      toast.error(error.message || "Failed to sign transaction");
+      throw error;
+    }
+  };
+  
   return (
     <WalletContext.Provider
       value={{
@@ -143,6 +187,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         connect,
         disconnect,
         isAdmin,
+        signTransaction
       }}
     >
       {children}

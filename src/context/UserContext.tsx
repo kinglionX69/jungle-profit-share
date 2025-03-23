@@ -44,7 +44,7 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Get wallet information from WalletContext
-  const { connected, address } = useWallet();
+  const { connected, address, signTransaction } = useWallet();
   
   const [email, setEmail] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
@@ -134,8 +134,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       
       toast.loading("Processing your claim...");
       
-      // Submit the claim
-      const success = await submitClaim(address, eligibleNfts);
+      // Submit the claim using the wallet's sign transaction function
+      const success = await submitClaim(address, eligibleNfts, signTransaction);
       
       if (success) {
         // Refresh data

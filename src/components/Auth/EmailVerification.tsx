@@ -2,179 +2,177 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
-import { useWallet } from '@/context/WalletContext'; 
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from "sonner";
-import { Mail, Check, Loader } from 'lucide-react';
+import { useWallet } from '@/context/WalletContext';
+import { sendVerificationEmail } from '@/api/userApi';
 
-const EmailVerification: React.FC = () => {
-  const { email, setEmail, isVerified, verifyEmail } = useUser();
+const emailSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+});
+
+const otpSchema = z.object({
+  otp: z.string().min(6, { message: 'OTP must be 6 digits' }).max(6),
+});
+
+const EmailVerification = () => {
+  const { email, isVerified, setEmail, verifyEmail } = useUser();
   const { address } = useWallet();
-  const [inputEmail, setInputEmail] = useState(email || '');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
   
-  const handleSendOtp = async () => {
-    if (!inputEmail) {
-      toast.error("Please enter your email address");
-      return;
-    }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputEmail)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: email || '',
+    },
+  });
+  
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      otp: '',
+    },
+  });
+  
+  const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
     if (!address) {
-      toast.error("Wallet not connected");
+      toast.error('Wallet not connected');
       return;
     }
     
-    setSendingOtp(true);
-    
+    setSendingEmail(true);
     try {
-      // Save email to Supabase
-      const { error } = await supabase
-        .from('users')
-        .upsert({ 
-          wallet_address: address,
-          email: inputEmail,
-          updated_at: new Date().toISOString()
-        });
+      setEmail(values.email);
       
-      if (error) {
-        console.error("Error saving email:", error);
-        toast.error("Failed to save email. Please try again.");
-        setSendingOtp(false);
-        return;
+      // Call API to send verification email
+      const result = await sendVerificationEmail(address, values.email);
+      
+      if (result) {
+        setShowOTP(true);
+        toast.success('Verification code sent to your email');
+        
+        // For demo purposes, auto-fill the OTP (since we're not actually sending emails)
+        otpForm.setValue('otp', result);
       }
-      
-      // In a real application, this would send an OTP to the user's email
-      // For this demo, we'll simulate an API call
-      setTimeout(() => {
-        setEmail(inputEmail);
-        setOtpSent(true);
-        setSendingOtp(false);
-        toast.success("OTP sent to your email");
-      }, 1500);
     } catch (error) {
-      console.error("Error saving email:", error);
-      toast.error("Failed to save email. Please try again.");
-      setSendingOtp(false);
+      console.error('Error sending verification email:', error);
+      toast.error('Failed to send verification email');
+    } finally {
+      setSendingEmail(false);
     }
   };
   
-  const handleVerifyOtp = async () => {
-    if (!otp) {
-      toast.error("Please enter the OTP from your email");
+  const onOTPSubmit = async (values: z.infer<typeof otpSchema>) => {
+    if (!address || !email) {
+      toast.error('Missing required information');
       return;
     }
     
-    setVerifyingOtp(true);
-    
-    const result = await verifyEmail(otp);
-    setVerifyingOtp(false);
-    
-    if (result) {
-      // OTP verification was successful, no need to do anything else
-      // The toast and state updates are handled in verifyEmail
+    setVerifyingOTP(true);
+    try {
+      const success = await verifyEmail(values.otp);
+      
+      if (success) {
+        toast.success('Email verified successfully!');
+      } else {
+        toast.error('Invalid verification code');
+      }
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      toast.error('Failed to verify email');
+    } finally {
+      setVerifyingOTP(false);
     }
   };
   
   if (isVerified) {
     return (
-      <div className="flex flex-col items-center text-center gap-2 p-4">
-        <div className="bg-success/20 p-3 rounded-full mb-2">
-          <Check className="h-6 w-6 text-success" />
-        </div>
-        <h3 className="font-medium text-lg">Email Verified</h3>
-        <p className="text-muted-foreground">{email}</p>
+      <div className="flex items-center p-4 text-sm rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
+        <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+        <span>Email verified: <span className="font-medium">{email}</span></span>
       </div>
     );
   }
   
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-md border bg-card">
-      <div className="flex flex-col items-center text-center gap-2">
-        <div className="bg-muted p-3 rounded-full mb-2">
-          <Mail className="h-6 w-6 text-primary" />
-        </div>
-        <h3 className="font-medium text-lg">Verify Your Email</h3>
-        <p className="text-muted-foreground text-sm">
-          We need to verify your email to process claims and send you important updates
-        </p>
-      </div>
-      
-      {!otpSent ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Input 
-              type="email" 
-              placeholder="your@email.com" 
-              value={inputEmail}
-              onChange={(e) => setInputEmail(e.target.value)}
-            />
-          </div>
-          <Button 
-            onClick={handleSendOtp} 
-            className="w-full"
-            disabled={sendingOtp}
-          >
-            {sendingOtp ? (
-              <>
-                <Loader className="mr-2 h-4 w-4 animate-spin" />
-                Sending OTP...
-              </>
-            ) : (
-              'Send OTP'
-            )}
-          </Button>
-        </div>
+    <div className="rounded-lg border p-4 bg-card">
+      <h3 className="text-lg font-medium mb-4">Verify Your Email</h3>
+      {!showOTP ? (
+        <>
+          <p className="text-sm text-muted-foreground mb-4">
+            Verify your email to claim rewards and receive important updates
+          </p>
+          <Form {...emailForm}>
+            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+              <FormField
+                control={emailForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={sendingEmail}>
+                {sendingEmail ? 'Sending...' : 'Send Verification Code'}
+              </Button>
+            </form>
+          </Form>
+        </>
       ) : (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Input 
-              type="text" 
-              placeholder="Enter 6-digit OTP" 
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-            />
-            <p className="text-xs text-muted-foreground text-center">
-              A 6-digit code has been sent to {email}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Button 
-              onClick={handleVerifyOtp} 
-              className="w-full"
-              disabled={verifyingOtp}
-            >
-              {verifyingOtp ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                'Verify OTP'
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              className="text-xs"
-              disabled={sendingOtp}
-              onClick={() => {
-                setOtpSent(false);
-                setOtp('');
-              }}
-            >
-              Change Email
-            </Button>
-          </div>
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground mb-4">
+            Enter the 6-digit verification code sent to {email}
+          </p>
+          <Form {...otpForm}>
+            <form onSubmit={otpForm.handleSubmit(onOTPSubmit)} className="space-y-4">
+              <FormField
+                control={otpForm.control}
+                name="otp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <InputOTP maxLength={6} {...field}>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setShowOTP(false)}
+                  disabled={verifyingOTP}
+                >
+                  Back
+                </Button>
+                <Button type="submit" disabled={verifyingOTP}>
+                  {verifyingOTP ? 'Verifying...' : 'Verify Email'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </>
       )}
     </div>
   );

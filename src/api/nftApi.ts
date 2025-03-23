@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getNFTsInWallet, submitClaimTransaction } from "@/utils/aptosUtils";
 
 export interface NFT {
   tokenId: string;
@@ -20,43 +21,27 @@ export interface ClaimHistory {
 }
 
 /**
- * Fetches NFTs for a wallet and determines eligibility
+ * Fetches NFTs for a wallet from the blockchain and determines eligibility
  * @param walletAddress The wallet address to check NFTs for
  */
 export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
   try {
-    // For demo, let's use mock NFTs
-    // In a real implementation, this would call a blockchain API
-    const mockNfts: NFT[] = [
-      {
-        tokenId: "1",
-        name: "Proud Lion #1",
-        imageUrl: "https://picsum.photos/seed/lion1/300/300",
-        isEligible: true,
-        isLocked: false
-      },
-      {
-        tokenId: "2",
-        name: "Proud Lion #2",
-        imageUrl: "https://picsum.photos/seed/lion2/300/300",
-        isEligible: true,
-        isLocked: false
-      },
-      {
-        tokenId: "3",
-        name: "Proud Lion #3",
-        imageUrl: "https://picsum.photos/seed/lion3/300/300",
-        isEligible: true,
-        isLocked: false
-      },
-      {
-        tokenId: "4",
-        name: "Proud Lion #4",
-        imageUrl: "https://picsum.photos/seed/lion4/300/300",
-        isEligible: true,
-        isLocked: false
-      }
-    ];
+    // Get NFTs from blockchain
+    const blockchainNfts = await getNFTsInWallet(walletAddress);
+    
+    // If no NFTs found on blockchain, return empty array
+    if (!blockchainNfts || blockchainNfts.length === 0) {
+      return [];
+    }
+    
+    // Convert blockchain NFTs to our application format
+    const nfts: NFT[] = blockchainNfts.map(nft => ({
+      tokenId: nft.tokenId,
+      name: nft.name,
+      imageUrl: nft.imageUrl || "https://picsum.photos/seed/lion1/300/300", // Fallback image
+      isEligible: true, // Default to eligible, we'll check locks below
+      isLocked: false
+    }));
     
     // Fetch NFT claims from Supabase to determine what's locked
     const { data: nftClaimsData, error: nftClaimsError } = await supabase
@@ -69,19 +54,19 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       throw nftClaimsError;
     }
     
-    // If we have NFT claim data, update the mock NFTs to reflect locked status
+    // If we have NFT claim data, update the NFTs to reflect locked status
     if (nftClaimsData && nftClaimsData.length > 0) {
       nftClaimsData.forEach(claim => {
-        const nftIndex = mockNfts.findIndex(nft => nft.tokenId === claim.token_id);
+        const nftIndex = nfts.findIndex(nft => nft.tokenId === claim.token_id);
         if (nftIndex !== -1) {
-          mockNfts[nftIndex].isLocked = true;
-          mockNfts[nftIndex].isEligible = false;
-          mockNfts[nftIndex].unlockDate = new Date(claim.unlock_date);
+          nfts[nftIndex].isLocked = true;
+          nfts[nftIndex].isEligible = false;
+          nfts[nftIndex].unlockDate = new Date(claim.unlock_date);
         }
       });
     }
     
-    return mockNfts;
+    return nfts;
   } catch (error) {
     console.error("Error fetching NFTs:", error);
     return [];
@@ -158,10 +143,12 @@ export const calculateClaimableAmount = async (nfts: NFT[]): Promise<number> => 
  * Submits a claim for eligible NFTs
  * @param walletAddress The wallet address to claim for
  * @param eligibleNfts The eligible NFTs to claim
+ * @param signTransaction Function to sign and submit blockchain transactions
  */
 export const submitClaim = async (
   walletAddress: string,
-  eligibleNfts: NFT[]
+  eligibleNfts: NFT[],
+  signTransaction: (txn: any) => Promise<any>
 ): Promise<boolean> => {
   try {
     if (eligibleNfts.length === 0) {
@@ -186,8 +173,17 @@ export const submitClaim = async (
     const tokenName = payoutData?.token_name || "APT"; // Default to APT if no token is configured
     const totalAmount = eligibleNfts.length * Number(payoutPerNft);
     
-    // Simulate blockchain transaction
-    const transactionHash = `0x${Math.random().toString(16).substring(2, 62)}`;
+    // Submit transaction to blockchain
+    const { success, transactionHash } = await submitClaimTransaction(
+      walletAddress, 
+      eligibleNfts.map(nft => nft.tokenId),
+      signTransaction
+    );
+    
+    if (!success || !transactionHash) {
+      toast.error("Blockchain transaction failed");
+      return false;
+    }
     
     // Insert into nft_claims for each NFT
     for (const nft of eligibleNfts) {
