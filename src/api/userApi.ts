@@ -81,8 +81,8 @@ export const sendVerificationEmail = async (
     
     if (data.success) {
       toast.success("Verification code sent to your email");
-      // In a real app, we wouldn't return the OTP, but for this demo we will
-      return data.otp;
+      // If we're in development, the OTP will be returned for easier testing
+      return data.otp || null;
     } else {
       toast.error(data.message || "Failed to send verification email");
       return null;

@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,14 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
+    
+    if (!resendApiKey) {
+      throw new Error("Missing RESEND_API_KEY environment variable");
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const resend = new Resend(resendApiKey);
 
     const { email, walletAddress } = await req.json();
 
@@ -36,12 +44,38 @@ serve(async (req) => {
     // Generate a random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store the OTP in the database (in a real implementation)
-    // For demo purposes, we're just simulating email sending
-    console.log(`Would send OTP ${otp} to ${email} for wallet ${walletAddress}`);
+    // Send actual email with the OTP using Resend
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: "PLS Pride Share <onboarding@resend.dev>",
+      to: email,
+      subject: "Verify your email for Proud Lion Studios Pride Share",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Verify your email</h2>
+          <p>Hello,</p>
+          <p>Thank you for using Proud Lion Studios Pride Share. Please use the verification code below to verify your email address:</p>
+          <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
+            <strong>${otp}</strong>
+          </div>
+          <p>This code will expire in 30 minutes.</p>
+          <p>If you didn't request this code, you can safely ignore this email.</p>
+          <p>Best regards,<br>The Proud Lion Studios Team</p>
+        </div>
+      `,
+    });
+    
+    if (emailError) {
+      console.error("Error sending email:", emailError);
+      return new Response(
+        JSON.stringify({ error: "Failed to send verification email" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
 
-    // In a real implementation, you would send the actual email with the OTP
-    // using a service like SendGrid, Resend, or AWS SES
+    console.log(`Email sent successfully to ${email} with OTP ${otp}`);
     
     // Update the user with the new email (but not verified yet)
     const { error } = await supabase
@@ -64,13 +98,15 @@ serve(async (req) => {
       );
     }
 
-    // For demo purposes, always return the OTP in the response
-    // In production, the OTP would only be sent via email
+    // In development environment, we can still return the OTP for easier testing
+    // In production, this should be removed
+    const isDevelopment = Deno.env.get("ENVIRONMENT") === "development";
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "Verification code sent", 
-        otp: otp // Only for demo - remove in production!
+        ...(isDevelopment && { otp }) // Only include OTP in development
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

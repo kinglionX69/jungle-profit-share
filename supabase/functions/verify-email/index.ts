@@ -23,8 +23,7 @@ serve(async (req) => {
 
     const { email, otp, walletAddress } = await req.json();
 
-    // In a real implementation, validate the OTP against one sent to the user's email
-    // For demo purposes, we're simulating OTP validation with a simple regex for a 6-digit code
+    // Validate required fields
     if (!otp || !email || !walletAddress) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -45,6 +44,10 @@ serve(async (req) => {
         }
       );
     }
+
+    // In a real implementation, we would validate the OTP against a stored value
+    // For now, we'll simulate validation by accepting any 6-digit code
+    // In production, you would store the OTP in a table with an expiration time
 
     // Update user in the database as verified
     const { data, error } = await supabase

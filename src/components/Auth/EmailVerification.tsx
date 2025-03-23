@@ -58,8 +58,10 @@ const EmailVerification = () => {
         setShowOTP(true);
         toast.success('Verification code sent to your email');
         
-        // For demo purposes, auto-fill the OTP (since we're not actually sending emails)
-        otpForm.setValue('otp', result);
+        // In development mode, the API might return the OTP for easier testing
+        if (result) {
+          otpForm.setValue('otp', result);
+        }
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
