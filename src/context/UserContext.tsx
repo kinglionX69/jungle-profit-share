@@ -140,6 +140,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (success) {
         // Refresh data
         await fetchUserData();
+        toast.success("Claim processed successfully!");
+      } else {
+        toast.error("Failed to process claim");
       }
       
       toast.dismiss();

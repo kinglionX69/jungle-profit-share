@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
 import { Coins, History, ChevronRight, Loader } from 'lucide-react';
@@ -7,14 +7,14 @@ import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 
 const ClaimCard: React.FC = () => {
-  const { claimableAmount, nfts, claim } = useUser();
-  const [claiming, setClaiming] = React.useState(false);
+  const { claimableAmount, nfts, claim, isVerified } = useUser();
+  const [claiming, setClaiming] = useState(false);
   const navigate = useNavigate();
   
   const eligibleCount = nfts.filter(nft => nft.isEligible).length;
   
   const handleClaim = async () => {
-    if (claimableAmount <= 0) return;
+    if (claimableAmount <= 0 || !isVerified) return;
     
     setClaiming(true);
     try {
@@ -79,7 +79,7 @@ const ClaimCard: React.FC = () => {
           
           <Button 
             onClick={handleClaim}
-            disabled={claimableAmount <= 0 || claiming}
+            disabled={claimableAmount <= 0 || claiming || !isVerified}
             className="w-full"
             size="lg"
           >
@@ -96,11 +96,15 @@ const ClaimCard: React.FC = () => {
             )}
           </Button>
           
-          {claimableAmount <= 0 && (
+          {claimableAmount <= 0 ? (
             <p className="text-xs text-muted-foreground text-center">
               You don't have any rewards to claim at this time
             </p>
-          )}
+          ) : !isVerified ? (
+            <p className="text-xs text-destructive text-center">
+              Please verify your email before claiming rewards
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
