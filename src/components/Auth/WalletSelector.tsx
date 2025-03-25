@@ -20,22 +20,22 @@ interface WalletSelectorProps {
 const WALLET_OPTIONS: Omit<WalletOption, 'isInstalled'>[] = [
   {
     name: 'Petra',
-    icon: '/wallet-icons/petra.png',
+    icon: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=64&h=64&q=80',
     downloadUrl: 'https://petra.app',
   },
   {
     name: 'Martian',
-    icon: '/wallet-icons/martian.png',
+    icon: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=64&h=64&q=80',
     downloadUrl: 'https://martianwallet.xyz',
   },
   {
     name: 'Pontem',
-    icon: '/wallet-icons/pontem.png',
+    icon: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=64&h=64&q=80',
     downloadUrl: 'https://pontem.network',
   },
   {
     name: 'Rise',
-    icon: '/wallet-icons/rise.png',
+    icon: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=64&h=64&q=80',
     downloadUrl: 'https://risewallet.io',
   }
 ];
@@ -69,7 +69,7 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({
                   <img 
                     src={wallet.icon} 
                     alt={`${wallet.name} wallet`} 
-                    className="w-6 h-6"
+                    className="w-6 h-6 object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg';
                     }}
