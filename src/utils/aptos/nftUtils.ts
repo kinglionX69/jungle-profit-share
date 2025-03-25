@@ -1,0 +1,64 @@
+
+import { toast } from "sonner";
+import { BlockchainNFT } from "./types";
+import { fetchFromIndexer, fetchFromNodeAPI } from "./nftFetcher";
+
+/**
+ * Check if the user has NFTs from the specified collection
+ * @param walletAddress The wallet address to check
+ * @param collectionName The collection name to filter by
+ * @returns Array of NFTs owned by the wallet
+ */
+export const getNFTsInWallet = async (walletAddress: string, collectionName: string = "Proud Lions Club") => {
+  try {
+    console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+    
+    // First try using the indexer
+    try {
+      const nfts = await fetchFromIndexer(walletAddress, collectionName);
+      
+      if (nfts.length > 0) {
+        console.log(`Found ${nfts.length} NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+        return nfts;
+      }
+    } catch (indexerError) {
+      console.error("Error with indexer, trying fallback:", indexerError);
+    }
+    
+    // If no NFTs found or indexer error, try the node API as fallback
+    console.log(`No NFTs found from indexer, trying node API fallback for wallet: ${walletAddress}`);
+    const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
+    console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
+    return nodeFetchResult;
+  } catch (error) {
+    console.error("Error getting NFTs:", error);
+    return [];
+  }
+};
+
+/**
+ * Check if an NFT is locked (has been used for a claim in the last 30 days)
+ * @param tokenId The token ID to check
+ * @param walletAddress The wallet address that owns the token
+ * @returns Lock status and unlock date if locked
+ */
+export const checkNFTLockStatus = async (tokenId: string, walletAddress: string) => {
+  try {
+    // Query our database to check if this NFT has been claimed recently
+    const { data, error } = await fetch(`/api/check-lock-status?tokenId=${tokenId}&walletAddress=${walletAddress}`)
+      .then(res => res.json());
+    
+    if (error) {
+      console.error("Error checking lock status:", error);
+      return { isLocked: false, unlockDate: null };
+    }
+    
+    return {
+      isLocked: data?.isLocked || false,
+      unlockDate: data?.unlockDate ? new Date(data.unlockDate) : null
+    };
+  } catch (error) {
+    console.error("Error checking NFT lock status:", error);
+    return { isLocked: false, unlockDate: null };
+  }
+};

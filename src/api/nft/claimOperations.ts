@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { submitClaimTransaction } from "@/utils/aptosUtils";
+import { submitClaimTransaction } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
 
 /**
