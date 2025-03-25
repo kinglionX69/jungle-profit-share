@@ -20,22 +20,22 @@ interface WalletSelectorProps {
 const WALLET_OPTIONS: Omit<WalletOption, 'isInstalled'>[] = [
   {
     name: 'Petra',
-    icon: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=64&h=64&q=80',
+    icon: '/wallet-icons/petra.png',
     downloadUrl: 'https://petra.app',
   },
   {
     name: 'Martian',
-    icon: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=64&h=64&q=80',
+    icon: '/wallet-icons/martian.png',
     downloadUrl: 'https://martianwallet.xyz',
   },
   {
     name: 'Pontem',
-    icon: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=64&h=64&q=80',
+    icon: '/wallet-icons/pontem.png',
     downloadUrl: 'https://pontem.network',
   },
   {
     name: 'Rise',
-    icon: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=64&h=64&q=80',
+    icon: '/wallet-icons/rise.png',
     downloadUrl: 'https://risewallet.io',
   }
 ];
