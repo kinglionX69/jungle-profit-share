@@ -21,22 +21,22 @@ const WALLET_OPTIONS: Omit<WalletOption, 'isInstalled'>[] = [
   {
     name: 'Petra',
     icon: '/wallet-icons/petra.png',
-    downloadUrl: 'https://petra.app/download',
+    downloadUrl: 'https://petra.app',
   },
   {
     name: 'Martian',
     icon: '/wallet-icons/martian.png',
-    downloadUrl: 'https://martianwallet.xyz/download',
+    downloadUrl: 'https://martianwallet.xyz',
   },
   {
     name: 'Pontem',
     icon: '/wallet-icons/pontem.png',
-    downloadUrl: 'https://pontem.network/download',
+    downloadUrl: 'https://pontem.network',
   },
   {
     name: 'Rise',
     icon: '/wallet-icons/rise.png',
-    downloadUrl: 'https://risewallet.io/download',
+    downloadUrl: 'https://risewallet.io',
   }
 ];
 
