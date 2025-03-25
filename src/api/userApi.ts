@@ -14,14 +14,30 @@ export const upsertUser = async (
   emailVerified?: boolean
 ) => {
   try {
-    const { error } = await supabase
+    // First check if the user exists
+    const { data: existingUser, error: fetchError } = await supabase
       .from('users')
-      .upsert({
-        wallet_address: walletAddress,
-        email: email || null,
-        email_verified: emailVerified || false,
-        updated_at: new Date().toISOString()
-      });
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error("Error checking for existing user:", fetchError);
+    }
+    
+    const userData = {
+      wallet_address: walletAddress,
+      email: email || (existingUser?.email || null),
+      email_verified: emailVerified !== undefined ? emailVerified : (existingUser?.email_verified || false),
+      updated_at: new Date().toISOString()
+    };
+    
+    // If user exists, update it; otherwise insert new record
+    const operation = existingUser ? 
+      supabase.from('users').update(userData).eq('wallet_address', walletAddress) :
+      supabase.from('users').insert([userData]);
+      
+    const { error } = await operation;
 
     if (error) {
       console.error("Error upserting user:", error);

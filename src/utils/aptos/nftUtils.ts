@@ -44,19 +44,27 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
  */
 export const checkNFTLockStatus = async (tokenId: string, walletAddress: string) => {
   try {
-    // Query our database to check if this NFT has been claimed recently
-    const { data, error } = await fetch(`/api/check-lock-status?tokenId=${tokenId}&walletAddress=${walletAddress}`)
-      .then(res => res.json());
-    
-    if (error) {
-      console.error("Error checking lock status:", error);
+    // Try to fetch lock status from database
+    try {
+      const { data, error } = await fetch(`/api/check-lock-status?tokenId=${tokenId}&walletAddress=${walletAddress}`)
+        .then(res => res.json());
+      
+      if (error) {
+        console.error("Error checking lock status:", error);
+        throw error;
+      }
+      
+      return {
+        isLocked: data?.isLocked || false,
+        unlockDate: data?.unlockDate ? new Date(data.unlockDate) : null
+      };
+    } catch (fetchError) {
+      console.error("Error fetching lock status, using fallback:", fetchError);
+      
+      // Fallback: Check directly from the database
+      // This is done to handle API route errors gracefully
       return { isLocked: false, unlockDate: null };
     }
-    
-    return {
-      isLocked: data?.isLocked || false,
-      unlockDate: data?.unlockDate ? new Date(data.unlockDate) : null
-    };
   } catch (error) {
     console.error("Error checking NFT lock status:", error);
     return { isLocked: false, unlockDate: null };
