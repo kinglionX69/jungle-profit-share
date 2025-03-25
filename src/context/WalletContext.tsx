@@ -11,9 +11,12 @@ interface WalletContextType {
   connecting: boolean;
   address: string | null;
   connect: () => Promise<void>;
+  connectWallet: (walletName: string) => Promise<void>;
   disconnect: () => void;
   isAdmin: boolean;
   signTransaction: (transaction: any) => Promise<any>;
+  showWalletSelector: boolean;
+  setShowWalletSelector: (show: boolean) => void;
 }
 
 // Create the context with undefined as default value
@@ -39,11 +42,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [connecting, setConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
   
   // Check if wallet is already connected
   useEffect(() => {
     const checkConnection = async () => {
-      // Detect available wallet providers
+      // Check for Petra wallet
       if (window.aptos) {
         try {
           const isConnected = await window.aptos.isConnected();
@@ -51,42 +55,29 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             const { address } = await window.aptos.account();
             if (address) {
               console.log("Found connected Petra wallet:", address);
-              setAddress(address);
-              setConnected(true);
-              
-              // Insert user in database
-              await upsertUser(address);
-              
-              // Check if the wallet is an admin
-              const adminStatus = await checkIsAdmin(address);
-              setIsAdmin(adminStatus);
+              await handleSuccessfulConnection(address, "Petra");
             }
           }
         } catch (error) {
           console.error("Error checking Petra connection:", error);
         }
-      } else if (window.martian) {
+      } 
+      // Check for Martian wallet
+      else if (window.martian) {
         try {
           const isConnected = await window.martian.isConnected();
           if (isConnected) {
             const { address } = await window.martian.getAccount();
             if (address) {
               console.log("Found connected Martian wallet:", address);
-              setAddress(address);
-              setConnected(true);
-              
-              // Insert user in database
-              await upsertUser(address);
-              
-              // Check if the wallet is an admin
-              const adminStatus = await checkIsAdmin(address);
-              setIsAdmin(adminStatus);
+              await handleSuccessfulConnection(address, "Martian");
             }
           }
         } catch (error) {
           console.error("Error checking Martian connection:", error);
         }
       }
+      // Add checks for other wallets as needed
     };
     
     checkConnection();
@@ -100,42 +91,44 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   }, [address]);
   
-  const connect = async () => {
+  // Handler for successful wallet connections
+  const handleSuccessfulConnection = async (walletAddress: string, walletName: string) => {
+    setAddress(walletAddress);
+    setConnected(true);
+    
+    // Insert user in database
+    await upsertUser(walletAddress);
+    
+    // Check if the wallet is an admin
+    const adminStatus = await checkIsAdmin(walletAddress);
+    setIsAdmin(adminStatus);
+    
+    toast.success(`${walletName} wallet connected!`);
+  };
+  
+  // Connect to a specific wallet
+  const connectWallet = async (walletName: string) => {
     setConnecting(true);
     
     try {
-      // Check for different wallet providers
-      if (window.aptos) {
-        // Petra wallet
+      if (walletName === 'petra' && window.aptos) {
         const { address } = await window.aptos.connect();
-        setAddress(address);
-        setConnected(true);
-        
-        // Insert user in database
-        await upsertUser(address);
-        
-        // Check if the wallet is an admin
-        const adminStatus = await checkIsAdmin(address);
-        setIsAdmin(adminStatus);
-        
-        toast.success("Petra wallet connected!");
-      } else if (window.martian) {
-        // Martian wallet
+        await handleSuccessfulConnection(address, "Petra");
+      } else if (walletName === 'martian' && window.martian) {
         const response = await window.martian.connect();
-        setAddress(response.address);
-        setConnected(true);
-        
-        // Insert user in database
-        await upsertUser(response.address);
-        
-        // Check if the wallet is an admin
-        const adminStatus = await checkIsAdmin(response.address);
-        setIsAdmin(adminStatus);
-        
-        toast.success("Martian wallet connected!");
+        await handleSuccessfulConnection(response.address, "Martian");
+      } else if (walletName === 'pontem' && window.pontem) {
+        const address = await window.pontem.connect();
+        await handleSuccessfulConnection(address, "Pontem");
+      } else if (walletName === 'rise' && window.rise) {
+        const response = await window.rise.connect();
+        await handleSuccessfulConnection(response.address, "Rise");
       } else {
-        toast.error("No Aptos wallet found. Please install Petra, Martian, or another Aptos wallet extension");
+        throw new Error(`${walletName} wallet not installed`);
       }
+      
+      // Hide the wallet selector after successful connection
+      setShowWalletSelector(false);
     } catch (error: any) {
       console.error("Connection error:", error);
       toast.error(error.message || "Failed to connect wallet");
@@ -144,12 +137,18 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
   
+  // Main connect function to show wallet selector
+  const connect = async () => {
+    setShowWalletSelector(true);
+  };
+  
   const disconnect = () => {
     if (window.aptos) {
       window.aptos.disconnect();
     } else if (window.martian) {
       window.martian.disconnect();
     }
+    // Add disconnect for other wallets as needed
     
     setAddress(null);
     setConnected(false);
@@ -185,9 +184,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         connecting,
         address,
         connect,
+        connectWallet,
         disconnect,
         isAdmin,
-        signTransaction
+        signTransaction,
+        showWalletSelector,
+        setShowWalletSelector
       }}
     >
       {children}
@@ -209,6 +211,18 @@ declare global {
       connect: () => Promise<{ address: string }>;
       disconnect: () => Promise<void>;
       getAccount: () => Promise<{ address: string }>;
+      isConnected: () => Promise<boolean>;
+      signAndSubmitTransaction: (transaction: any) => Promise<any>;
+    };
+    pontem?: {
+      connect: () => Promise<string>;
+      disconnect: () => Promise<void>;
+      isConnected: () => Promise<boolean>;
+      signAndSubmitTransaction: (transaction: any) => Promise<any>;
+    };
+    rise?: {
+      connect: () => Promise<{ address: string }>;
+      disconnect: () => Promise<void>;
       isConnected: () => Promise<boolean>;
       signAndSubmitTransaction: (transaction: any) => Promise<any>;
     };

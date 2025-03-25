@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -6,10 +7,18 @@ import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
+import WalletSelector from '@/components/Auth/WalletSelector';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { connected, connect, connecting } = useWallet();
+  const { 
+    connected, 
+    connect, 
+    connectWallet, 
+    connecting,
+    showWalletSelector,
+    setShowWalletSelector
+  } = useWallet();
   
   const features = [
     {
@@ -73,6 +82,12 @@ const Index = () => {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
+                
+                <WalletSelector 
+                  open={showWalletSelector}
+                  onOpenChange={setShowWalletSelector}
+                  onSelectWallet={connectWallet}
+                />
               </div>
             </div>
           </PageContainer>

@@ -3,13 +3,22 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useWallet } from '@/context/WalletContext';
 import { Wallet } from 'lucide-react';
+import WalletSelector from './WalletSelector';
 
 interface WalletConnectProps {
   className?: string;
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({ className = '' }) => {
-  const { connected, connecting, address, connect } = useWallet();
+  const { 
+    connected, 
+    connecting, 
+    address, 
+    connect, 
+    connectWallet,
+    showWalletSelector,
+    setShowWalletSelector
+  } = useWallet();
   
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
   
@@ -47,6 +56,12 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className = '' }) => {
       >
         {connecting ? 'Connecting...' : 'Connect Wallet'}
       </Button>
+      
+      <WalletSelector
+        open={showWalletSelector}
+        onOpenChange={setShowWalletSelector}
+        onSelectWallet={connectWallet}
+      />
     </div>
   );
 };
