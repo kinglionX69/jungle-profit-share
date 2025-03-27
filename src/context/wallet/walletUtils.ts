@@ -23,6 +23,9 @@ export const checkWalletInstalled = (walletName: string): boolean => {
 
 // Handler for successful wallet connections
 export const handleSuccessfulConnection = async (walletAddress: string, walletName: string) => {
+  // Update Supabase headers before inserting user
+  updateSupabaseHeaders(walletAddress);
+  
   // Insert user in database
   await upsertUser(walletAddress);
   
@@ -59,7 +62,25 @@ export const signTransaction = async (transaction: any, address: string | null, 
 // Update Supabase headers with wallet address
 export const updateSupabaseHeaders = (address: string | null) => {
   if (address) {
-    // Set the wallet address in Supabase headers for RLS policies
+    // Set the Authorization header for all future requests
+    supabase.rest.headers = {
+      ...supabase.rest.headers,
+      "Authorization": `Bearer ${address}`
+    };
+    
+    // For realtime subscriptions
     supabase.realtime.setAuth(address);
+    
+    console.log("Updated Supabase headers with wallet address:", address);
+  } else {
+    // Clear authorization if address is null
+    if (supabase.rest.headers && "Authorization" in supabase.rest.headers) {
+      delete supabase.rest.headers["Authorization"];
+    }
+    
+    // Clear realtime auth
+    supabase.realtime.setAuth(null);
+    
+    console.log("Cleared Supabase authorization headers");
   }
 };

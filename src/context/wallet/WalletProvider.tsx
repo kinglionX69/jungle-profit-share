@@ -1,8 +1,8 @@
 
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import { useWalletConnection } from "./useWalletConnection";
-import { handleSuccessfulConnection, signTransaction } from "./walletUtils";
+import { handleSuccessfulConnection, signTransaction, updateSupabaseHeaders } from "./walletUtils";
 import { WalletContextType } from "./types";
 
 // Create the context with undefined as default value
@@ -86,17 +86,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
   
   const disconnect = () => {
-    if (window.aptos) {
-      window.aptos.disconnect();
-    } else if (window.martian) {
-      window.martian.disconnect();
+    try {
+      if (window.aptos) {
+        window.aptos.disconnect();
+      } else if (window.martian) {
+        window.martian.disconnect();
+      }
+      // Add disconnect for other wallets as needed
+      
+      setAddress(null);
+      setConnected(false);
+      setIsAdmin(false);
+      
+      // Clear Supabase headers
+      updateSupabaseHeaders(null);
+      
+      toast.info("Wallet disconnected");
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
+      toast.error("Failed to disconnect wallet");
     }
-    // Add disconnect for other wallets as needed
-    
-    setAddress(null);
-    setConnected(false);
-    setIsAdmin(false);
-    toast.info("Wallet disconnected");
   };
   
   const handleSignTransaction = async (transaction: any): Promise<any> => {

@@ -12,43 +12,47 @@ export const useWalletConnection = () => {
   // Check if wallet is already connected
   useEffect(() => {
     const checkConnection = async () => {
-      // Check for Petra wallet
-      if (window.aptos) {
-        try {
-          const isConnected = await window.aptos.isConnected();
-          if (isConnected) {
-            const { address } = await window.aptos.account();
-            if (address) {
-              console.log("Found connected Petra wallet:", address);
-              const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
-              setAddress(address);
-              setConnected(true);
-              setIsAdmin(adminStatus);
+      try {
+        // Check for Petra wallet
+        if (window.aptos) {
+          try {
+            const isConnected = await window.aptos.isConnected();
+            if (isConnected) {
+              const { address } = await window.aptos.account();
+              if (address) {
+                console.log("Found connected Petra wallet:", address);
+                const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
+                setAddress(address);
+                setConnected(true);
+                setIsAdmin(adminStatus);
+              }
             }
+          } catch (error) {
+            console.error("Error checking Petra connection:", error);
           }
-        } catch (error) {
-          console.error("Error checking Petra connection:", error);
-        }
-      } 
-      // Check for Martian wallet
-      else if (window.martian) {
-        try {
-          const isConnected = await window.martian.isConnected();
-          if (isConnected) {
-            const { address } = await window.martian.getAccount();
-            if (address) {
-              console.log("Found connected Martian wallet:", address);
-              const { adminStatus } = await handleSuccessfulConnection(address, "Martian");
-              setAddress(address);
-              setConnected(true);
-              setIsAdmin(adminStatus);
+        } 
+        // Check for Martian wallet
+        else if (window.martian) {
+          try {
+            const isConnected = await window.martian.isConnected();
+            if (isConnected) {
+              const { address } = await window.martian.getAccount();
+              if (address) {
+                console.log("Found connected Martian wallet:", address);
+                const { adminStatus } = await handleSuccessfulConnection(address, "Martian");
+                setAddress(address);
+                setConnected(true);
+                setIsAdmin(adminStatus);
+              }
             }
+          } catch (error) {
+            console.error("Error checking Martian connection:", error);
           }
-        } catch (error) {
-          console.error("Error checking Martian connection:", error);
         }
+        // Add checks for other wallets as needed
+      } catch (error) {
+        console.error("Error checking wallet connections:", error);
       }
-      // Add checks for other wallets as needed
     };
     
     checkConnection();

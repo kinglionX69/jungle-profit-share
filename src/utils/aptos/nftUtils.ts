@@ -13,6 +13,11 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
   try {
     console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
     
+    if (!walletAddress) {
+      console.error("No wallet address provided");
+      return [];
+    }
+    
     // First try using the indexer
     try {
       const nfts = await fetchFromIndexer(walletAddress, collectionName);
@@ -32,6 +37,7 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     return nodeFetchResult;
   } catch (error) {
     console.error("Error getting NFTs:", error);
+    // Return an empty array rather than failing completely
     return [];
   }
 };
@@ -46,8 +52,13 @@ export const checkNFTLockStatus = async (tokenId: string, walletAddress: string)
   try {
     // Try to fetch lock status from database
     try {
-      const { data, error } = await fetch(`/api/check-lock-status?tokenId=${tokenId}&walletAddress=${walletAddress}`)
-        .then(res => res.json());
+      const response = await fetch(`/api/check-lock-status?tokenId=${tokenId}&walletAddress=${walletAddress}`);
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const { data, error } = await response.json();
       
       if (error) {
         console.error("Error checking lock status:", error);
