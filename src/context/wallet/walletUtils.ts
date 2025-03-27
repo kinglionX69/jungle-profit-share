@@ -62,24 +62,21 @@ export const signTransaction = async (transaction: any, address: string | null, 
 // Update Supabase headers with wallet address
 export const updateSupabaseHeaders = (address: string | null) => {
   if (address) {
-    // Set the Authorization header for all future requests
-    supabase.rest.headers = {
-      ...supabase.rest.headers,
-      "Authorization": `Bearer ${address}`
-    };
-    
-    // For realtime subscriptions
-    supabase.realtime.setAuth(address);
+    // Set global auth for future requests
+    // Using the public methods instead of accessing protected 'rest' property
+    supabase.auth.setSession({
+      access_token: address,
+      refresh_token: '',
+    });
     
     console.log("Updated Supabase headers with wallet address:", address);
   } else {
     // Clear authorization if address is null
-    if (supabase.rest.headers && "Authorization" in supabase.rest.headers) {
-      delete supabase.rest.headers["Authorization"];
-    }
-    
-    // Clear realtime auth
-    supabase.realtime.setAuth(null);
+    // Using the public methods instead of accessing protected 'rest' property
+    supabase.auth.setSession({
+      access_token: null,
+      refresh_token: null,
+    });
     
     console.log("Cleared Supabase authorization headers");
   }
