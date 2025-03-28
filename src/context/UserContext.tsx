@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useWallet } from "./WalletContext";
 import { toast } from "sonner";
 import { 
-  verifyEmail as verifyEmailApi, 
+  updateUserEmail,
   getUserData 
 } from "@/api/userApi";
 import {
@@ -22,7 +22,7 @@ interface UserContextType {
   claimHistory: ClaimHistory[];
   claimableAmount: number;
   setEmail: (email: string) => void;
-  verifyEmail: (otp: string) => Promise<boolean>;
+  setIsVerified: (verified: boolean) => void;
   loadingNfts: boolean;
   loadingClaimHistory: boolean;
   claim: () => Promise<void>;
@@ -111,22 +111,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
   
-  const handleVerifyEmail = async (otp: string): Promise<boolean> => {
-    if (!address || !email) return false;
-    
-    const success = await verifyEmailApi(address, email, otp);
-    if (success) {
-      setIsVerified(true);
-    }
-    
-    return success;
-  };
-  
   const claim = async () => {
     if (!address) return;
     
     if (!isVerified) {
-      toast.error("Please verify your email before claiming");
+      toast.error("Please add your email before claiming");
       return;
     }
     
@@ -169,7 +158,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         claimHistory,
         claimableAmount,
         setEmail,
-        verifyEmail: handleVerifyEmail,
+        setIsVerified,
         loadingNfts,
         loadingClaimHistory,
         claim,

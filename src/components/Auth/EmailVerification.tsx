@@ -6,43 +6,24 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
-import { sendVerificationEmail, verifyEmail } from '@/api/userApi';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Info } from 'lucide-react';
+import { updateUserEmail } from '@/api/userApi';
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
 });
 
-const otpSchema = z.object({
-  otp: z.string().min(6, { message: 'OTP must be 6 digits' }).max(6),
-});
-
 const EmailVerification = () => {
-  const { email, isVerified, setEmail, verifyEmail: contextVerifyEmail } = useUser();
+  const { email, isVerified, setEmail, setIsVerified } = useUser();
   const { address } = useWallet();
-  const [showOTP, setShowOTP] = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [verifyingOTP, setVerifyingOTP] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [testModeActive, setTestModeActive] = useState(false);
-  const [autoFilledOTP, setAutoFilledOTP] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
       email: email || '',
-    },
-  });
-  
-  const otpForm = useForm<z.infer<typeof otpSchema>>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: {
-      otp: '',
     },
   });
   
@@ -52,102 +33,27 @@ const EmailVerification = () => {
       return;
     }
     
-    setEmailError(null);
-    setSendingEmail(true);
+    setSubmitting(true);
     
     try {
       setEmail(values.email);
       
-      console.log(`Sending verification email to ${values.email} for wallet ${address}`);
+      console.log(`Saving email ${values.email} for wallet ${address}`);
       
-      // Call API to send verification email
-      const response = await sendVerificationEmail(address, values.email);
-      
-      if (response && response.success) {
-        setShowOTP(true);
-        
-        // Check if we have an OTP returned (test mode)
-        if (response.otp) {
-          setTestModeActive(true);
-          setAutoFilledOTP(response.otp);
-          
-          // We no longer auto-fill the OTP to prevent issues with the input
-          // Instead we'll just show it to the user
-          toast.info('TEST MODE: Verification code retrieved');
-        } else {
-          toast.success('Verification code sent to your email');
-        }
-      } else {
-        setEmailError(response?.error || 'Failed to send verification email. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      setEmailError('An unexpected error occurred. Please try again.');
-      toast.error('Failed to send verification email');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-  
-  const onOTPSubmit = async (values: z.infer<typeof otpSchema>) => {
-    if (!address || !email) {
-      toast.error('Missing required information');
-      return;
-    }
-    
-    setVerifyingOTP(true);
-    try {
-      console.log(`Verifying OTP ${values.otp} for email ${email} and wallet ${address}`);
-      
-      const success = await verifyEmail(address, email, values.otp);
+      // Call API to update user email
+      const success = await updateUserEmail(address, values.email);
       
       if (success) {
-        await contextVerifyEmail(values.otp);
-        toast.success('Email verified successfully!');
+        setIsVerified(true);
+        toast.success('Email saved successfully');
       } else {
-        toast.error('Invalid verification code');
+        toast.error('Failed to save email. Please try again.');
       }
     } catch (error) {
-      console.error('Error verifying email:', error);
-      toast.error('Failed to verify email');
+      console.error('Error saving email:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
-      setVerifyingOTP(false);
-    }
-  };
-  
-  const handleResendCode = async () => {
-    if (!email || !address) return;
-    
-    setSendingEmail(true);
-    try {
-      const response = await sendVerificationEmail(address, email);
-      
-      if (response && response.success) {
-        if (response.otp) {
-          setTestModeActive(true);
-          setAutoFilledOTP(response.otp);
-          // No longer auto-fill the form directly
-          toast.info('TEST MODE: New verification code retrieved');
-        } else {
-          toast.success('Verification code resent');
-        }
-      } else {
-        toast.error(response?.error || 'Failed to resend code');
-      }
-    } catch (error) {
-      console.error('Error resending code:', error);
-      toast.error('Failed to resend verification code');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-  
-  const handleManuallyEnterCode = () => {
-    if (autoFilledOTP) {
-      // Instead of auto-filling, we'll let the user copy the code
-      navigator.clipboard.writeText(autoFilledOTP)
-        .then(() => toast.success('Verification code copied to clipboard'))
-        .catch(() => toast.error('Failed to copy verification code'));
+      setSubmitting(false);
     }
   };
   
@@ -155,123 +61,37 @@ const EmailVerification = () => {
     return (
       <div className="flex items-center p-4 text-sm rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
         <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-        <span>Email verified: <span className="font-medium">{email}</span></span>
+        <span>Email: <span className="font-medium">{email}</span></span>
       </div>
     );
   }
   
   return (
     <div className="rounded-lg border p-4 bg-card">
-      <h3 className="text-lg font-medium mb-4">Verify Your Email</h3>
+      <h3 className="text-lg font-medium mb-4">Add Your Email</h3>
       
-      {emailError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{emailError}</AlertDescription>
-        </Alert>
-      )}
-      
-      {testModeActive && (
-        <Alert className="mb-4">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Test Mode Active:</strong> Email verification code is available below. In production, an actual email would be sent.
-            {autoFilledOTP && (
-              <div className="mt-1 font-mono bg-muted p-1 rounded text-center">
-                {autoFilledOTP} 
-                <Button variant="ghost" size="sm" className="ml-2" onClick={handleManuallyEnterCode}>
-                  Copy Code
-                </Button>
-              </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Add your email to receive important updates
+      </p>
+      <Form {...emailForm}>
+        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+          <FormField
+            control={emailForm.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input placeholder="Enter your email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {!showOTP ? (
-        <>
-          <p className="text-sm text-muted-foreground mb-4">
-            Verify your email to claim rewards and receive important updates
-          </p>
-          <Form {...emailForm}>
-            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-              <FormField
-                control={emailForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={sendingEmail}>
-                {sendingEmail ? 'Sending...' : 'Send Verification Code'}
-              </Button>
-            </form>
-          </Form>
-        </>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground mb-4">
-            {testModeActive
-              ? 'Enter the 6-digit verification code shown above.'
-              : `Enter the 6-digit verification code sent to ${email}`}
-          </p>
-          <Form {...otpForm}>
-            <form onSubmit={otpForm.handleSubmit(onOTPSubmit)} className="space-y-4">
-              <FormField
-                control={otpForm.control}
-                name="otp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <InputOTP maxLength={6} value={field.value} onChange={field.onChange}>
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-between items-center">
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  size="sm" 
-                  onClick={handleResendCode}
-                  disabled={sendingEmail}
-                >
-                  {sendingEmail ? 'Sending...' : 'Resend code'}
-                </Button>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => setShowOTP(false)}
-                    disabled={verifyingOTP}
-                  >
-                    Back
-                  </Button>
-                  <Button type="submit" disabled={verifyingOTP}>
-                    {verifyingOTP ? 'Verifying...' : 'Verify Email'}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-        </>
-      )}
+          />
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Saving...' : 'Save Email'}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 };

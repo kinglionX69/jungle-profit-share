@@ -76,86 +76,34 @@ export const getUserData = async (walletAddress: string) => {
 };
 
 /**
- * Response from the verification email function
- */
-interface VerificationEmailResponse {
-  success?: boolean;
-  message?: string;
-  otp?: string;
-  testMode?: boolean;
-  error?: string;
-}
-
-/**
- * Sends a verification email with an OTP code
+ * Updates a user's email address
  * @param walletAddress The wallet address of the user
- * @param email The email to verify
+ * @param email The email address to save
  */
-export const sendVerificationEmail = async (
+export const updateUserEmail = async (
   walletAddress: string,
   email: string
-): Promise<VerificationEmailResponse | null> => {
-  try {
-    console.log(`Calling send-verification-email for ${email}, wallet: ${walletAddress}`);
-    
-    const { data, error } = await supabase.functions.invoke('send-verification-email', {
-      body: { email, walletAddress }
-    });
-    
-    if (error) {
-      console.error("Error invoking send-verification-email function:", error);
-      toast.error("Failed to send verification email");
-      return { success: false, error: error.message };
-    }
-    
-    console.log("Response from send-verification-email:", data);
-    
-    // The function will always return the OTP for test mode
-    return data as VerificationEmailResponse;
-  } catch (error: any) {
-    console.error("Error sending verification email:", error);
-    toast.error("Failed to send verification email");
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Verifies a user's email with an OTP code
- * @param walletAddress The wallet address of the user
- * @param email The email to verify
- * @param otp The OTP code
- */
-export const verifyEmail = async (
-  walletAddress: string,
-  email: string,
-  otp: string
 ): Promise<boolean> => {
   try {
-    console.log(`Calling verify-email for ${email}, wallet: ${walletAddress}, OTP: ${otp}`);
+    console.log(`Updating email for ${walletAddress} to ${email}`);
     
-    const { data, error } = await supabase.functions.invoke('verify-email', {
-      body: { walletAddress, email, otp }
-    });
-    
+    const { error } = await supabase
+      .from("users")
+      .update({ 
+        email: email,
+        email_verified: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq("wallet_address", walletAddress);
+
     if (error) {
-      console.error("Error invoking verify-email function:", error);
-      toast.error("Failed to verify email");
+      console.error("Error updating user email:", error);
       return false;
     }
     
-    console.log("Response from verify-email:", data);
-    
-    if (data && data.success) {
-      toast.success("Email verified successfully!");
-      return true;
-    } else {
-      console.error("Email verification failed:", data?.error || "Unknown error");
-      toast.error(data?.message || "Failed to verify email");
-      return false;
-    }
+    return true;
   } catch (error: any) {
-    console.error("Error verifying email:", error);
-    toast.error("Failed to verify email: " + (error.message || "Unknown error"));
+    console.error("Error updating email:", error);
     return false;
   }
 };
