@@ -76,6 +76,16 @@ export const getUserData = async (walletAddress: string) => {
 };
 
 /**
+ * Response from the verification email function
+ */
+interface VerificationEmailResponse {
+  success?: boolean;
+  message?: string;
+  otp?: string;
+  error?: string;
+}
+
+/**
  * Sends a verification email with an OTP code
  * @param walletAddress The wallet address of the user
  * @param email The email to verify
@@ -83,7 +93,7 @@ export const getUserData = async (walletAddress: string) => {
 export const sendVerificationEmail = async (
   walletAddress: string,
   email: string
-): Promise<string | null> => {
+): Promise<VerificationEmailResponse | null> => {
   try {
     console.log(`Calling send-verification-email for ${email}, wallet: ${walletAddress}`);
     
@@ -94,22 +104,16 @@ export const sendVerificationEmail = async (
     if (error) {
       console.error("Error invoking send-verification-email function:", error);
       toast.error("Failed to send verification email");
-      return null;
+      return { success: false, error: error.message };
     }
     
     console.log("Response from send-verification-email:", data);
     
-    if (data && data.success) {
-      return data.otp || null; // OTP only included in development
-    } else {
-      console.error("Email sending failed:", data?.error || "Unknown error");
-      toast.error(data?.message || "Failed to send verification email");
-      return null;
-    }
-  } catch (error) {
+    return data as VerificationEmailResponse;
+  } catch (error: any) {
     console.error("Error sending verification email:", error);
     toast.error("Failed to send verification email");
-    return null;
+    return { success: false, error: error.message };
   }
 };
 
@@ -147,7 +151,7 @@ export const verifyEmail = async (
       toast.error(data?.message || "Failed to verify email");
       return false;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error verifying email:", error);
     toast.error("Failed to verify email: " + (error.message || "Unknown error"));
     return false;

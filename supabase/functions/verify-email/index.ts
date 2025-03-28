@@ -53,9 +53,8 @@ serve(async (req) => {
     }
 
     // In a real implementation, we would validate the OTP against a stored value
-    // For now, we'll simulate validation by accepting any 6-digit code
-    // In production, you would store the OTP in a table with an expiration time
-
+    // For now, we're accepting any valid 6-digit OTP code for testing purposes
+    
     // Update user in the database as verified
     console.log(`Updating user ${walletAddress} as verified`);
     const { data, error } = await supabase

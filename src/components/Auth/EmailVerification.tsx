@@ -29,6 +29,8 @@ const EmailVerification = () => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [verifyingOTP, setVerifyingOTP] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [testModeActive, setTestModeActive] = useState(false);
+  const [autoFilledOTP, setAutoFilledOTP] = useState<string | null>(null);
   
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
@@ -59,19 +61,24 @@ const EmailVerification = () => {
       console.log(`Sending verification email to ${values.email} for wallet ${address}`);
       
       // Call API to send verification email
-      const result = await sendVerificationEmail(address, values.email);
+      const response = await sendVerificationEmail(address, values.email);
       
-      if (result) {
+      if (response && response.success) {
         setShowOTP(true);
-        toast.success('Verification code sent to your email');
         
-        // In development mode, the API might return the OTP for easier testing
-        if (result) {
-          console.log(`Auto-filling OTP: ${result}`);
-          otpForm.setValue('otp', result);
+        // Check if we're in test mode and have an OTP returned
+        if (response.otp) {
+          setTestModeActive(true);
+          setAutoFilledOTP(response.otp);
+          
+          // Auto-fill the OTP for easier testing
+          otpForm.setValue('otp', response.otp);
+          toast.info('TEST MODE: Verification code auto-filled');
+        } else {
+          toast.success('Verification code sent to your email');
         }
       } else {
-        setEmailError('Failed to send verification email. Please try again.');
+        setEmailError(response?.error || 'Failed to send verification email. Please try again.');
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
@@ -113,13 +120,19 @@ const EmailVerification = () => {
     
     setSendingEmail(true);
     try {
-      const result = await sendVerificationEmail(address, email);
-      if (result) {
-        toast.success('Verification code resent');
-        // Auto-fill OTP in development mode
-        if (result) {
-          otpForm.setValue('otp', result);
+      const response = await sendVerificationEmail(address, email);
+      
+      if (response && response.success) {
+        if (response.otp) {
+          setTestModeActive(true);
+          setAutoFilledOTP(response.otp);
+          otpForm.setValue('otp', response.otp);
+          toast.info('TEST MODE: New verification code auto-filled');
+        } else {
+          toast.success('Verification code resent');
         }
+      } else {
+        toast.error(response?.error || 'Failed to resend code');
       }
     } catch (error) {
       console.error('Error resending code:', error);
@@ -146,6 +159,15 @@ const EmailVerification = () => {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{emailError}</AlertDescription>
+        </Alert>
+      )}
+      
+      {testModeActive && (
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Running in test mode. Email sending is simulated. Code: {autoFilledOTP}
+          </AlertDescription>
         </Alert>
       )}
       
@@ -177,7 +199,9 @@ const EmailVerification = () => {
       ) : (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            Enter the 6-digit verification code sent to {email}
+            {testModeActive
+              ? 'Test mode active. The verification code has been auto-filled.'
+              : `Enter the 6-digit verification code sent to ${email}`}
           </p>
           <Form {...otpForm}>
             <form onSubmit={otpForm.handleSubmit(onOTPSubmit)} className="space-y-4">
