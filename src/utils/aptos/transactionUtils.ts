@@ -20,7 +20,7 @@ export const submitClaimTransaction = async (
     // based on your smart contract's requirements
     const payload = {
       type: "entry_function_payload",
-      function: "0x1::aptos_token::claim_rewards",  // Replace with your actual module and function
+      function: "0x3::token::claim_rewards",  // Updated from 0x1::aptos_token to 0x3::token
       type_arguments: [],
       arguments: [
         nftIds,  // The NFT token IDs being claimed
@@ -61,7 +61,7 @@ export const depositTokensTransaction = async (
     // Create the transaction payload for depositing tokens
     const payload = {
       type: "entry_function_payload",
-      function: "0x1::coin::transfer",  // Replace with your actual module and function
+      function: "0x1::coin::transfer",  // This is correct, the coin module is at 0x1
       type_arguments: [tokenType],  // e.g., "0x1::aptos_coin::AptosCoin"
       arguments: [
         "ESCROW_WALLET_ADDRESS",  // Replace with actual escrow wallet address
