@@ -12,7 +12,7 @@ import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
 import { sendVerificationEmail, verifyEmail } from '@/api/userApi';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -66,7 +66,7 @@ const EmailVerification = () => {
       if (response && response.success) {
         setShowOTP(true);
         
-        // Check if we're in test mode and have an OTP returned
+        // Check if we have an OTP returned (test mode)
         if (response.otp) {
           setTestModeActive(true);
           setAutoFilledOTP(response.otp);
@@ -164,9 +164,14 @@ const EmailVerification = () => {
       
       {testModeActive && (
         <Alert className="mb-4">
-          <AlertCircle className="h-4 w-4" />
+          <Info className="h-4 w-4" />
           <AlertDescription>
-            Running in test mode. Email sending is simulated. Code: {autoFilledOTP}
+            <strong>Test Mode Active:</strong> Email verification code is automatically filled in for testing. In production, an actual email would be sent.
+            {autoFilledOTP && (
+              <div className="mt-1 font-mono bg-muted p-1 rounded text-center">
+                {autoFilledOTP}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}

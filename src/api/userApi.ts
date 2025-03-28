@@ -82,6 +82,7 @@ interface VerificationEmailResponse {
   success?: boolean;
   message?: string;
   otp?: string;
+  testMode?: boolean;
   error?: string;
 }
 
@@ -109,6 +110,7 @@ export const sendVerificationEmail = async (
     
     console.log("Response from send-verification-email:", data);
     
+    // The function will always return the OTP for test mode
     return data as VerificationEmailResponse;
   } catch (error: any) {
     console.error("Error sending verification email:", error);
