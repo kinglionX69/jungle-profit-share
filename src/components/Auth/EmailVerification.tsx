@@ -71,9 +71,9 @@ const EmailVerification = () => {
           setTestModeActive(true);
           setAutoFilledOTP(response.otp);
           
-          // Auto-fill the OTP for easier testing
-          otpForm.setValue('otp', response.otp);
-          toast.info('TEST MODE: Verification code auto-filled');
+          // We no longer auto-fill the OTP to prevent issues with the input
+          // Instead we'll just show it to the user
+          toast.info('TEST MODE: Verification code retrieved');
         } else {
           toast.success('Verification code sent to your email');
         }
@@ -126,8 +126,8 @@ const EmailVerification = () => {
         if (response.otp) {
           setTestModeActive(true);
           setAutoFilledOTP(response.otp);
-          otpForm.setValue('otp', response.otp);
-          toast.info('TEST MODE: New verification code auto-filled');
+          // No longer auto-fill the form directly
+          toast.info('TEST MODE: New verification code retrieved');
         } else {
           toast.success('Verification code resent');
         }
@@ -139,6 +139,15 @@ const EmailVerification = () => {
       toast.error('Failed to resend verification code');
     } finally {
       setSendingEmail(false);
+    }
+  };
+  
+  const handleManuallyEnterCode = () => {
+    if (autoFilledOTP) {
+      // Instead of auto-filling, we'll let the user copy the code
+      navigator.clipboard.writeText(autoFilledOTP)
+        .then(() => toast.success('Verification code copied to clipboard'))
+        .catch(() => toast.error('Failed to copy verification code'));
     }
   };
   
@@ -166,10 +175,13 @@ const EmailVerification = () => {
         <Alert className="mb-4">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>Test Mode Active:</strong> Email verification code is automatically filled in for testing. In production, an actual email would be sent.
+            <strong>Test Mode Active:</strong> Email verification code is available below. In production, an actual email would be sent.
             {autoFilledOTP && (
               <div className="mt-1 font-mono bg-muted p-1 rounded text-center">
-                {autoFilledOTP}
+                {autoFilledOTP} 
+                <Button variant="ghost" size="sm" className="ml-2" onClick={handleManuallyEnterCode}>
+                  Copy Code
+                </Button>
               </div>
             )}
           </AlertDescription>
@@ -205,7 +217,7 @@ const EmailVerification = () => {
         <>
           <p className="text-sm text-muted-foreground mb-4">
             {testModeActive
-              ? 'Test mode active. The verification code has been auto-filled.'
+              ? 'Enter the 6-digit verification code shown above.'
               : `Enter the 6-digit verification code sent to ${email}`}
           </p>
           <Form {...otpForm}>
@@ -216,7 +228,7 @@ const EmailVerification = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <InputOTP maxLength={6} {...field}>
+                      <InputOTP maxLength={6} value={field.value} onChange={field.onChange}>
                         <InputOTPGroup>
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
