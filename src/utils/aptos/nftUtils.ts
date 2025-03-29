@@ -1,7 +1,6 @@
-
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
-import { fetchFromIndexer, fetchFromNodeAPI } from "./nftFetcher";
+import { fetchFromIndexer, fetchFromNodeAPI, resolveImageUrl } from "./nftFetcher";
 
 /**
  * Check if the user has NFTs from the specified collection
@@ -24,7 +23,14 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
       
       if (nfts.length > 0) {
         console.log(`Found ${nfts.length} NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
-        return nfts;
+        
+        // Process NFTs to resolve image URLs
+        const processedNfts = await Promise.all(nfts.map(async (nft) => ({
+          ...nft,
+          imageUrl: await resolveImageUrl(nft.imageUrl)
+        })));
+        
+        return processedNfts;
       }
     } catch (indexerError) {
       console.error("Error with indexer, trying fallback:", indexerError);
@@ -34,7 +40,14 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     console.log(`No NFTs found from indexer, trying node API fallback for wallet: ${walletAddress}`);
     const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
     console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
-    return nodeFetchResult;
+    
+    // Process NFTs to resolve image URLs
+    const processedNodeNfts = await Promise.all(nodeFetchResult.map(async (nft) => ({
+      ...nft,
+      imageUrl: await resolveImageUrl(nft.imageUrl)
+    })));
+    
+    return processedNodeNfts;
   } catch (error) {
     console.error("Error getting NFTs:", error);
     // Return an empty array rather than failing completely

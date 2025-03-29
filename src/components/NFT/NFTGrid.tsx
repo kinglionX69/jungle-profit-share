@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { useUser } from '@/context/UserContext';
-import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface NFTGridProps {
   filterEligible?: boolean;
@@ -140,26 +142,50 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
           </div>
           
           <div className="p-4">
-            <h3 className="font-medium truncate">{nft.name}</h3>
-            <p className="text-sm text-muted-foreground mt-1">Token ID: {nft.tokenId.substring(0, 12)}...</p>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium truncate mr-2">{nft.name}</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-help">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <div className="text-xs">
+                      <p className="font-semibold mb-1">NFT Details</p>
+                      <p>Token ID: {nft.tokenId}</p>
+                      {nft.standard && <p>Standard: {nft.standard}</p>}
+                      {nft.isLocked && nft.unlockDate && (
+                        <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             
-            <div className="flex items-center mt-2">
-              {nft.isEligible ? (
-                <div className="flex items-center text-success text-sm">
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Available for claim
-                </div>
-              ) : nft.isLocked ? (
-                <div className="flex items-center text-muted-foreground text-sm">
-                  <Clock className="h-4 w-4 mr-1" />
-                  Locked for 30 days
-                </div>
-              ) : (
-                <div className="flex items-center text-destructive text-sm">
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Not eligible
-                </div>
-              )}
+            <p className="text-sm text-muted-foreground">Token ID: {nft.tokenId.substring(0, 12)}...</p>
+            
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center">
+                {nft.isEligible ? (
+                  <Badge variant="outline" className="text-success border-success">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Available
+                  </Badge>
+                ) : nft.isLocked ? (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Locked
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-destructive border-destructive">
+                    <XCircle className="h-3 w-3 mr-1" />
+                    Ineligible
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -169,3 +195,4 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
 };
 
 export default NFTGrid;
+
