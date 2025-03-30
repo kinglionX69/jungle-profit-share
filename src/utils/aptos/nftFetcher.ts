@@ -1,6 +1,6 @@
 
 import { toast } from "sonner";
-import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME, CREATOR_ADDRESS } from "./constants";
+import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME, CREATOR_ADDRESS, USE_DEMO_MODE } from "./constants";
 import { BlockchainNFT } from "./types";
 import { resolveNFTImages } from "./nftImageResolver";
 import { fetchFromNodeAPI } from "./nodeApiFetcher";
@@ -55,7 +55,7 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
       },
     };
 
-    console.log("Sending GraphQL query to Aptos Indexer");
+    console.log("Sending GraphQL query to Aptos Indexer:", APTOS_INDEXER_API);
     
     const response = await fetch(APTOS_INDEXER_API, {
       method: 'POST',
@@ -105,6 +105,30 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
 };
 
 /**
+ * Create demo NFTs for testing when real data cannot be fetched
+ * @returns Array of demo NFTs
+ */
+const createDemoNFTs = (): BlockchainNFT[] => {
+  if (!USE_DEMO_MODE) return [];
+  
+  console.log("Creating demo NFTs for testing");
+  
+  return Array.from({ length: 3 }).map((_, i) => ({
+    tokenId: `demo-token-${i}`,
+    name: `Proud Lion #${i + 1}`,
+    imageUrl: `https://picsum.photos/seed/lion${i+1}/300/300`,
+    creator: CREATOR_ADDRESS,
+    standard: "v2",
+    properties: JSON.stringify({
+      generation: i.toString(),
+      rarity: i === 0 ? "legendary" : i === 1 ? "rare" : "common"
+    }),
+    collectionName: NFT_COLLECTION_NAME,
+    collectionId: NFT_COLLECTION_ID
+  }));
+};
+
+/**
  * Fetch NFTs with fallback strategy from primary source to secondary
  * @param walletAddress The wallet address to fetch NFTs for
  * @param collectionName The collection name to filter by
@@ -137,12 +161,28 @@ export async function fetchNFTsWithFallback(walletAddress: string, collectionNam
     if (nodeFetchResult.length > 0) {
       // Process NFTs to resolve image URLs
       return await resolveNFTImages(nodeFetchResult);
-    } 
+    }
     
     console.log("No NFTs found from Node API either");
-    return []; // Return empty array instead of mocks
+    
+    // If demo mode is enabled, return demo NFTs
+    const demoNFTs = createDemoNFTs();
+    if (demoNFTs.length > 0) {
+      toast.info("Using demo NFTs for testing");
+      return demoNFTs;
+    }
+    
+    return []; // Return empty array if all methods failed
   } catch (nodeError) {
     console.error("Node API fallback also failed:", nodeError);
-    return []; // Return empty array instead of mocks
+    
+    // If demo mode is enabled, return demo NFTs
+    const demoNFTs = createDemoNFTs();
+    if (demoNFTs.length > 0) {
+      toast.info("Using demo NFTs for testing");
+      return demoNFTs;
+    }
+    
+    return []; // Return empty array if all methods failed
   }
 }

@@ -1,6 +1,5 @@
-
 import { BlockchainNFT } from "./types";
-import { NFT_COLLECTION_ID, CREATOR_ADDRESS } from "./constants";
+import { APTOS_API, NFT_COLLECTION_ID, CREATOR_ADDRESS, TOKEN_STORE_ADDRESS } from "./constants";
 
 /**
  * Fallback method to fetch NFTs using the Aptos Node API
@@ -15,7 +14,7 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
     console.log(`Creator Address: ${CREATOR_ADDRESS}`);
     
     // For testnet, fetch actual data
-    const testnetEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${walletAddress}/resources`;
+    const testnetEndpoint = `${APTOS_API}/accounts/${walletAddress}/resources`;
     console.log(`Fetching resources from testnet endpoint: ${testnetEndpoint}`);
     
     const resourcesResponse = await fetch(testnetEndpoint);
@@ -27,12 +26,18 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
     
     const resources = await resourcesResponse.json();
     
-    // Find the TokenStore resource
-    const tokenStoreResource = resources.find((r: any) => r.type === '0x3::token::TokenStore' || r.type.includes('::token::'));
+    // Find the TokenStore resource (using both v1 and v2 formats)
+    const tokenStoreResource = resources.find((r: any) => {
+      return r.type === TOKEN_STORE_ADDRESS || 
+             r.type.includes('token::TokenStore') || 
+             r.type.includes('::token_store::') || 
+             r.type.includes('::token::');
+    });
     
     if (!tokenStoreResource) {
-      console.error("TokenStore resource not found");
-      throw new Error("TokenStore resource not found");
+      // Try an alternative approach before giving up
+      console.log("TokenStore resource not found, trying alternate collection endpoint directly");
+      return await tryDirectCollectionEndpoint(walletAddress, collectionName);
     }
     
     console.log("Found TokenStore resource:", tokenStoreResource);
@@ -46,7 +51,7 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
       return tokens;
     } 
     
-    console.log("No tokens found in Node API, trying last resort check");
+    console.log("No tokens found in TokenStore, trying last resort check");
     
     // Try direct collection endpoint as last resort
     return await tryDirectCollectionEndpoint(walletAddress, collectionName);
@@ -70,45 +75,76 @@ async function extractTokensFromResource(
 ): Promise<BlockchainNFT[]> {
   const tokens: BlockchainNFT[] = [];
   
-  // Look for tokens in the store that match our collection
-  if (tokenStoreResource.data && tokenStoreResource.data.tokens) {
-    const tokenMap = tokenStoreResource.data.tokens.tokens;
-    
-    if (tokenMap && typeof tokenMap === 'object') {
-      console.log("Found tokens in TokenStore");
+  try {
+    // Look for tokens in the store that match our collection
+    if (tokenStoreResource.data) {
+      // Handle different token store data structures
+      let tokenMap = null;
       
-      // Process each token to find matches for our collection
-      for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
-        // Check if this token belongs to our collection by ID, name, or creator
-        if (
-          tokenId.includes(collectionName) || 
-          tokenId.includes(NFT_COLLECTION_ID) || 
-          tokenId.includes(CREATOR_ADDRESS)
-        ) {
-          console.log(`Found matching token: ${tokenId}`);
-          
-          // Fetch token metadata if available
-          try {
-            const tokenInfoEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${walletAddress}/resource/0x3::token::TokenStore/${tokenId}`;
-            const tokenInfoResponse = await fetch(tokenInfoEndpoint);
+      // V1 format
+      if (tokenStoreResource.data.tokens) {
+        tokenMap = tokenStoreResource.data.tokens.tokens || tokenStoreResource.data.tokens;
+        console.log("Found tokens in V1 TokenStore format");
+      } 
+      // V2 format
+      else if (tokenStoreResource.data.token_data) {
+        tokenMap = tokenStoreResource.data.token_data;
+        console.log("Found tokens in V2 TokenStore format");
+      }
+      // Other potential formats
+      else if (tokenStoreResource.data.data) {
+        tokenMap = tokenStoreResource.data.data.tokens || tokenStoreResource.data.data;
+        console.log("Found tokens in alternative TokenStore format");
+      }
+      
+      if (tokenMap && typeof tokenMap === 'object') {
+        console.log("Processing tokens from TokenStore");
+        
+        // Process each token to find matches for our collection
+        for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
+          // Check if this token belongs to our collection by ID, name, or creator
+          if (
+            tokenId.includes(collectionName) || 
+            tokenId.includes(NFT_COLLECTION_ID) || 
+            tokenId.includes(CREATOR_ADDRESS)
+          ) {
+            console.log(`Found matching token: ${tokenId}`);
             
-            if (tokenInfoResponse.ok) {
-              const tokenInfo = await tokenInfoResponse.json();
+            try {
+              // Extract as much data as possible from the token
+              const name = typeof tokenData === 'object' && tokenData.name 
+                ? tokenData.name 
+                : `Proud Lion #${tokenId.substring(0, 6)}`;
+                
+              const imageUrl = typeof tokenData === 'object' && tokenData.uri 
+                ? tokenData.uri 
+                : "";
+                
+              const creator = typeof tokenData === 'object' && tokenData.creator 
+                ? tokenData.creator 
+                : CREATOR_ADDRESS;
+                
+              const properties = typeof tokenData === 'object' && tokenData.properties 
+                ? JSON.stringify(tokenData.properties) 
+                : "{}";
+                
               tokens.push({
                 tokenId: tokenId,
-                name: tokenInfo.data?.name || `Proud Lion #${tokenId.substring(0, 6)}`,
-                imageUrl: tokenInfo.data?.uri || "",
-                creator: tokenInfo.data?.creator || CREATOR_ADDRESS,
+                name: name,
+                imageUrl: imageUrl,
+                creator: creator,
                 standard: "v2",
-                properties: JSON.stringify(tokenInfo.data?.properties || {})
+                properties: properties
               });
+            } catch (tokenError) {
+              console.error(`Error processing token ${tokenId}:`, tokenError);
             }
-          } catch (error) {
-            console.error(`Error fetching token info for ${tokenId}:`, error);
           }
         }
       }
     }
+  } catch (extractError) {
+    console.error("Error extracting tokens from resource:", extractError);
   }
   
   return tokens;
@@ -125,7 +161,7 @@ async function tryDirectCollectionEndpoint(
   collectionName: string
 ): Promise<BlockchainNFT[]> {
   try {
-    const collectionEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${walletAddress}/collection/${collectionName}`;
+    const collectionEndpoint = `${APTOS_API}/accounts/${walletAddress}/collection/${collectionName}`;
     console.log(`Trying direct collection endpoint: ${collectionEndpoint}`);
     
     const collectionResponse = await fetch(collectionEndpoint);
@@ -150,21 +186,37 @@ async function tryDirectCollectionEndpoint(
       }
     }
     
-    // Another attempt - try to get tokens from the creator's account
-    const creatorEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${CREATOR_ADDRESS}/resources`;
-    console.log(`Trying creator endpoint: ${creatorEndpoint}`);
+    // Another approach - try to find NFTs in creator's account that might be in the wallet
+    console.log("Trying to get collection info from creator's account");
     
-    const creatorResponse = await fetch(creatorEndpoint);
-    if (creatorResponse.ok) {
-      const creatorResources = await creatorResponse.json();
-      const collectionResource = creatorResources.find((r: any) => 
-        r.type.includes('collection') && 
-        (r.data?.name === collectionName || r.data?.collection_name === collectionName)
+    // Try with the collection in creator's account
+    const creatorCollectionEndpoint = `${APTOS_API}/accounts/${CREATOR_ADDRESS}/resource/0x3::token::Collections`;
+    console.log(`Checking creator's collections: ${creatorCollectionEndpoint}`);
+    
+    const creatorCollectionResponse = await fetch(creatorCollectionEndpoint);
+    if (creatorCollectionResponse.ok) {
+      const creatorCollections = await creatorCollectionResponse.json();
+      console.log("Creator collections:", creatorCollections);
+      
+      // Look for our collection and see if the wallet has any tokens from it
+      // This is implementation-specific and would need to be customized
+    }
+    
+    // If everything failed, check if the wallet has ANY tokens of any type
+    // as a diagnostic approach
+    console.log("Checking if wallet has ANY tokens of any type as diagnostic");
+    
+    const accountTokensEndpoint = `${APTOS_API}/accounts/${walletAddress}/resources`;
+    const accountResponse = await fetch(accountTokensEndpoint);
+    if (accountResponse.ok) {
+      const resources = await accountResponse.json();
+      const tokenRelatedResources = resources.filter((r: any) => 
+        r.type.includes('token') || r.type.includes('nft') || r.type.includes('collection')
       );
       
-      if (collectionResource) {
-        console.log("Found collection in creator resources:", collectionResource);
-        return [];  // You'd need to parse this depending on the structure
+      console.log("Token-related resources found:", tokenRelatedResources.length);
+      if (tokenRelatedResources.length > 0) {
+        console.log("Types found:", tokenRelatedResources.map((r: any) => r.type));
       }
     }
     
@@ -173,6 +225,6 @@ async function tryDirectCollectionEndpoint(
     return [];
   } catch (collectionError) {
     console.error("Error with direct collection endpoint:", collectionError);
-    throw collectionError;
+    return [];
   }
 }
