@@ -40,9 +40,12 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       }
       
       // Check token_data_id if collection_name is still empty
-      if (!collectionName && token.token_data_id && typeof token.token_data_id === 'object') {
-        if ('collection_id' in token.token_data_id) {
+      if (!collectionName && token.token_data_id) {
+        if (typeof token.token_data_id === 'object' && 'collection_id' in token.token_data_id) {
           collectionName = String(token.token_data_id.collection_id || '');
+        } else if (typeof token.token_data_id === 'string' && token.token_data_id.includes(NFT_COLLECTION_NAME)) {
+          // For string token_data_id, check if it contains the collection name
+          collectionName = NFT_COLLECTION_NAME;
         }
       }
       
@@ -85,14 +88,22 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       let description = '';
       let imageUrl = '';
       
-      // Safely extract token ID - adding null check here
-      const tokenId = token.token_data_id 
-        ? (typeof token.token_data_id === 'string' 
-            ? token.token_data_id 
-            : JSON.stringify(token.token_data_id || {}))
-        : `unknown-token-${Math.random().toString(36).substring(2, 10)}`;
+      // Generate a token ID regardless of whether token_data_id exists
+      let tokenId: string;
       
-      // Try to extract name from token data - adding null check
+      if (!token.token_data_id) {
+        // Generate a random token ID if null/undefined
+        tokenId = `unknown-token-${Math.random().toString(36).substring(2, 10)}`;
+        console.log(`Generated random token ID for missing token_data_id: ${tokenId}`);
+      } else if (typeof token.token_data_id === 'string') {
+        // Use the string directly
+        tokenId = token.token_data_id;
+      } else {
+        // Stringify the object
+        tokenId = JSON.stringify(token.token_data_id);
+      }
+      
+      // Try to extract name from token data - safely check for null
       if (token.token_data_id && typeof token.token_data_id === 'object') {
         const tokenDataId = token.token_data_id as Record<string, unknown>;
         if ('name' in tokenDataId) {
