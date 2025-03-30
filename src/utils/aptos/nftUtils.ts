@@ -1,7 +1,14 @@
 
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
-import { NFT_COLLECTION_NAME, USE_DEMO_MODE, CREATOR_ADDRESS, NFT_COLLECTION_ID, IS_TESTNET } from "./constants";
+import { 
+  NFT_COLLECTION_NAME, 
+  USE_DEMO_MODE, 
+  CREATOR_ADDRESS, 
+  NFT_COLLECTION_ID, 
+  IS_TESTNET,
+  NFT_IMAGE_BASE_URL
+} from "./constants";
 import { enhancedNFTFetch } from "./enhancedNFTFetcher";
 
 /**
@@ -16,6 +23,7 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     console.log(`Looking for collection ID: ${NFT_COLLECTION_ID}`);
     console.log(`Looking for creator address: ${CREATOR_ADDRESS}`);
     console.log(`Network: ${IS_TESTNET ? 'TESTNET' : 'MAINNET'}`);
+    console.log(`NFT Image base URL: ${NFT_IMAGE_BASE_URL}`);
     
     if (!walletAddress) {
       console.error("No wallet address provided");
@@ -63,8 +71,19 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
         propertiesMatch,
         collectionName: nft.collectionName,
         collectionId: nft.collectionId,
-        creator: nft.creator
+        creator: nft.creator,
+        tokenId: nft.tokenId
       });
+      
+      // If image URL is missing but we have a token ID, construct it
+      if (!nft.imageUrl && nft.tokenId) {
+        // Extract the token ID from the string if possible
+        const idMatch = nft.tokenId.match(/0x[a-fA-F0-9]+/);
+        if (idMatch) {
+          nft.imageUrl = `${NFT_IMAGE_BASE_URL}${idMatch[0]}`;
+          console.log(`Constructed image URL for ${nft.name}: ${nft.imageUrl}`);
+        }
+      }
       
       // Match if any of these conditions are true
       return (nameMatches || idMatches || propertiesMatch || creatorMatches);

@@ -1,7 +1,13 @@
 
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { BlockchainNFT } from './types';
-import { CREATOR_ADDRESS, NFT_COLLECTION_NAME, IS_TESTNET, NFT_COLLECTION_ID } from './constants';
+import { 
+  CREATOR_ADDRESS, 
+  NFT_COLLECTION_NAME, 
+  IS_TESTNET, 
+  NFT_COLLECTION_ID,
+  NFT_IMAGE_BASE_URL
+} from './constants';
 
 /**
  * Fetch NFTs using the official Aptos SDK
@@ -91,7 +97,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           });
         }
         
-        // More relaxed matching to catch potential tokens - Matching by collection name, ID, or creator
+        // More relaxed matching to catch potential tokens - Matching by collection ID, or creator
         const matchesCollectionId = currentCollectionId && (
           currentCollectionId === NFT_COLLECTION_ID || 
           currentCollectionId.includes("Lion") ||
@@ -108,7 +114,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         
         const matchesCreator = creatorAddress === CREATOR_ADDRESS;
         
-        // Additional check for collection data if available in token_properties_mutated_v1
+        // Additional check for collection name in token_properties_mutated_v1
         let matchesPropertiesCollectionName = false;
         if (token.token_properties_mutated_v1 && 
             typeof token.token_properties_mutated_v1 === 'object') {
@@ -136,10 +142,9 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         let imageUrl = '';
         let tokenCollectionId = '';
         let collectionName = NFT_COLLECTION_NAME;
+        let tokenId = '';
         
-        // Generate a token ID regardless of whether token_data_id exists
-        let tokenId: string;
-        
+        // Try to extract token ID
         if (!token.token_data_id) {
           // Generate a random token ID if null/undefined
           tokenId = `unknown-token-${Math.random().toString(36).substring(2, 10)}`;
@@ -152,41 +157,47 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           tokenId = JSON.stringify(token.token_data_id);
         }
         
-        // Try to extract collection name from token properties if available
+        // Try to extract collection ID
+        if (token.current_token_data && typeof token.current_token_data === 'object') {
+          if (token.current_token_data.collection_id) {
+            tokenCollectionId = String(token.current_token_data.collection_id);
+          }
+        }
+        
+        // Try to extract name from token properties
         if (token.token_properties_mutated_v1 && 
             typeof token.token_properties_mutated_v1 === 'object') {
-          const props = token.token_properties_mutated_v1 as Record<string, unknown>;
-          if ('collection_name' in props) {
-            collectionName = String(props.collection_name || collectionName);
+          const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+          
+          // Try to get collection name
+          if ('collection_name' in properties) {
+            collectionName = String(properties.collection_name || collectionName);
+          }
+          
+          // Try to get name
+          if ('name' in properties) {
+            name = String(properties.name || name);
+          }
+          
+          // Try to get token ID for image URL construction
+          if ('token_id' in properties) {
+            const propTokenId = String(properties.token_id || '');
+            if (propTokenId) {
+              // Use the base URL + token ID for image URL construction
+              imageUrl = `${NFT_IMAGE_BASE_URL}${propTokenId}`;
+            }
           }
         }
         
-        // Try to extract name from token data - safely check for null
-        if (token.token_data_id && typeof token.token_data_id === 'object') {
-          const tokenDataId = token.token_data_id as Record<string, unknown>;
-          if ('name' in tokenDataId) {
-            name = String(tokenDataId.name || name);
-          }
-        }
-        
-        // Try to extract name from current_token_data first - using description field since name is missing
+        // Try to extract name from current_token_data if still missing
         if (token.current_token_data && 
             typeof token.current_token_data === 'object') {
           if (token.current_token_data.description) {
             name = token.current_token_data.description;
           }
           
-          if (token.current_token_data.collection_id) {
-            tokenCollectionId = String(token.current_token_data.collection_id);
-          }
-        }
-        
-        // Try to extract name from token properties if available
-        if (token.token_properties_mutated_v1 && 
-            typeof token.token_properties_mutated_v1 === 'object') {
-          const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
-          if ('name' in properties) {
-            name = String(properties.name || name);
+          if (token.current_token_data.name && !name.includes(NFT_COLLECTION_NAME)) {
+            name = token.current_token_data.name;
           }
         }
         
@@ -209,16 +220,28 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           }
         }
         
-        // Try to extract image URL from token properties if available
-        if (token.token_properties_mutated_v1 && 
-            typeof token.token_properties_mutated_v1 === 'object') {
-          const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
-          if ('uri' in properties) {
-            imageUrl = String(properties.uri || '');
-          } else if ('image_uri' in properties) {
-            imageUrl = String(properties.image_uri || '');
-          } else if ('image' in properties) {
-            imageUrl = String(properties.image || '');
+        // Try to extract image URL if not already set
+        if (!imageUrl) {
+          // Try to get from uri in token properties
+          if (token.token_properties_mutated_v1 && 
+              typeof token.token_properties_mutated_v1 === 'object') {
+            const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+            if ('uri' in properties) {
+              imageUrl = String(properties.uri || '');
+            } else if ('image_uri' in properties) {
+              imageUrl = String(properties.image_uri || '');
+            } else if ('image' in properties) {
+              imageUrl = String(properties.image || '');
+            }
+          }
+          
+          // If still no image URL, try to construct from token ID
+          if (!imageUrl) {
+            // Extract the token ID from the string if possible
+            const idMatch = tokenId.match(/0x[a-fA-F0-9]+/);
+            if (idMatch) {
+              imageUrl = `${NFT_IMAGE_BASE_URL}${idMatch[0]}`;
+            }
           }
         }
         
@@ -242,7 +265,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           creator: CREATOR_ADDRESS,
           properties: JSON.stringify(properties),
           standard: token.token_standard || 'v2',
-          collectionId: tokenCollectionId || NFT_COLLECTION_ID // Use extracted or default collection ID
+          collectionId: tokenCollectionId || NFT_COLLECTION_ID
         };
       });
       
