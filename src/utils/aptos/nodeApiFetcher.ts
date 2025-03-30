@@ -1,6 +1,6 @@
 
 import { BlockchainNFT } from "./types";
-import { NFT_COLLECTION_ID } from "./constants";
+import { NFT_COLLECTION_ID, CREATOR_ADDRESS } from "./constants";
 
 /**
  * Fallback method to fetch NFTs using the Aptos Node API
@@ -11,8 +11,10 @@ import { NFT_COLLECTION_ID } from "./constants";
 export const fetchFromNodeAPI = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress} from collection: ${collectionName}`);
+    console.log(`Collection ID: ${NFT_COLLECTION_ID}`);
+    console.log(`Creator Address: ${CREATOR_ADDRESS}`);
     
-    // For testnet, we'll try to fetch real data instead of returning mock data immediately
+    // For testnet, fetch actual data
     const testnetEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${walletAddress}/resources`;
     console.log(`Fetching resources from testnet endpoint: ${testnetEndpoint}`);
     
@@ -26,7 +28,7 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
     const resources = await resourcesResponse.json();
     
     // Find the TokenStore resource
-    const tokenStoreResource = resources.find((r: any) => r.type === '0x3::token::TokenStore');
+    const tokenStoreResource = resources.find((r: any) => r.type === '0x3::token::TokenStore' || r.type.includes('::token::'));
     
     if (!tokenStoreResource) {
       console.error("TokenStore resource not found");
@@ -42,7 +44,7 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
     if (tokens.length > 0) {
       console.log(`Found ${tokens.length} tokens from Node API`);
       return tokens;
-    }
+    } 
     
     console.log("No tokens found in Node API, trying last resort check");
     
@@ -77,8 +79,12 @@ async function extractTokensFromResource(
       
       // Process each token to find matches for our collection
       for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
-        // Check if this token belongs to our collection
-        if (tokenId.includes(collectionName) || tokenId.includes(NFT_COLLECTION_ID)) {
+        // Check if this token belongs to our collection by ID, name, or creator
+        if (
+          tokenId.includes(collectionName) || 
+          tokenId.includes(NFT_COLLECTION_ID) || 
+          tokenId.includes(CREATOR_ADDRESS)
+        ) {
           console.log(`Found matching token: ${tokenId}`);
           
           // Fetch token metadata if available
@@ -90,9 +96,9 @@ async function extractTokensFromResource(
               const tokenInfo = await tokenInfoResponse.json();
               tokens.push({
                 tokenId: tokenId,
-                name: tokenInfo.data?.name || `Token from ${collectionName}`,
+                name: tokenInfo.data?.name || `Proud Lion #${tokenId.substring(0, 6)}`,
                 imageUrl: tokenInfo.data?.uri || "",
-                creator: tokenInfo.data?.creator || "",
+                creator: tokenInfo.data?.creator || CREATOR_ADDRESS,
                 standard: "v2",
                 properties: JSON.stringify(tokenInfo.data?.properties || {})
               });
@@ -135,17 +141,36 @@ async function tryDirectCollectionEndpoint(
         // Map the token IDs to NFT objects
         return collectionData.token_ids.map((tokenId: string) => ({
           tokenId: tokenId,
-          name: `${collectionName} #${tokenId.substring(0, 6)}`,
+          name: `Proud Lion #${tokenId.substring(0, 6)}`,
           imageUrl: "",  // We don't have the image URL from this endpoint
-          creator: collectionData.creator || "",
+          creator: collectionData.creator || CREATOR_ADDRESS,
           standard: "v2",
           properties: "{}"
         }));
       }
     }
     
-    // If we've tried everything and still found nothing, throw an error
-    throw new Error("No NFTs found from any API endpoint");
+    // Another attempt - try to get tokens from the creator's account
+    const creatorEndpoint = `https://fullnode.testnet.aptoslabs.com/v1/accounts/${CREATOR_ADDRESS}/resources`;
+    console.log(`Trying creator endpoint: ${creatorEndpoint}`);
+    
+    const creatorResponse = await fetch(creatorEndpoint);
+    if (creatorResponse.ok) {
+      const creatorResources = await creatorResponse.json();
+      const collectionResource = creatorResources.find((r: any) => 
+        r.type.includes('collection') && 
+        (r.data?.name === collectionName || r.data?.collection_name === collectionName)
+      );
+      
+      if (collectionResource) {
+        console.log("Found collection in creator resources:", collectionResource);
+        return [];  // You'd need to parse this depending on the structure
+      }
+    }
+    
+    // If we've tried everything and still found nothing, return empty array
+    console.log("No NFTs found after trying all endpoints");
+    return [];
   } catch (collectionError) {
     console.error("Error with direct collection endpoint:", collectionError);
     throw collectionError;

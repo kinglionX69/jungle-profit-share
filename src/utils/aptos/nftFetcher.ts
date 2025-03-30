@@ -1,6 +1,6 @@
 
 import { toast } from "sonner";
-import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME } from "./constants";
+import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME, CREATOR_ADDRESS } from "./constants";
 import { BlockchainNFT } from "./types";
 import { resolveNFTImages } from "./nftImageResolver";
 import { fetchFromNodeAPI } from "./nodeApiFetcher";
@@ -15,19 +15,20 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
   try {
     console.log(`Querying Aptos Indexer for wallet: ${walletAddress}, collection: ${collectionName}`);
     console.log(`Collection ID: ${NFT_COLLECTION_ID}`);
+    console.log(`Creator Address: ${CREATOR_ADDRESS}`);
     console.log(`Using testnet: ${IS_TESTNET}`);
     
-    // Use the recommended GraphQL query format for Aptos
-    // The query is now more focused on finding tokens by both collection name and collection id
+    // Use the optimized GraphQL query format for Aptos
     const query = {
       query: `
-        query CurrentTokens($owner_address: String, $collection_name: String, $collection_id: String) {
+        query CurrentTokens($owner_address: String, $collection_name: String, $collection_id: String, $creator_address: String) {
           current_token_ownerships(
             where: {
               owner_address: {_eq: $owner_address},
               _or: [
                 {collection_name: {_eq: $collection_name}},
-                {collection_id: {_eq: $collection_id}}
+                {collection_id: {_eq: $collection_id}},
+                {creator_address: {_eq: $creator_address}}
               ],
               amount: {_gt: "0"}
             }
@@ -49,11 +50,12 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
       variables: {
         owner_address: walletAddress,
         collection_name: collectionName,
-        collection_id: NFT_COLLECTION_ID
+        collection_id: NFT_COLLECTION_ID,
+        creator_address: CREATOR_ADDRESS
       },
     };
 
-    console.log("Sending GraphQL query to Aptos Indexer with payload:", JSON.stringify(query, null, 2));
+    console.log("Sending GraphQL query to Aptos Indexer");
     
     const response = await fetch(APTOS_INDEXER_API, {
       method: 'POST',
@@ -88,7 +90,7 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
     // Transform the data into our BlockchainNFT format
     return tokens.map((token: any) => ({
       tokenId: token.token_data_id_hash,
-      name: token.name || `Token #${token.token_data_id_hash.substring(0, 6)}`,
+      name: token.name || `Proud Lion #${token.token_data_id_hash.substring(0, 6)}`,
       imageUrl: token.metadata_uri || "",
       creator: token.creator_address,
       standard: token.token_standard,
@@ -103,13 +105,12 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
 };
 
 /**
- * Fetch NFTs with fallback strategy from primary source to secondary and finally mock data
+ * Fetch NFTs with fallback strategy from primary source to secondary
  * @param walletAddress The wallet address to fetch NFTs for
  * @param collectionName The collection name to filter by
  * @returns Array of NFTs processed and ready to display
  */
 export async function fetchNFTsWithFallback(walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> {
-  // Try using the indexer first with better error handling
   try {
     console.log("Fetching NFTs from indexer...");
     const nfts = await fetchFromIndexer(walletAddress, collectionName);
@@ -139,9 +140,9 @@ export async function fetchNFTsWithFallback(walletAddress: string, collectionNam
     } 
     
     console.log("No NFTs found from Node API either");
-    throw new Error("No NFTs found from any API endpoint");
+    return []; // Return empty array instead of mocks
   } catch (nodeError) {
     console.error("Node API fallback also failed:", nodeError);
-    throw nodeError;
+    return []; // Return empty array instead of mocks
   }
 }

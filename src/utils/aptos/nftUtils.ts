@@ -2,8 +2,7 @@
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
 import { fetchNFTsWithFallback } from "./nftFetcher";
-import { generateMockNFTs } from "./mockNFTUtils";
-import { IS_TESTNET, NFT_COLLECTION_NAME } from "./constants";
+import { NFT_COLLECTION_NAME } from "./constants";
 
 /**
  * Check if the user has NFTs from the specified collection
@@ -14,7 +13,6 @@ import { IS_TESTNET, NFT_COLLECTION_NAME } from "./constants";
 export const getNFTsInWallet = async (walletAddress: string, collectionName: string = NFT_COLLECTION_NAME) => {
   try {
     console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
-    console.log(`Using testnet: ${IS_TESTNET}`);
     
     if (!walletAddress) {
       console.error("No wallet address provided");
@@ -24,10 +22,8 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     return await fetchNFTsWithFallback(walletAddress, collectionName);
   } catch (error) {
     console.error("Error getting NFTs:", error);
-    toast.error("Failed to fetch NFTs. Showing sample data instead.");
-    
-    // Return an error mock NFT for complete failure
-    return generateMockNFTs(collectionName, true);
+    toast.error("Failed to fetch NFTs. Please try again later.");
+    return [];
   }
 };
 

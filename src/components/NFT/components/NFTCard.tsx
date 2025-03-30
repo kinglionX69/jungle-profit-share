@@ -27,8 +27,6 @@ const formatTimeRemaining = (unlockDate?: Date) => {
 };
 
 const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
-  const isMockData = nft.tokenId.includes('mock') || nft.tokenId.includes('error') || nft.name.includes('Mock');
-
   return (
     <>
       <div className={`absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm ${
@@ -67,25 +65,13 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
       >
         {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
       </div>
-      
-      {isMockData && (
-        <div className="absolute top-2 left-2 px-2 py-1 bg-warning/20 text-warning rounded-md text-xs font-medium">
-          Sample
-        </div>
-      )}
     </>
   );
 };
 
 const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
-  const isMockData = nft.tokenId.includes('mock') || nft.tokenId.includes('error') || nft.name.includes('Mock');
-
   return (
-    <div 
-      className={`rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px] ${
-        isMockData ? 'border-warning' : ''
-      }`}
-    >
+    <div className="rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px]">
       <div className="relative">
         <img 
           src={nft.imageUrl} 
@@ -120,9 +106,6 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
                   {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
                   {nft.isLocked && nft.unlockDate && (
                     <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
-                  )}
-                  {isMockData && (
-                    <p className="mt-1 text-warning">This is sample data</p>
                   )}
                 </div>
               </TooltipContent>
