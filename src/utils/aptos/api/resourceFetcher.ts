@@ -24,6 +24,11 @@ export const fetchFromResourcesAPI = async (walletAddress: string, collectionNam
     
     if (!resourcesResponse.ok) {
       console.error(`Node API responded with status: ${resourcesResponse.status}`);
+      // If we get a 404, it could mean the account doesn't exist on this network
+      if (resourcesResponse.status === 404) {
+        console.log("Account not found on this network. The wallet might not have been used on this network yet.");
+        return [];
+      }
       throw new Error(`Node API responded with status: ${resourcesResponse.status}`);
     }
     
@@ -76,6 +81,7 @@ export const fetchFromResourcesAPI = async (walletAddress: string, collectionNam
     return await tryDirectCollectionEndpoint(walletAddress, collectionName);
   } catch (error) {
     console.error("Error with resources API:", error);
-    throw error;
+    // Return empty array instead of throwing to prevent cascade failures
+    return [];
   }
 }

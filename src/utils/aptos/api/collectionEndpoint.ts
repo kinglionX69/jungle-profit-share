@@ -170,7 +170,11 @@ export async function tryDirectCollectionEndpoint(
       console.error("Error with standard collection endpoint:", err);
     }
     
-    // Approach 3: Try the token_ownerships endpoint
+    // Approach 3: Try the token_ownerships endpoint - Note: Skip this if the other methods failed
+    // Since we know this endpoint is returning 404 errors
+    console.log("Skipping token_ownerships endpoint as it's returning 404 errors");
+    
+    /*
     const ownershipsEndpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships`;
     console.log(`Trying token_ownerships endpoint: ${ownershipsEndpoint}`);
     
@@ -214,6 +218,7 @@ export async function tryDirectCollectionEndpoint(
     } catch (err) {
       console.error("Error with token_ownerships endpoint:", err);
     }
+    */
     
     console.log("No NFTs found after trying all collection endpoints");
     return [];
