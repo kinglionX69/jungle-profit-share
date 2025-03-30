@@ -12,6 +12,7 @@ export type { BlockchainNFT, TransactionResult } from './types';
 // Export NFT utilities
 export { getNFTsInWallet, checkNFTLockStatus } from './nftUtils';
 export { isMockNFTData } from './mockNFTUtils';
+export { resolveImageUrl } from './nftImageResolver';
 
 // Export transaction utilities
 export { submitClaimTransaction, depositTokensTransaction } from './transactionUtils';
