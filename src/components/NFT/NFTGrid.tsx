@@ -1,11 +1,10 @@
+
 import React from 'react';
 import { useUser } from '@/context/UserContext';
-import { Clock, CheckCircle, XCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+import NFTCard from './components/NFTCard';
+import NFTGridSkeleton from './components/NFTGridSkeleton';
+import NFTEmptyState from './components/NFTEmptyState';
+import MockDataAlert from './components/MockDataAlert';
 
 interface NFTGridProps {
   filterEligible?: boolean;
@@ -21,209 +20,26 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
     nft.name.includes('Mock')
   );
   
-  // Format time remaining as DD:HH:MM
-  const formatTimeRemaining = (unlockDate?: Date) => {
-    if (!unlockDate) return '';
-    
-    const now = new Date();
-    const diff = unlockDate.getTime() - now.getTime();
-    
-    if (diff <= 0) return '00:00:00';
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  };
-  
   // Filter NFTs based on the filterEligible prop
   const filteredNfts = filterEligible 
     ? nfts.filter(nft => nft.isEligible)
     : nfts;
   
   if (loadingNfts) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="rounded-lg border overflow-hidden bg-card">
-            <Skeleton className="h-48 w-full" />
-            <div className="p-4 space-y-2">
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <NFTGridSkeleton />;
   }
   
   if (filteredNfts.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Alert variant="default">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>No NFTs Found</AlertTitle>
-          <AlertDescription>
-            {filterEligible ? 
-              `We couldn't find any eligible NFTs for claiming. This could be because all your NFTs are currently locked or you don't own any NFTs from the ${NFT_COLLECTION_NAME} collection.` :
-              `We couldn't find any ${NFT_COLLECTION_NAME} NFTs in your wallet. This could be due to:`}
-            {!filterEligible && (
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>You don't own any NFTs from the {NFT_COLLECTION_NAME} collection</li>
-                <li>There might be connection issues with the Aptos blockchain</li>
-                <li>The wallet might not be properly connected</li>
-              </ul>
-            )}
-          </AlertDescription>
-        </Alert>
-        
-        <div className="text-center py-10 border rounded-lg bg-card">
-          <h3 className="text-lg font-medium">Debugging Information</h3>
-          <p className="text-muted-foreground mt-2">
-            Check the browser console for more details (F12 &gt; Console)
-          </p>
-          <p className="text-xs text-muted-foreground mt-4">
-            Try adding ?debug=true to the URL for more information
-          </p>
-        </div>
-      </div>
-    );
+    return <NFTEmptyState filterEligible={filterEligible} />;
   }
   
   return (
     <div className="space-y-4">
-      {isMockData && (
-        <Alert variant="warning" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertTitle>Using Sample Data</AlertTitle>
-          <AlertDescription>
-            <p>We couldn't find any real NFTs in your wallet from the {NFT_COLLECTION_NAME} collection.</p>
-            <p className="mt-1 text-sm">If you believe this is an error, please check your wallet connection and make sure you own NFTs from this collection.</p>
-          </AlertDescription>
-        </Alert>
-      )}
+      {isMockData && <MockDataAlert />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {filteredNfts.map((nft) => (
-          <div 
-            key={nft.tokenId} 
-            className={`rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px] ${
-              nft.tokenId.includes('mock') || nft.tokenId.includes('error') ? 'border-warning' : ''
-            }`}
-          >
-            <div className="relative">
-              <img 
-                src={nft.imageUrl} 
-                alt={nft.name} 
-                className="w-full h-48 object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://picsum.photos/seed/${nft.tokenId}/300/300`;
-                }}
-              />
-              
-              <div className={`absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm ${
-                nft.isEligible 
-                  ? 'bg-success/10' 
-                  : nft.isLocked 
-                    ? 'bg-destructive/10' 
-                    : 'bg-warning/10'
-              }`}>
-                {nft.isEligible && (
-                  <div className="bg-white/90 dark:bg-black/80 rounded-full p-3">
-                    <CheckCircle className="h-12 w-12 text-success" />
-                  </div>
-                )}
-                
-                {nft.isLocked && (
-                  <div className="flex flex-col items-center p-4 bg-white/90 dark:bg-black/80 rounded-xl">
-                    {nft.unlockDate && (
-                      <>
-                        <p className="text-xs text-muted-foreground mb-1">Unlocks in</p>
-                        <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
-                        <p className="text-xs text-muted-foreground">Days:Hours:Mins</p>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium 
-                ${nft.isEligible 
-                  ? 'bg-success/20 text-success' 
-                  : nft.isLocked 
-                    ? 'bg-destructive/20 text-destructive' 
-                    : 'bg-warning/20 text-warning'
-                }`}
-              >
-                {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
-              </div>
-              
-              {(nft.tokenId.includes('mock') || nft.tokenId.includes('error') || nft.name.includes('Mock')) && (
-                <div className="absolute top-2 left-2 px-2 py-1 bg-warning/20 text-warning rounded-md text-xs font-medium">
-                  Sample
-                </div>
-              )}
-            </div>
-            
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-medium truncate mr-2">{nft.name}</h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="cursor-help">
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <div className="text-xs">
-                        <p className="font-semibold mb-1">NFT Details</p>
-                        <p>Collection: {NFT_COLLECTION_NAME}</p>
-                        <p>Token ID: {nft.tokenId}</p>
-                        {nft.standard && <p>Standard: {nft.standard}</p>}
-                        {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
-                        {nft.isLocked && nft.unlockDate && (
-                          <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
-                        )}
-                        {(nft.tokenId.includes('mock') || nft.tokenId.includes('error')) && (
-                          <p className="mt-1 text-warning">This is sample data</p>
-                        )}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
-              <p className="text-sm text-muted-foreground">Token ID: {nft.tokenId.substring(0, 12)}...</p>
-              
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center">
-                  {nft.isEligible ? (
-                    <Badge variant="outline" className="text-success border-success">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Available
-                    </Badge>
-                  ) : nft.isLocked ? (
-                    <Badge variant="outline" className="text-muted-foreground">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Locked
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-destructive border-destructive">
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Ineligible
-                    </Badge>
-                  )}
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {NFT_COLLECTION_NAME}
-                </Badge>
-              </div>
-            </div>
-          </div>
+          <NFTCard key={nft.tokenId} nft={nft} />
         ))}
       </div>
     </div>
