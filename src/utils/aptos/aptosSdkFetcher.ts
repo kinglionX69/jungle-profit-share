@@ -12,6 +12,8 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
   try {
     console.log(`Using Aptos SDK to fetch NFTs for wallet: ${walletAddress}`);
     console.log(`Looking for collection ID: ${NFT_COLLECTION_ID}`);
+    console.log(`Looking for collection name: ${NFT_COLLECTION_NAME}`);
+    console.log(`Network: ${IS_TESTNET ? 'TESTNET' : 'MAINNET'}`);
     
     // Set up the Aptos client with the appropriate network
     const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
@@ -87,32 +89,50 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
              typeof token.current_token_data === 'object' && 
              token.current_token_data.collection_id && 
              (token.current_token_data.collection_id.toString() === NFT_COLLECTION_ID || 
-              token.current_token_data.collection_id.toString().includes("Lion"))) ||
-            (currentCollectionId === NFT_COLLECTION_ID)) {
+              token.current_token_data.collection_id.toString().includes("Lion") ||
+              token.current_token_data.collection_id.toString().includes("lion"))) ||
+            (currentCollectionId === NFT_COLLECTION_ID) ||
+            (token.current_collection && 
+             token.current_collection.collection_name && 
+             (token.current_collection.collection_name.includes("Lion") ||
+              token.current_collection.collection_name.includes("lion")))) {
           console.log("Found potential match:", {
             name: token.current_token_data && typeof token.current_token_data === 'object' 
               ? token.current_token_data.description || 'No name' 
               : 'No token data',
             collectionId: currentCollectionId,
             creator: creatorAddress,
+            collectionName: token.current_collection?.collection_name,
             tokenData: token.token_data_id
           });
         }
         
-        return (
-          // More relaxed matching to catch more potential tokens
-          (currentCollectionId && (
-            currentCollectionId === NFT_COLLECTION_ID || 
-            currentCollectionId.includes("Lion")
-          )) ||
-          (token.current_token_data && 
-           typeof token.current_token_data === 'object' &&
-           token.current_token_data.collection_id && (
-            token.current_token_data.collection_id.toString() === NFT_COLLECTION_ID ||
-            token.current_token_data.collection_id.toString().includes("Lion")
-          )) ||
-          (creatorAddress === CREATOR_ADDRESS)
+        // More relaxed matching to catch potential tokens - Matching by collection name, ID, or creator
+        const matchesCollectionId = currentCollectionId && (
+          currentCollectionId === NFT_COLLECTION_ID || 
+          currentCollectionId.includes("Lion") ||
+          currentCollectionId.includes("lion")
         );
+          
+        const matchesTokenData = token.current_token_data && 
+          typeof token.current_token_data === 'object' &&
+          token.current_token_data.collection_id && (
+            token.current_token_data.collection_id.toString() === NFT_COLLECTION_ID ||
+            token.current_token_data.collection_id.toString().includes("Lion") ||
+            token.current_token_data.collection_id.toString().includes("lion")
+          );
+          
+        const matchesCreator = creatorAddress === CREATOR_ADDRESS;
+          
+        const matchesCollectionName = token.current_collection && 
+          token.current_collection.collection_name && (
+            token.current_collection.collection_name === NFT_COLLECTION_NAME ||
+            token.current_collection.collection_name.includes("Lion") ||
+            token.current_collection.collection_name.includes("lion") ||
+            token.current_collection.collection_name.includes("Proud")
+          );
+        
+        return matchesCollectionId || matchesTokenData || matchesCreator || matchesCollectionName;
       });
       
       console.log(`After filtering, found ${filtered.length} tokens matching collection and creator`);
@@ -124,6 +144,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         let description = '';
         let imageUrl = '';
         let tokenCollectionId = '';
+        let collectionName = NFT_COLLECTION_NAME;
         
         // Generate a token ID regardless of whether token_data_id exists
         let tokenId: string;
@@ -138,6 +159,11 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         } else {
           // Stringify the object
           tokenId = JSON.stringify(token.token_data_id);
+        }
+        
+        // Try to extract collection name from current_collection
+        if (token.current_collection && token.current_collection.collection_name) {
+          collectionName = token.current_collection.collection_name;
         }
         
         // Try to extract name from token data - safely check for null
@@ -215,7 +241,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         return {
           tokenId: tokenId,
           name: name,
-          collectionName: NFT_COLLECTION_NAME,
+          collectionName: collectionName,
           description: description,
           imageUrl: imageUrl,
           creator: CREATOR_ADDRESS,

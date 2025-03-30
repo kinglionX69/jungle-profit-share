@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { 
   APTOS_API, 
   NFT_COLLECTION_NAME, 
-  USE_DEMO_MODE 
+  USE_DEMO_MODE,
+  IS_TESTNET
 } from "./constants";
 import { fetchWithNodeAPI } from "./nodeApiFetcher";
 import { fetchMockNFTs } from "./mockNFTUtils";
@@ -23,6 +24,7 @@ export const enhancedNFTFetch = async (
   collectionName: string = NFT_COLLECTION_NAME
 ): Promise<BlockchainNFT[]> => {
   console.log(`Using enhanced NFT fetcher for wallet: ${walletAddress}, collection: ${collectionName}`);
+  console.log(`Network: ${IS_TESTNET ? 'TESTNET' : 'MAINNET'}`);
   
   // Normalize the wallet address
   if (walletAddress && !walletAddress.startsWith("0x")) {
@@ -59,6 +61,11 @@ export const enhancedNFTFetch = async (
       if (result.status === 'fulfilled') {
         console.log(`Method ${method} succeeded with ${result.value.length} NFTs`);
         
+        // Log each NFT from this method
+        if (result.value.length > 0) {
+          console.log(`Sample NFT from ${method}:`, result.value[0]);
+        }
+        
         // Add NFTs from this method, avoiding duplicates
         result.value.forEach(nft => {
           if (!allNfts.some(existingNft => existingNft.tokenId === nft.tokenId)) {
@@ -91,6 +98,12 @@ export const enhancedNFTFetch = async (
         console.log("Falling back to demo NFTs after all methods failed");
         return await fetchMockNFTs(collectionName);
       }
+    }
+    
+    // If we still found no NFTs but we want to show something, use demo NFTs
+    if (allNfts.length === 0 && USE_DEMO_MODE) {
+      console.log("No NFTs found but demo mode enabled, returning demo NFTs");
+      return await fetchMockNFTs(collectionName);
     }
     
     // Return whatever we found, even if empty
