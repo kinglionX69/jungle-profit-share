@@ -2,19 +2,25 @@
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface NFTGridSkeletonProps {
-  count?: number;
-}
-
-const NFTGridSkeleton: React.FC<NFTGridSkeletonProps> = ({ count = 4 }) => {
+const NFTGridSkeleton: React.FC = () => {
+  // Create an array of 6 placeholders
+  const placeholders = Array.from({ length: 6 }, (_, i) => i);
+  
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {[...Array(count)].map((_, index) => (
-        <div key={index} className="rounded-lg border overflow-hidden bg-card">
-          <Skeleton className="h-48 w-full" />
-          <div className="p-4 space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {placeholders.map((index) => (
+        <div 
+          key={index} 
+          className="glass border border-jungle-700/20 rounded-xl overflow-hidden animate-pulse"
+        >
+          <Skeleton className="w-full h-48 bg-amber-500/5" />
+          <div className="p-4">
+            <Skeleton className="h-6 w-3/4 mb-2 bg-amber-500/5" />
+            <Skeleton className="h-4 w-1/2 mb-4 bg-amber-500/5" />
+            <div className="flex justify-between">
+              <Skeleton className="h-6 w-24 rounded-full bg-amber-500/5" />
+              <Skeleton className="h-6 w-20 rounded-full bg-amber-500/5" />
+            </div>
           </div>
         </div>
       ))}

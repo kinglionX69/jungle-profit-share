@@ -37,30 +37,30 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
             : 'bg-amber-500/10'
       }`}>
         {nft.isEligible && (
-          <div className="bg-white/90 dark:bg-black/80 rounded-full p-3 shadow-glow animate-pulse-light">
-            <CheckCircle className="h-12 w-12 text-jungle-600" />
+          <div className="bg-black/60 rounded-full p-3 shadow-glow animate-pulse-light">
+            <CheckCircle className="h-12 w-12 text-amber-400" />
           </div>
         )}
         
         {nft.isLocked && (
-          <div className="flex flex-col items-center p-4 bg-white/90 dark:bg-black/80 rounded-xl shadow-md">
+          <div className="flex flex-col items-center p-4 glass rounded-xl shadow-md">
             {nft.unlockDate && (
               <>
-                <p className="text-xs text-muted-foreground mb-1">Unlocks in</p>
+                <p className="text-xs text-muted-foreground mb-1 font-nunito">Unlocks in</p>
                 <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
-                <p className="text-xs text-muted-foreground">Days:Hours:Mins</p>
+                <p className="text-xs text-muted-foreground font-nunito">Days:Hours:Mins</p>
               </>
             )}
           </div>
         )}
       </div>
       
-      <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium font-montserrat
+      <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium font-nunito
         ${nft.isEligible 
-          ? 'bg-jungle-600/20 text-jungle-700' 
+          ? 'bg-jungle-700/20 text-amber-400' 
           : nft.isLocked 
             ? 'bg-destructive/20 text-destructive' 
-            : 'bg-amber-500/20 text-amber-600'
+            : 'bg-amber-500/20 text-amber-400'
         }`}
       >
         {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
@@ -71,7 +71,7 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
 
 const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   return (
-    <div className="nft-card rounded-xl border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px]">
+    <div className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
       <div className="relative">
         <img 
           src={nft.imageUrl} 
@@ -87,9 +87,9 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         <NFTCardOverlay nft={nft} />
       </div>
       
-      <div className="p-4 font-outfit">
+      <div className="p-4 font-nunito">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium truncate mr-2 text-left">{nft.name}</h3>
+          <h3 className="font-medium truncate mr-2 text-left font-poppins">{nft.name}</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -97,9 +97,9 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs bg-white/95 dark:bg-black/95 backdrop-blur-md border border-jungle-200 dark:border-jungle-800 shadow-lg">
+              <TooltipContent className="max-w-xs glass border border-jungle-700/20 shadow-lg">
                 <div className="text-xs">
-                  <p className="font-semibold mb-1">NFT Details</p>
+                  <p className="font-semibold mb-1 font-poppins">NFT Details</p>
                   <p>Collection: {NFT_COLLECTION_NAME}</p>
                   <p>Token ID: {nft.tokenId}</p>
                   {nft.standard && <p>Standard: {nft.standard}</p>}
@@ -118,12 +118,12 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center">
             {nft.isEligible ? (
-              <Badge variant="outline" className="text-jungle-600 border-jungle-400 bg-jungle-50/50 dark:bg-jungle-900/30">
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Available
               </Badge>
             ) : nft.isLocked ? (
-              <Badge variant="outline" className="text-muted-foreground">
+              <Badge variant="outline" className="text-muted-foreground border-muted">
                 <Clock className="h-3 w-3 mr-1" />
                 Locked
               </Badge>
@@ -134,7 +134,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
               </Badge>
             )}
           </div>
-          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400">
+          <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20">
             {NFT_COLLECTION_NAME}
           </Badge>
         </div>

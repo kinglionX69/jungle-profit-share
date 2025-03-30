@@ -13,10 +13,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #22c55eaa);
+  filter: drop-shadow(0 0 2em #fbbf24aa);
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #22c55eaa);
+  filter: drop-shadow(0 0 2em #fbbf24aa);
 }
 
 @keyframes logo-spin {
@@ -66,16 +66,16 @@
 
 /* Custom glowing effects */
 .glow-effect {
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
 }
 
 .glow-effect:hover {
-  box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
 }
 
 /* Hero section background */
 .hero-background {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/jungle-bg.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/jungle-bg.jpg');
   background-size: cover;
   background-position: center;
 }

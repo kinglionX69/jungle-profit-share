@@ -88,8 +88,8 @@ export default {
 			fontFamily: {
 				sans: ['Inter', 'system-ui', 'sans-serif'],
 				mono: ['Roboto Mono', 'monospace'],
-        outfit: ['Outfit', 'sans-serif'],
-        montserrat: ['Montserrat', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        nunito: ['Nunito', 'sans-serif']
 			},
 			keyframes: {
 				'accordion-down': {
@@ -127,13 +127,13 @@ export default {
 			},
       boxShadow: {
         'soft': '0 4px 14px 0 rgba(0, 0, 0, 0.05)',
-        'glow': '0 0 15px rgba(34, 197, 94, 0.5)',
-        'inner-glow': 'inset 0 0 5px rgba(34, 197, 94, 0.2)'
+        'glow': '0 0 15px rgba(245, 158, 11, 0.5)',
+        'inner-glow': 'inset 0 0 5px rgba(245, 158, 11, 0.2)'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'shimmer': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)',
-        'jungle-gradient': 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+        'jungle-gradient': 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
         'amber-gradient': 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
         'lion-gradient': 'linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%)'
       }

@@ -53,19 +53,19 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="glass sm:max-w-md border-jungle-700/20">
         <DialogHeader>
-          <DialogTitle>Connect Your Wallet</DialogTitle>
+          <DialogTitle className="font-poppins">Connect Your Wallet</DialogTitle>
         </DialogHeader>
         
         <div className="flex flex-col gap-3 py-4">
           {walletOptions.map((wallet) => (
             <div 
               key={wallet.name} 
-              className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex items-center justify-between p-3 border border-jungle-700/20 rounded-lg hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center rounded bg-background overflow-hidden">
+                <div className="w-8 h-8 flex items-center justify-center rounded bg-black/20 overflow-hidden">
                   <img 
                     src={wallet.icon} 
                     alt={`${wallet.name} wallet`} 
@@ -75,13 +75,14 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({
                     }}
                   />
                 </div>
-                <span className="font-medium">{wallet.name}</span>
+                <span className="font-medium font-nunito">{wallet.name}</span>
               </div>
               
               {wallet.isInstalled ? (
                 <Button 
                   size="sm"
                   onClick={() => onSelectWallet(wallet.name.toLowerCase())}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-medium"
                 >
                   Connect
                 </Button>
@@ -90,6 +91,7 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({
                   size="sm" 
                   variant="outline"
                   onClick={() => window.open(wallet.downloadUrl, '_blank')}
+                  className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Download
