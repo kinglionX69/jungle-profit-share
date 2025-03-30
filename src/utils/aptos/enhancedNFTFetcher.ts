@@ -5,7 +5,8 @@ import {
   NFT_COLLECTION_NAME, 
   CREATOR_ADDRESS, 
   NFT_COLLECTION_ID,
-  USE_DEMO_MODE
+  USE_DEMO_MODE,
+  IS_TESTNET
 } from "./constants";
 import { BlockchainNFT } from "./types";
 import { resolveNFTImages } from "./nftImageResolver";
@@ -18,6 +19,9 @@ import { resolveNFTImages } from "./nftImageResolver";
  */
 export const enhancedNFTFetch = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   console.log(`Beginning enhanced NFT fetch for wallet: ${walletAddress}, collection: ${collectionName}`);
+  console.log(`Network: ${IS_TESTNET ? 'TESTNET' : 'MAINNET'}`);
+  console.log(`Collection ID: ${NFT_COLLECTION_ID}`);
+  console.log(`Creator Address: ${CREATOR_ADDRESS}`);
   
   // Standardize wallet address format
   if (walletAddress && !walletAddress.startsWith('0x')) {
@@ -27,106 +31,119 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
   let allNFTs: BlockchainNFT[] = [];
   let errors: string[] = [];
   
-  // Try all methods in parallel for speed, then combine results
-  const results = await Promise.allSettled([
-    fetchFromToken2022Standard(walletAddress, collectionName),
-    fetchFromAccountResources(walletAddress, collectionName),
-    fetchFromTokenData(walletAddress, collectionName),
-    fetchFromIndexerApi(walletAddress, collectionName),
-    fetchFromOwnershipsEndpoint(walletAddress, collectionName) // Added new method for token ownerships endpoint
-  ]);
-  
-  // Process results
-  results.forEach((result, index) => {
-    if (result.status === 'fulfilled' && result.value.length > 0) {
-      console.log(`Method ${index + 1} found ${result.value.length} NFTs`);
-      
-      // Add NFTs from this method, avoiding duplicates
-      result.value.forEach(nft => {
-        if (!allNFTs.some(existingNft => existingNft.tokenId === nft.tokenId)) {
-          allNFTs.push(nft);
-        }
-      });
-    } else if (result.status === 'rejected') {
-      console.error(`Method ${index + 1} failed:`, result.reason);
-      errors.push(`Method ${index + 1}: ${result.reason}`);
-    }
-  });
-  
-  console.log(`Combined results: ${allNFTs.length} unique NFTs found`);
-  
-  // If we found any NFTs, process them
-  if (allNFTs.length > 0) {
-    return await resolveNFTImages(allNFTs);
+  // In test mode, directly return demo NFTs
+  if (USE_DEMO_MODE) {
+    console.log("DEMO MODE ENABLED - Returning demo NFTs");
+    return createDemoNFTs();
   }
   
-  // If all methods failed, try demo mode or return empty
-  if (errors.length === results.length) {
-    console.error("All fetching methods failed:", errors);
-    toast.error("Could not fetch NFTs from blockchain");
+  try {
+    // Try all methods in parallel for speed, then combine results
+    console.log("Starting parallel NFT fetch methods...");
+    
+    const results = await Promise.allSettled([
+      fetchAllWalletTokens(walletAddress),
+      fetchFromIndexerApi(walletAddress, collectionName),
+      fetchFromToken2022Standard(walletAddress, collectionName),
+      fetchFromOwnershipsEndpoint(walletAddress, collectionName)
+    ]);
+    
+    // Process results
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value.length > 0) {
+        console.log(`Method ${index + 1} found ${result.value.length} NFTs`);
+        
+        // Add NFTs from this method, avoiding duplicates
+        result.value.forEach(nft => {
+          if (!allNFTs.some(existingNft => existingNft.tokenId === nft.tokenId)) {
+            allNFTs.push(nft);
+          }
+        });
+      } else if (result.status === 'rejected') {
+        console.error(`Method ${index + 1} failed:`, result.reason);
+        errors.push(`Method ${index + 1}: ${result.reason}`);
+      } else if (result.status === 'fulfilled' && result.value.length === 0) {
+        console.log(`Method ${index + 1} found no NFTs`);
+      }
+    });
+    
+    console.log(`Combined results: ${allNFTs.length} unique NFTs found`);
+    
+    // If we found any NFTs, process them
+    if (allNFTs.length > 0) {
+      const processedNFTs = await resolveNFTImages(allNFTs);
+      console.log(`Processed ${processedNFTs.length} NFTs with images`);
+      return processedNFTs;
+    }
+    
+    // If all methods failed, try demo mode or return empty
+    if (errors.length === results.length) {
+      console.error("All fetching methods failed:", errors);
+      
+      if (USE_DEMO_MODE) {
+        console.log("Using demo NFTs as fallback");
+        return createDemoNFTs();
+      }
+    }
+    
+    // If we reach here, no NFTs were found
+    console.log("No NFTs found for wallet:", walletAddress);
+    return [];
+  } catch (error) {
+    console.error("Critical error in NFT fetching:", error);
     
     if (USE_DEMO_MODE) {
-      console.log("Using demo NFTs for testing");
+      console.log("Using demo NFTs after critical error");
       return createDemoNFTs();
     }
+    
+    return [];
   }
-  
-  return [];
 };
 
 /**
- * NEW METHOD: Fetch NFTs using the ownerships endpoint (best for Token V2)
+ * NEW METHOD: Fetch ALL tokens in the wallet without filtering
+ * This is a more aggressive approach to find any tokens
  */
-const fetchFromOwnershipsEndpoint = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
+const fetchAllWalletTokens = async (walletAddress: string): Promise<BlockchainNFT[]> => {
   try {
-    console.log(`Trying Token V2 ownerships endpoint for wallet: ${walletAddress}`);
+    console.log(`Trying to fetch ALL tokens for wallet: ${walletAddress}`);
     
-    // This endpoint is optimized for Token V2 standard
-    const endpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships?limit=100`;
+    // Use the most general endpoint with high limit
+    const endpoint = `${APTOS_API}/accounts/${walletAddress}/tokens?limit=200`;
     console.log(`Fetching from: ${endpoint}`);
     
     const response = await fetch(endpoint);
     
     if (!response.ok) {
-      throw new Error(`Ownerships endpoint error: ${response.status}`);
+      throw new Error(`All tokens endpoint error: ${response.status}`);
     }
     
-    const ownerships = await response.json();
-    console.log(`Received ${ownerships.length} token ownerships`);
+    const tokens = await response.json();
+    console.log(`Received ${tokens.length} total tokens from wallet`);
     
-    // Filter for our collection and map to NFT format
-    const filteredTokens = ownerships
-      .filter((token: any) => {
-        const matchesCollection = token.current_token_data?.collection_name === collectionName;
-        const matchesCreator = token.current_token_data?.creator_address === CREATOR_ADDRESS;
-        const matchesCollectionId = token.current_collection_data?.collection_id === NFT_COLLECTION_ID;
-        const matchesTokenId = token.token_data_id_hash && 
-                              token.token_data_id_hash.toLowerCase().includes(CREATOR_ADDRESS.toLowerCase());
-        
-        return matchesCollection || matchesCreator || matchesCollectionId || matchesTokenId;
-      })
-      .map((token: any) => {
-        // Format token ID to match explorer format (with version number)
-        const tokenId = token.token_data_id_hash ? 
-          `${token.token_data_id_hash}/${token.property_version || '0'}` : 
-          token.token_id || token.token_data_id;
-          
-        return {
-          tokenId: tokenId,
-          name: token.current_token_data?.name || `${collectionName} #${(token.token_data_id_hash || "").substring(0, 6)}`,
-          imageUrl: token.current_token_data?.uri || "",
-          creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
-          standard: "v2",
-          properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
-          collectionName: token.current_token_data?.collection_name,
-          collectionId: token.current_collection_data?.collection_id
-        };
-      });
-      
-    console.log(`Found ${filteredTokens.length} matching tokens from ownerships endpoint`);
-    return filteredTokens;
+    // We'll map all tokens first, then filter later
+    const allTokens = tokens.map((token: any) => {
+      // Generate a unique token ID from available fields
+      const tokenId = token.id_hash || token.token_data_id_hash || token.token_id || 
+                     (token.id ? token.id : `token-${Math.random().toString(36).substring(2, 10)}`);
+                     
+      return {
+        tokenId: tokenId,
+        name: token.name || token.token_name || `Token #${tokenId.substring(0, 6)}`,
+        imageUrl: token.uri || token.metadata_uri || token.image || "",
+        creator: token.creator_address || token.creator || CREATOR_ADDRESS,
+        standard: token.token_standard || "unknown",
+        properties: token.properties ? JSON.stringify(token.properties) : "{}",
+        collectionName: token.collection_name || "Unknown Collection",
+        collectionId: token.collection_id || ""
+      };
+    });
+    
+    console.log(`Mapped ${allTokens.length} total tokens`);
+    return allTokens;
   } catch (error) {
-    console.error("Error with token ownerships endpoint:", error);
+    console.error("Error fetching all wallet tokens:", error);
     return [];
   }
 };
@@ -256,6 +273,63 @@ const fetchFromToken2022Standard = async (walletAddress: string, collectionName:
 };
 
 /**
+ * Fetch NFTs using the ownerships endpoint (best for Token V2)
+ */
+const fetchFromOwnershipsEndpoint = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
+  try {
+    console.log(`Trying Token V2 ownerships endpoint for wallet: ${walletAddress}`);
+    
+    // This endpoint is optimized for Token V2 standard
+    const endpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships?limit=100`;
+    console.log(`Fetching from: ${endpoint}`);
+    
+    const response = await fetch(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`Ownerships endpoint error: ${response.status}`);
+    }
+    
+    const ownerships = await response.json();
+    console.log(`Received ${ownerships.length} token ownerships`);
+    
+    // Filter for our collection and map to NFT format
+    const filteredTokens = ownerships
+      .filter((token: any) => {
+        const matchesCollection = token.current_token_data?.collection_name === collectionName;
+        const matchesCreator = token.current_token_data?.creator_address === CREATOR_ADDRESS;
+        const matchesCollectionId = token.current_collection_data?.collection_id === NFT_COLLECTION_ID;
+        const matchesTokenId = token.token_data_id_hash && 
+                              token.token_data_id_hash.toLowerCase().includes(CREATOR_ADDRESS.toLowerCase());
+        
+        return matchesCollection || matchesCreator || matchesCollectionId || matchesTokenId;
+      })
+      .map((token: any) => {
+        // Format token ID to match explorer format (with version number)
+        const tokenId = token.token_data_id_hash ? 
+          `${token.token_data_id_hash}/${token.property_version || '0'}` : 
+          token.token_id || token.token_data_id;
+          
+        return {
+          tokenId: tokenId,
+          name: token.current_token_data?.name || `${collectionName} #${(token.token_data_id_hash || "").substring(0, 6)}`,
+          imageUrl: token.current_token_data?.uri || "",
+          creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
+          standard: "v2",
+          properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
+          collectionName: token.current_token_data?.collection_name,
+          collectionId: token.current_collection_data?.collection_id
+        };
+      });
+      
+    console.log(`Found ${filteredTokens.length} matching tokens from ownerships endpoint`);
+    return filteredTokens;
+  } catch (error) {
+    console.error("Error with token ownerships endpoint:", error);
+    return [];
+  }
+};
+
+/**
  * Fetch NFTs using account resources endpoint
  */
 const fetchFromAccountResources = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
@@ -368,7 +442,7 @@ const fetchFromAccountResources = async (walletAddress: string, collectionName: 
       }
     }
     
-    return allNfts;
+    return allNFTs;
   } catch (error) {
     console.error("Error with account resources:", error);
     return [];

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getNFTsInWallet } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
-import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
+import { NFT_COLLECTION_NAME, USE_DEMO_MODE } from "@/utils/aptos/constants";
 
 /**
  * Fetches NFTs for a wallet from the blockchain and determines eligibility
@@ -22,14 +22,23 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
     // Get NFTs from blockchain with improved logging
     try {
       console.log(`Fetching blockchain NFTs for wallet: ${walletAddress}`);
+      
+      // Set a longer timeout
+      const timeoutPromise = new Promise<[]>((_, reject) => 
+        setTimeout(() => reject(new Error("NFT fetch timeout")), 15000)
+      );
+      
       // This will use our enhanced fetcher via getNFTsInWallet
-      const blockchainNfts = await getNFTsInWallet(walletAddress, NFT_COLLECTION_NAME);
+      const nftPromise = getNFTsInWallet(walletAddress);
+      
+      // Race between the fetch and timeout
+      const blockchainNfts = await Promise.race([nftPromise, timeoutPromise]) as any[];
       
       console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
       
-      if (blockchainNfts.length === 0) {
+      if (blockchainNfts.length === 0 && !USE_DEMO_MODE) {
         console.log("No NFTs found for this wallet");
-        toast.info("No Proud Lion NFTs found in your wallet");
+        toast.info("No NFTs found in your wallet");
         return [];
       }
       
@@ -76,6 +85,25 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
     } catch (blockchainError) {
       console.error("Error fetching from blockchain:", blockchainError);
       toast.error("Failed to fetch NFTs from blockchain");
+      
+      if (USE_DEMO_MODE) {
+        // Return demo NFTs if enabled
+        console.log("Using demo NFTs after blockchain error");
+        const demoNfts: NFT[] = Array.from({ length: 3 }).map((_, i) => ({
+          tokenId: `demo-token-${i}`,
+          name: `${NFT_COLLECTION_NAME} #${i + 1}`,
+          imageUrl: `https://picsum.photos/seed/lion${i+1}/300/300`,
+          isEligible: true,
+          isLocked: false,
+          standard: "v2",
+          creator: "0x1",
+          properties: JSON.stringify({
+            generation: i.toString(),
+            rarity: i === 0 ? "legendary" : i === 1 ? "rare" : "common"
+          })
+        }));
+        return demoNfts;
+      }
       return [];
     }
   } catch (error) {

@@ -15,9 +15,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, InfoIcon, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { IS_TESTNET } from '@/utils/aptos/constants';
 
 const Dashboard = () => {
-  const { connected, address } = useWallet();
+  const { connected, address, walletType } = useWallet();
   const { isVerified, nfts, email, fetchUserData, loadingNfts } = useUser();
   const navigate = useNavigate();
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -40,12 +41,14 @@ const Dashboard = () => {
     if (connected) {
       console.log("Dashboard debug info:");
       console.log("- Wallet connected:", connected);
+      console.log("- Wallet type:", walletType);
       console.log("- Wallet address:", address);
+      console.log("- Testnet mode:", IS_TESTNET);
       console.log("- Email verified:", isVerified);
       console.log("- NFTs loaded:", nfts.length);
       console.log("- NFTs:", nfts);
     }
-  }, [connected, address, isVerified, nfts]);
+  }, [connected, address, isVerified, nfts, walletType]);
 
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
@@ -76,11 +79,21 @@ const Dashboard = () => {
               View your NFTs and claim your rewards
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRefreshNFTs}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh NFTs
+          <Button variant="outline" size="sm" onClick={handleRefreshNFTs} disabled={loadingNfts}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingNfts ? 'animate-spin' : ''}`} />
+            {loadingNfts ? 'Refreshing...' : 'Refresh NFTs'}
           </Button>
         </div>
+        
+        {IS_TESTNET && (
+          <Alert className="mb-4 bg-amber-500/10 border-amber-500/20">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertTitle className="text-amber-500">Testnet Mode</AlertTitle>
+            <AlertDescription className="text-amber-400/80">
+              Application is running in testnet mode. NFTs and transactions will be on the Aptos testnet.
+            </AlertDescription>
+          </Alert>
+        )}
         
         {showDebugInfo && (
           <Alert className="mb-8" variant="default">
@@ -88,10 +101,12 @@ const Dashboard = () => {
             <AlertTitle>Debug Information</AlertTitle>
             <AlertDescription>
               <div className="mt-2">
+                <p><strong>Wallet Type:</strong> {walletType || 'Unknown'}</p>
                 <p><strong>Wallet Address:</strong> {address}</p>
                 <p><strong>Email:</strong> {email || 'Not set'}</p>
                 <p><strong>Email Verified:</strong> {isVerified ? 'Yes' : 'No'}</p>
                 <p><strong>NFTs Loaded:</strong> {nfts.length}</p>
+                <p><strong>Network:</strong> {IS_TESTNET ? 'TESTNET' : 'MAINNET'}</p>
                 <p><strong>Loading State:</strong> {loadingNfts ? 'Loading...' : 'Completed'}</p>
               </div>
             </AlertDescription>

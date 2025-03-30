@@ -45,7 +45,7 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Get wallet information from WalletContext
-  const { connected, address, signTransaction } = useWallet();
+  const { connected, address, walletType, signTransaction } = useWallet();
   
   const [email, setEmail] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
@@ -58,6 +58,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Load user data when wallet connects
   useEffect(() => {
     if (connected && address) {
+      console.log(`Wallet connected (${walletType}), fetching user data...`);
       fetchUserData();
     } else {
       // Reset user data when disconnected
@@ -66,7 +67,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setNfts([]);
       setClaimHistory([]);
     }
-  }, [connected, address]);
+  }, [connected, address, walletType]);
   
   const fetchUserData = async () => {
     if (!address) {
@@ -88,15 +89,24 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       
       // Fetch NFTs and calculate claimable amount
       console.log("Fetching NFTs for address:", address);
-      const userNfts = await fetchNFTs(address);
-      setNfts(userNfts);
       
-      const claimable = await calculateClaimableAmount(userNfts);
-      setClaimableAmount(claimable);
-      
-      console.log(`Fetched ${userNfts.length} NFTs with ${claimable} claimable amount`);
-      
-      setLoadingNfts(false);
+      // Set a timeout to show loading state for at least 1 second
+      setTimeout(async () => {
+        try {
+          const userNfts = await fetchNFTs(address);
+          setNfts(userNfts);
+          
+          const claimable = await calculateClaimableAmount(userNfts);
+          setClaimableAmount(claimable);
+          
+          console.log(`Fetched ${userNfts.length} NFTs with ${claimable} claimable amount`);
+        } catch (error) {
+          console.error("Error fetching NFTs:", error);
+          toast.error("Failed to fetch NFTs");
+        } finally {
+          setLoadingNfts(false);
+        }
+      }, 1000);
       
       // Fetch claim history
       const history = await fetchClaimHistory(address);

@@ -4,6 +4,7 @@ import { useUser } from '@/context/UserContext';
 import NFTCard from './components/NFTCard';
 import NFTGridSkeleton from './components/NFTGridSkeleton';
 import NFTEmptyState from './components/NFTEmptyState';
+import { Loader } from 'lucide-react';
 
 interface NFTGridProps {
   filterEligible?: boolean;
@@ -18,7 +19,15 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
     : nfts;
   
   if (loadingNfts) {
-    return <NFTGridSkeleton />;
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <NFTGridSkeleton />
+        <div className="mt-6 flex items-center justify-center text-muted-foreground">
+          <Loader className="h-5 w-5 animate-spin mr-2" />
+          <span>Searching for NFTs in your wallet...</span>
+        </div>
+      </div>
+    );
   }
   
   if (filteredNfts.length === 0) {
