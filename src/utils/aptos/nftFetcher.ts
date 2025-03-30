@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME, CREATOR_ADDRESS, USE_DEMO_MODE } from "./constants";
 import { BlockchainNFT } from "./types";
 import { resolveNFTImages } from "./nftImageResolver";
-import { fetchFromNodeAPI } from "./nodeApiFetcher";
+import { fetchWithNodeAPI } from "./nodeApiFetcher";
 
 /**
  * Fetch NFTs using the Aptos Indexer
@@ -155,7 +155,7 @@ export async function fetchNFTsWithFallback(walletAddress: string, collectionNam
   // If no NFTs found or indexer error, try the node API as fallback
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress}`);
-    const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
+    const nodeFetchResult = await fetchWithNodeAPI(walletAddress, collectionName);
     console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
     
     if (nodeFetchResult.length > 0) {

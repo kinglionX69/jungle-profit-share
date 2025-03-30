@@ -28,10 +28,15 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Filter by collection name and creator
     const filtered = tokens.filter(token => {
-      if (!token.current_token_data) return false;
-      
-      const collectionName = token.current_token_data.collection_id || '';
-      const creatorAddress = token.current_token_data.creator_address || '';
+      // Get the collection name from token data or related fields
+      const collectionName = token.current_token_data?.collection_name || 
+                            token.token_data_id?.collection_name || 
+                            '';
+                            
+      // Get the creator address from token data or related fields
+      const creatorAddress = token.current_token_data?.creator || 
+                            token.token_data_id?.creator || 
+                            '';
       
       return (
         (collectionName.includes(NFT_COLLECTION_NAME) || collectionName === NFT_COLLECTION_NAME) &&
@@ -44,12 +49,14 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     // Convert to our BlockchainNFT format
     const nfts: BlockchainNFT[] = filtered.map(token => {
       const tokenData = token.current_token_data || {};
+      
+      // Access token fields safely with optional chaining and fallbacks
       return {
         tokenId: token.token_data_id || '',
-        name: tokenData.name || `${NFT_COLLECTION_NAME} #Unknown`,
+        name: tokenData.token_name || `${NFT_COLLECTION_NAME} #Unknown`,
         collectionName: NFT_COLLECTION_NAME,
         description: tokenData.description || '',
-        imageUrl: tokenData.uri || '',
+        imageUrl: tokenData.metadata_uri || '',
         creator: CREATOR_ADDRESS,
         properties: JSON.stringify({
           amount: token.amount,
