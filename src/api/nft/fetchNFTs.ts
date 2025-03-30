@@ -19,36 +19,10 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       return [];
     }
     
-    // Get NFTs from blockchain
+    // Get NFTs from blockchain with improved logging
     try {
+      console.log(`Fetching blockchain NFTs for wallet: ${walletAddress}`);
       const blockchainNfts = await getNFTsInWallet(walletAddress, NFT_COLLECTION_NAME);
-      
-      // If no NFTs found on blockchain, provide mock data for testing
-      if (!blockchainNfts || blockchainNfts.length === 0) {
-        console.log("No NFTs found from blockchain, using mock data for testing");
-        // Return mock data for testing
-        return [
-          {
-            tokenId: "mock-token-1",
-            name: "Proud Lion #1",
-            imageUrl: "https://picsum.photos/seed/lion1/300/300",
-            isEligible: true,
-            isLocked: false,
-            standard: "v2",
-            creator: "0x1"
-          },
-          {
-            tokenId: "mock-token-2",
-            name: "Proud Lion #2",
-            imageUrl: "https://picsum.photos/seed/lion2/300/300",
-            isEligible: false,
-            isLocked: true,
-            unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
-            standard: "v2",
-            creator: "0x1"
-          }
-        ];
-      }
       
       console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
       
@@ -64,97 +38,53 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
         properties: nft.properties
       }));
       
-      // Fetch NFT claims from Supabase to determine what's locked
-      const { data: nftClaimsData, error: nftClaimsError } = await supabase
-        .from('nft_claims')
-        .select('*')
-        .eq('wallet_address', walletAddress);
-      
-      if (nftClaimsError) {
-        console.error("Error fetching NFT claims:", nftClaimsError);
-        throw nftClaimsError;
-      }
-      
-      // If we have NFT claim data, update the NFTs to reflect locked status
-      if (nftClaimsData && nftClaimsData.length > 0) {
-        nftClaimsData.forEach(claim => {
-          const nftIndex = nfts.findIndex(nft => nft.tokenId === claim.token_id);
-          if (nftIndex !== -1) {
-            nfts[nftIndex].isLocked = true;
-            nfts[nftIndex].isEligible = false;
-            nfts[nftIndex].unlockDate = new Date(claim.unlock_date);
-          }
-        });
+      // Only if we have actual NFTs, check for locks in the database
+      if (nfts.length > 0 && !nfts[0].tokenId.includes('mock') && !nfts[0].tokenId.includes('error')) {
+        // Fetch NFT claims from Supabase to determine what's locked
+        console.log("Checking for locked NFTs in database");
+        const { data: nftClaimsData, error: nftClaimsError } = await supabase
+          .from('nft_claims')
+          .select('*')
+          .eq('wallet_address', walletAddress);
+        
+        if (nftClaimsError) {
+          console.error("Error fetching NFT claims:", nftClaimsError);
+        } else if (nftClaimsData && nftClaimsData.length > 0) {
+          console.log(`Found ${nftClaimsData.length} locked NFTs in database`);
+          
+          // Update the NFTs to reflect locked status
+          nftClaimsData.forEach(claim => {
+            const nftIndex = nfts.findIndex(nft => nft.tokenId === claim.token_id);
+            if (nftIndex !== -1) {
+              nfts[nftIndex].isLocked = true;
+              nfts[nftIndex].isEligible = false;
+              nfts[nftIndex].unlockDate = new Date(claim.unlock_date);
+              console.log(`Marked NFT ${nfts[nftIndex].name} as locked until ${nfts[nftIndex].unlockDate}`);
+            }
+          });
+        } else {
+          console.log("No locked NFTs found in database");
+        }
       }
       
       console.log(`Returning ${nfts.length} processed NFTs for display`);
       return nfts;
     } catch (blockchainError) {
-      console.error("Error fetching from blockchain, using fallback mock data:", blockchainError);
-      // Return mock data as fallback
-      return [
-        {
-          tokenId: "mock-token-1",
-          name: "Proud Lion #1",
-          imageUrl: "https://picsum.photos/seed/lion1/300/300",
-          isEligible: true,
-          isLocked: false,
-          standard: "v2",
-          creator: "0x1"
-        },
-        {
-          tokenId: "mock-token-2",
-          name: "Proud Lion #2",
-          imageUrl: "https://picsum.photos/seed/lion2/300/300",
-          isEligible: false,
-          isLocked: true,
-          unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
-          standard: "v2",
-          creator: "0x1"
-        },
-        {
-          tokenId: "mock-token-3",
-          name: "Proud Lion #3",
-          imageUrl: "https://picsum.photos/seed/lion3/300/300",
-          isEligible: true,
-          isLocked: false,
-          standard: "v2",
-          creator: "0x1"
-        },
-        {
-          tokenId: "mock-token-4",
-          name: "Proud Lion #4",
-          imageUrl: "https://picsum.photos/seed/lion4/300/300",
-          isEligible: false,
-          isLocked: true,
-          unlockDate: new Date(Date.now() + 86400000 * 5), // 5 days from now
-          standard: "v2",
-          creator: "0x1"
-        }
-      ];
+      console.error("Error fetching from blockchain:", blockchainError);
+      throw blockchainError; // Let the outer catch handle this
     }
   } catch (error) {
     console.error("Error fetching NFTs:", error);
-    toast.error("Failed to load NFTs. Using mock data instead.");
+    toast.error("Failed to load NFTs from your wallet.");
     
-    // Always return mock data in case of errors to ensure UI doesn't break
+    // Return a minimal set of mock data in case of complete failure
     return [
       {
-        tokenId: "mock-token-1",
-        name: "Proud Lion #1",
-        imageUrl: "https://picsum.photos/seed/lion1/300/300",
-        isEligible: true,
-        isLocked: false,
-        standard: "v2",
-        creator: "0x1"
-      },
-      {
-        tokenId: "mock-token-2",
-        name: "Proud Lion #2",
-        imageUrl: "https://picsum.photos/seed/lion2/300/300",
+        tokenId: "error-token",
+        name: "Error Loading NFTs",
+        imageUrl: "https://picsum.photos/seed/error/300/300",
         isEligible: false,
-        isLocked: true,
-        unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
+        isLocked: false,
         standard: "v2",
         creator: "0x1"
       }

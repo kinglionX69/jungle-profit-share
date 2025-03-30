@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
 import { fetchFromIndexer, fetchFromNodeAPI, resolveImageUrl } from "./nftFetcher";
@@ -19,12 +20,13 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
       return [];
     }
     
-    // First try using the indexer
+    // Try using the indexer first with better error handling
     try {
+      console.log("Fetching NFTs from indexer...");
       const nfts = await fetchFromIndexer(walletAddress, collectionName);
       
       if (nfts.length > 0) {
-        console.log(`Found ${nfts.length} NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+        console.log(`Found ${nfts.length} NFTs from indexer for wallet: ${walletAddress}`);
         
         // Process NFTs to resolve image URLs
         const processedNfts = await Promise.all(nfts.map(async (nft) => ({
@@ -33,27 +35,89 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
         })));
         
         return processedNfts;
+      } else {
+        console.log("No NFTs found from indexer, trying Node API");
       }
     } catch (indexerError) {
-      console.error("Error with indexer, trying fallback:", indexerError);
+      console.error("Error with indexer, details:", indexerError);
+      console.log("Trying fallback to Node API");
     }
     
     // If no NFTs found or indexer error, try the node API as fallback
-    console.log(`No NFTs found from indexer, trying node API fallback for wallet: ${walletAddress}`);
-    const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
-    console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
-    
-    // Process NFTs to resolve image URLs
-    const processedNodeNfts = await Promise.all(nodeFetchResult.map(async (nft) => ({
-      ...nft,
-      imageUrl: await resolveImageUrl(nft.imageUrl)
-    })));
-    
-    return processedNodeNfts;
+    try {
+      console.log(`Using Node API fallback for wallet: ${walletAddress}`);
+      const nodeFetchResult = await fetchFromNodeAPI(walletAddress, collectionName);
+      console.log(`Node API fallback result: ${nodeFetchResult.length} NFTs found`);
+      
+      if (nodeFetchResult.length > 0) {
+        // Process NFTs to resolve image URLs
+        const processedNodeNfts = await Promise.all(nodeFetchResult.map(async (nft) => ({
+          ...nft,
+          imageUrl: await resolveImageUrl(nft.imageUrl)
+        })));
+        
+        return processedNodeNfts;
+      } else {
+        console.log("No NFTs found from Node API either");
+        // Only use mock data as a last resort and with a clear warning
+        console.warn("USING MOCK DATA: No real NFTs found from any source");
+        toast.warning("No NFTs found in your wallet. Showing sample data for demonstration.");
+        
+        // Provide mock data only as last resort
+        return [
+          {
+            tokenId: "mock-token-1",
+            name: "Proud Lion #1 (Mock)",
+            imageUrl: "https://picsum.photos/seed/lion1/300/300",
+            creator: "0x1",
+            standard: "v2",
+            properties: "{}",
+            collectionName: collectionName
+          },
+          {
+            tokenId: "mock-token-2",
+            name: "Proud Lion #2 (Mock)",
+            imageUrl: "https://picsum.photos/seed/lion2/300/300",
+            creator: "0x1",
+            standard: "v2",
+            properties: "{}",
+            collectionName: collectionName
+          }
+        ];
+      }
+    } catch (nodeError) {
+      console.error("Node API fallback also failed:", nodeError);
+      toast.error("Failed to fetch NFTs. Showing sample data instead.");
+      
+      // Only use mock data as absolute last resort
+      return [
+        {
+          tokenId: "mock-token-1",
+          name: "Proud Lion #1 (Mock)",
+          imageUrl: "https://picsum.photos/seed/lion1/300/300",
+          creator: "0x1",
+          standard: "v2",
+          properties: "{}",
+          collectionName: collectionName
+        }
+      ];
+    }
   } catch (error) {
     console.error("Error getting NFTs:", error);
-    // Return an empty array rather than failing completely
-    return [];
+    toast.error("Failed to fetch NFTs. Showing sample data instead.");
+    
+    // Return an empty array rather than mock data for complete failure
+    return [
+      {
+        tokenId: "error-token",
+        name: "Error Loading NFT (Mock)",
+        imageUrl: "https://picsum.photos/seed/error/300/300",
+        creator: "0x1",
+        standard: "v2",
+        properties: "{}",
+        collectionName: collectionName
+      }
+    ];
   }
 };
 

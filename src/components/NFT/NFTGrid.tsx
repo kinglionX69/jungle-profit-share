@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useUser } from '@/context/UserContext';
-import { Clock, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,6 +13,13 @@ interface NFTGridProps {
 
 const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
   const { nfts, loadingNfts } = useUser();
+  
+  // Check if we're showing mock data
+  const isMockData = nfts.some(nft => 
+    nft.tokenId.includes('mock') || 
+    nft.tokenId.includes('error') || 
+    nft.name.includes('Mock')
+  );
   
   // Format time remaining as DD:HH:MM
   const formatTimeRemaining = (unlockDate?: Date) => {
@@ -86,116 +92,140 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {filteredNfts.map((nft) => (
-        <div key={nft.tokenId} className="rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px]">
-          <div className="relative">
-            <img 
-              src={nft.imageUrl} 
-              alt={nft.name} 
-              className="w-full h-48 object-cover"
-              loading="lazy"
-              onError={(e) => {
-                // Fallback if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = `https://picsum.photos/seed/${nft.tokenId}/300/300`;
-              }}
-            />
-            
-            {/* Status overlay */}
-            <div className={`absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm ${
-              nft.isEligible 
-                ? 'bg-success/10' 
-                : nft.isLocked 
-                  ? 'bg-destructive/10' 
-                  : 'bg-warning/10'
-            }`}>
-              {nft.isEligible && (
-                <div className="bg-white/90 dark:bg-black/80 rounded-full p-3">
-                  <CheckCircle className="h-12 w-12 text-success" />
-                </div>
-              )}
+    <div className="space-y-4">
+      {isMockData && (
+        <Alert variant="warning" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertTitle>Using Sample Data</AlertTitle>
+          <AlertDescription>
+            <p>We couldn't find any real NFTs in your wallet from the {NFT_COLLECTION_NAME} collection.</p>
+            <p className="mt-1 text-sm">If you believe this is an error, please check your wallet connection and make sure you own NFTs from this collection.</p>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {filteredNfts.map((nft) => (
+          <div 
+            key={nft.tokenId} 
+            className={`rounded-lg border overflow-hidden bg-card hover:shadow-md transition-all hover:translate-y-[-2px] ${
+              nft.tokenId.includes('mock') || nft.tokenId.includes('error') ? 'border-warning' : ''
+            }`}
+          >
+            <div className="relative">
+              <img 
+                src={nft.imageUrl} 
+                alt={nft.name} 
+                className="w-full h-48 object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://picsum.photos/seed/${nft.tokenId}/300/300`;
+                }}
+              />
               
-              {nft.isLocked && (
-                <div className="flex flex-col items-center p-4 bg-white/90 dark:bg-black/80 rounded-xl">
-                  {nft.unlockDate && (
-                    <>
-                      <p className="text-xs text-muted-foreground mb-1">Unlocks in</p>
-                      <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
-                      <p className="text-xs text-muted-foreground">Days:Hours:Mins</p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* Status indicator */}
-            <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium 
-              ${nft.isEligible 
-                ? 'bg-success/20 text-success' 
-                : nft.isLocked 
-                  ? 'bg-destructive/20 text-destructive' 
-                  : 'bg-warning/20 text-warning'
-              }`}
-            >
-              {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
-            </div>
-          </div>
-          
-          <div className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-medium truncate mr-2">{nft.name}</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-help">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <div className="text-xs">
-                      <p className="font-semibold mb-1">NFT Details</p>
-                      <p>Collection: {NFT_COLLECTION_NAME}</p>
-                      <p>Token ID: {nft.tokenId}</p>
-                      {nft.standard && <p>Standard: {nft.standard}</p>}
-                      {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
-                      {nft.isLocked && nft.unlockDate && (
-                        <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">Token ID: {nft.tokenId.substring(0, 12)}...</p>
-            
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center">
-                {nft.isEligible ? (
-                  <Badge variant="outline" className="text-success border-success">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Available
-                  </Badge>
-                ) : nft.isLocked ? (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Locked
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-destructive border-destructive">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Ineligible
-                  </Badge>
+              <div className={`absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm ${
+                nft.isEligible 
+                  ? 'bg-success/10' 
+                  : nft.isLocked 
+                    ? 'bg-destructive/10' 
+                    : 'bg-warning/10'
+              }`}>
+                {nft.isEligible && (
+                  <div className="bg-white/90 dark:bg-black/80 rounded-full p-3">
+                    <CheckCircle className="h-12 w-12 text-success" />
+                  </div>
+                )}
+                
+                {nft.isLocked && (
+                  <div className="flex flex-col items-center p-4 bg-white/90 dark:bg-black/80 rounded-xl">
+                    {nft.unlockDate && (
+                      <>
+                        <p className="text-xs text-muted-foreground mb-1">Unlocks in</p>
+                        <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
+                        <p className="text-xs text-muted-foreground">Days:Hours:Mins</p>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-              <Badge variant="secondary" className="text-xs">
-                {NFT_COLLECTION_NAME}
-              </Badge>
+              
+              <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium 
+                ${nft.isEligible 
+                  ? 'bg-success/20 text-success' 
+                  : nft.isLocked 
+                    ? 'bg-destructive/20 text-destructive' 
+                    : 'bg-warning/20 text-warning'
+                }`}
+              >
+                {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
+              </div>
+              
+              {(nft.tokenId.includes('mock') || nft.tokenId.includes('error') || nft.name.includes('Mock')) && (
+                <div className="absolute top-2 left-2 px-2 py-1 bg-warning/20 text-warning rounded-md text-xs font-medium">
+                  Sample
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium truncate mr-2">{nft.name}</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="text-xs">
+                        <p className="font-semibold mb-1">NFT Details</p>
+                        <p>Collection: {NFT_COLLECTION_NAME}</p>
+                        <p>Token ID: {nft.tokenId}</p>
+                        {nft.standard && <p>Standard: {nft.standard}</p>}
+                        {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
+                        {nft.isLocked && nft.unlockDate && (
+                          <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
+                        )}
+                        {(nft.tokenId.includes('mock') || nft.tokenId.includes('error')) && (
+                          <p className="mt-1 text-warning">This is sample data</p>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              <p className="text-sm text-muted-foreground">Token ID: {nft.tokenId.substring(0, 12)}...</p>
+              
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center">
+                  {nft.isEligible ? (
+                    <Badge variant="outline" className="text-success border-success">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Available
+                    </Badge>
+                  ) : nft.isLocked ? (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Locked
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-destructive border-destructive">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Ineligible
+                    </Badge>
+                  )}
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {NFT_COLLECTION_NAME}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
