@@ -13,7 +13,7 @@ export const APTOS_API = APTOS_TESTNET_API;
 export const IS_TESTNET = true;
 
 // Collection information - Updated to match explorers
-export const NFT_COLLECTION_ID = "0x2a0e0f7b75185900a4fd7fdf8a071df70cde2d531ac961678656b1d56af104a0";
+export const NFT_COLLECTION_ID = "0x9951fc9827da09d5170248afd9a39a7f0d1e9a63fc15d1eba4ab9182dccd9cb7";
 export const NFT_COLLECTION_NAME = "Proud Lion";
 export const CREATOR_ADDRESS = "0x004be579ff825b21ef1620a50ed856f711f37bc4b7f1433b9c48742f69e541ed";
 

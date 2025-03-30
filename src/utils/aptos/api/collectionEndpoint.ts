@@ -9,6 +9,8 @@ interface TokenV2Data {
     creator_address?: string;
     name?: string;
     uri?: string;
+    collection_id?: string;
+    description?: string;
   };
   current_collection_data?: {
     collection_id?: string;
@@ -66,18 +68,19 @@ export async function tryDirectCollectionEndpoint(
         // Filter for our collection and map to NFT format with more relaxed criteria
         const v2Tokens = v2Data
           .filter((token: TokenV2Data) => {
-            // Enhanced logging for each token to identify any that might match Proud Lion
+            // Enhanced logging for each token to identify any that might match our collection
             const possibleMatch = 
               (token.current_token_data?.collection_name && token.current_token_data.collection_name.includes("Lion")) ||
+              (token.current_token_data?.collection_id === NFT_COLLECTION_ID) ||
               (token.current_token_data?.creator_address === CREATOR_ADDRESS) ||
               (token.current_collection_data?.collection_id === NFT_COLLECTION_ID);
             
             if (possibleMatch) {
               console.log("Possible match found in v2 endpoint:", {
                 collection: token.current_token_data?.collection_name,
+                collection_id: token.current_token_data?.collection_id || token.current_collection_data?.collection_id,
                 creator: token.current_token_data?.creator_address,
-                collection_id: token.current_collection_data?.collection_id,
-                name: token.current_token_data?.name
+                name: token.current_token_data?.name || token.current_token_data?.description
               });
             }
             
@@ -85,6 +88,7 @@ export async function tryDirectCollectionEndpoint(
             return (token.current_token_data?.collection_name && 
                     (token.current_token_data.collection_name.includes("Lion") || 
                      token.current_token_data.collection_name.includes(collectionName))) || 
+                   (token.current_token_data?.collection_id === NFT_COLLECTION_ID) ||
                    (token.current_token_data?.creator_address === CREATOR_ADDRESS) ||
                    (token.current_collection_data?.collection_id === NFT_COLLECTION_ID) ||
                    (token.token_data_id_hash && token.token_data_id_hash.includes(CREATOR_ADDRESS.toLowerCase()));
@@ -97,13 +101,13 @@ export async function tryDirectCollectionEndpoint(
               
             return {
               tokenId: tokenId,
-              name: token.current_token_data?.name || `${NFT_COLLECTION_NAME} #${(tokenId || "").substring(0, 6)}`,
+              name: token.current_token_data?.name || token.current_token_data?.description || `${NFT_COLLECTION_NAME} #${(tokenId || "").substring(0, 6)}`,
               imageUrl: token.current_token_data?.uri || "",
               creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
               standard: "v2",
               properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
-              collectionName: token.current_token_data?.collection_name,
-              collectionId: token.current_collection_data?.collection_id
+              collectionName: token.current_token_data?.collection_name || NFT_COLLECTION_NAME,
+              collectionId: token.current_token_data?.collection_id || token.current_collection_data?.collection_id || NFT_COLLECTION_ID
             };
           });
           

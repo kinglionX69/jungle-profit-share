@@ -1,22 +1,47 @@
 
 /**
- * Type definitions for Aptos interactions
+ * Types for Aptos blockchain interactions
  */
 
-// Define types for NFT data returned from blockchain
+/**
+ * Common NFT representation from the blockchain
+ */
 export interface BlockchainNFT {
   tokenId: string;
   name: string;
+  description?: string;
   imageUrl: string;
-  creator?: string;
-  standard?: string;
-  properties?: string;
+  creator: string;
+  standard: string;
+  properties: string;
   collectionName?: string;
   collectionId?: string;
 }
 
-// Define types for transaction results
-export interface TransactionResult {
+/**
+ * Token balance representation
+ */
+export interface TokenBalance {
+  amount: string;
+  decimals: number;
+  name: string;
+  symbol: string;
+}
+
+/**
+ * Result of a token transfer operation
+ */
+export interface TransferResult {
   success: boolean;
-  transactionHash: string | null;
+  transactionHash?: string;
+  error?: string;
+}
+
+/**
+ * Result of a claim transaction
+ */
+export interface ClaimResult {
+  success: boolean;
+  transactionHash?: string;
+  error?: string;
 }
