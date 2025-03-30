@@ -85,12 +85,14 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       let description = '';
       let imageUrl = '';
       
-      // Safely extract token ID
-      const tokenId = typeof token.token_data_id === 'string' 
-        ? token.token_data_id 
-        : JSON.stringify(token.token_data_id || {});
+      // Safely extract token ID - adding null check here
+      const tokenId = token.token_data_id 
+        ? (typeof token.token_data_id === 'string' 
+            ? token.token_data_id 
+            : JSON.stringify(token.token_data_id || {}))
+        : `unknown-token-${Math.random().toString(36).substring(2, 10)}`;
       
-      // Try to extract name from token data
+      // Try to extract name from token data - adding null check
       if (token.token_data_id && typeof token.token_data_id === 'object') {
         const tokenDataId = token.token_data_id as Record<string, unknown>;
         if ('name' in tokenDataId) {
