@@ -1,35 +1,37 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Base colors */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Base colors - jungle theme */
+    --background: 140 20% 97%;
+    --foreground: 140 10% 10%;
     
-    /* Primary brand color - soft blue */
-    --primary: 210 100% 50%;
+    /* Primary brand color - jungle green */
+    --primary: 142 76% 36%;
     --primary-foreground: 0 0% 98%;
     
-    /* Secondary color - soft gold */
+    /* Secondary color - golden amber */
     --secondary: 35 100% 50%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary-foreground: 140 5.9% 10%;
     
     /* Neutral colors */
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --muted: 140 4.8% 90%;
+    --muted-foreground: 140 3.8% 46.1%;
+    --accent: 142 50% 93%;
+    --accent-foreground: 140 5.9% 10%;
     
     /* UI colors */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 140 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --popover-foreground: 140 10% 10%;
+    --border: 140 5.9% 90%;
+    --input: 140 5.9% 90%;
     
     /* Status colors */
     --success: 145 65% 42%;
@@ -39,37 +41,37 @@
     
     /* UI properties */
     --radius: 0.5rem;
-    --ring: 210 100% 50%;
+    --ring: 142 76% 36%;
   }
  
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 140 20% 10%;
     --foreground: 0 0% 98%;
     
-    --primary: 210 100% 50%;
+    --primary: 142 76% 36%;
     --primary-foreground: 0 0% 98%;
     
     --secondary: 35 100% 50%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary-foreground: 140 5.9% 10%;
     
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 140 15% 20%;
+    --muted-foreground: 140 5% 64.9%;
+    --accent: 142 15% 20%;
     --accent-foreground: 0 0% 98%;
     
-    --card: 240 10% 3.9%;
+    --card: 140 15% 15%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 140 15% 15%;
     --popover-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 140 15% 25%;
+    --input: 140 15% 25%;
     
     --success: 145 65% 42%;
     --warning: 35 100% 50%;
     --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --ring: 210 100% 50%;
+    --ring: 142 76% 36%;
   }
 }
 
@@ -79,8 +81,9 @@
   }
   
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-outfit;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23166534' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
   
   /* Custom animation classes */
@@ -137,5 +140,15 @@
   
   .status-waiting {
     @apply text-warning bg-warning/10 border-warning/20;
+  }
+
+  /* Custom jungle theme pattern */
+  .bg-grid-pattern {
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
+  }
+
+  .bg-jungle-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23166534' fill-opacity='0.1'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6H34c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6h-2c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6H4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 }
