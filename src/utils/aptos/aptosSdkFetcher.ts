@@ -28,18 +28,28 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Filter by collection name and creator
     const filtered = tokens.filter(token => {
-      // Get the collection name from token data or related fields
-      const collectionName = token.current_token_data?.collection_name || 
-                            token.token_data_id?.collection_name || 
-                            '';
-                            
-      // Get the creator address from token data or related fields
-      const creatorAddress = token.current_token_data?.creator || 
-                            token.token_data_id?.creator || 
-                            '';
+      // Navigate the token structure carefully with optional chaining
+      const tokenDataId = token.token_data_id || {};
+      const currentTokenData = token.current_token_data || {};
+      
+      // Try to extract collection name from different possible paths
+      let collectionName = '';
+      if (currentTokenData.collection_id) {
+        collectionName = currentTokenData.collection_id;
+      } else if (typeof tokenDataId === 'object' && 'collection_id' in tokenDataId) {
+        collectionName = tokenDataId.collection_id;
+      }
+      
+      // Try to extract creator address from current token data
+      let creatorAddress = '';
+      if (token.current_collection && token.current_collection.creator_address) {
+        creatorAddress = token.current_collection.creator_address;
+      } else if (token.token_properties && token.token_properties.creator) {
+        creatorAddress = token.token_properties.creator;
+      }
       
       return (
-        (collectionName.includes(NFT_COLLECTION_NAME) || collectionName === NFT_COLLECTION_NAME) &&
+        (collectionName && collectionName.includes(NFT_COLLECTION_NAME)) &&
         (creatorAddress === CREATOR_ADDRESS)
       );
     });
@@ -48,20 +58,46 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Convert to our BlockchainNFT format
     const nfts: BlockchainNFT[] = filtered.map(token => {
-      const tokenData = token.current_token_data || {};
+      // Safely extract data
+      const tokenDataId = token.token_data_id || {};
+      const currentTokenData = token.current_token_data || {};
+      const properties = token.token_properties || {};
       
-      // Access token fields safely with optional chaining and fallbacks
+      // Build name from token identification data
+      let name = `${NFT_COLLECTION_NAME} #Unknown`;
+      if (properties.name) {
+        name = properties.name as string;
+      } else if (typeof tokenDataId === 'object' && 'name' in tokenDataId) {
+        name = tokenDataId.name as string;
+      }
+      
+      // Extract description
+      let description = '';
+      if (currentTokenData.description) {
+        description = currentTokenData.description;
+      } else if (properties.description) {
+        description = properties.description as string;
+      }
+      
+      // Extract image URL
+      let imageUrl = '';
+      if (properties.uri) {
+        imageUrl = properties.uri as string;
+      } else if (currentTokenData.uri) {
+        imageUrl = currentTokenData.uri;
+      }
+      
       return {
-        tokenId: token.token_data_id || '',
-        name: tokenData.token_name || `${NFT_COLLECTION_NAME} #Unknown`,
+        tokenId: typeof tokenDataId === 'string' ? tokenDataId : JSON.stringify(tokenDataId),
+        name: name,
         collectionName: NFT_COLLECTION_NAME,
-        description: tokenData.description || '',
-        imageUrl: tokenData.metadata_uri || '',
+        description: description,
+        imageUrl: imageUrl,
         creator: CREATOR_ADDRESS,
         properties: JSON.stringify({
           amount: token.amount,
           property_version_v1: token.property_version_v1,
-          token_properties_mutated_v1: token.token_properties_mutated_v1,
+          token_properties: token.token_properties
         }),
         standard: token.token_standard || 'v2'
       };
