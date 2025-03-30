@@ -100,19 +100,28 @@ const fetchFromOwnershipsEndpoint = async (walletAddress: string, collectionName
         const matchesCollection = token.current_token_data?.collection_name === collectionName;
         const matchesCreator = token.current_token_data?.creator_address === CREATOR_ADDRESS;
         const matchesCollectionId = token.current_collection_data?.collection_id === NFT_COLLECTION_ID;
+        const matchesTokenId = token.token_data_id_hash && 
+                              token.token_data_id_hash.toLowerCase().includes(CREATOR_ADDRESS.toLowerCase());
         
-        return matchesCollection || matchesCreator || matchesCollectionId;
+        return matchesCollection || matchesCreator || matchesCollectionId || matchesTokenId;
       })
-      .map((token: any) => ({
-        tokenId: token.token_data_id_hash || token.token_id || token.token_data_id,
-        name: token.current_token_data?.name || `${collectionName} #${(token.token_data_id_hash || "").substring(0, 6)}`,
-        imageUrl: token.current_token_data?.uri || "",
-        creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
-        standard: "v2",
-        properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
-        collectionName: token.current_token_data?.collection_name,
-        collectionId: token.current_collection_data?.collection_id
-      }));
+      .map((token: any) => {
+        // Format token ID to match explorer format (with version number)
+        const tokenId = token.token_data_id_hash ? 
+          `${token.token_data_id_hash}/${token.property_version || '0'}` : 
+          token.token_id || token.token_data_id;
+          
+        return {
+          tokenId: tokenId,
+          name: token.current_token_data?.name || `${collectionName} #${(token.token_data_id_hash || "").substring(0, 6)}`,
+          imageUrl: token.current_token_data?.uri || "",
+          creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
+          standard: "v2",
+          properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
+          collectionName: token.current_token_data?.collection_name,
+          collectionId: token.current_collection_data?.collection_id
+        };
+      });
       
     console.log(`Found ${filteredTokens.length} matching tokens from ownerships endpoint`);
     return filteredTokens;

@@ -1,140 +1,99 @@
+
 import { BlockchainNFT } from "../types";
-import { CREATOR_ADDRESS, NFT_COLLECTION_NAME, NFT_COLLECTION_ID } from "../constants";
+import { CREATOR_ADDRESS, NFT_COLLECTION_NAME } from "../constants";
 
 /**
- * Extract tokens from a TokenStore resource
+ * Extract tokens from a token store resource
  * @param walletAddress The wallet address
- * @param tokenStoreResource The TokenStore resource
+ * @param tokenStoreResource The token store resource
  * @param collectionName The collection name to filter by
- * @returns Array of NFTs from the TokenStore
+ * @returns Array of tokens extracted from the resource
  */
-export async function extractTokensFromResource(
-  walletAddress: string, 
+export const extractTokensFromResource = async (
+  walletAddress: string,
   tokenStoreResource: any,
   collectionName: string
-): Promise<BlockchainNFT[]> {
-  const tokens: BlockchainNFT[] = [];
-  
+): Promise<BlockchainNFT[]> => {
   try {
-    console.log("Extracting tokens from resource:", JSON.stringify(tokenStoreResource, null, 2).slice(0, 500) + "...");
+    console.log(`Extracting tokens from resource for wallet: ${walletAddress}`);
     
-    // Look for tokens in the store that match our collection
-    if (!tokenStoreResource.data) {
-      console.error("TokenStore resource has no data property");
-      return tokens;
-    }
-    
-    // Handle different token store data structures
+    // Find the token map in the resource (different paths based on token standard)
     let tokenMap = null;
     
-    // Try multiple possible structures
+    // Try different paths for token data (based on observed resource structures)
     const possiblePaths = [
-      // V1 format
-      tokenStoreResource.data.tokens?.tokens,
-      tokenStoreResource.data.tokens,
-      // V2 format
-      tokenStoreResource.data.token_data,
-      // Other potential formats
-      tokenStoreResource.data.data?.tokens,
-      tokenStoreResource.data.data,
-      // Direct access
+      tokenStoreResource.data?.tokens?.data?.inner?.handle,
+      tokenStoreResource.data?.tokens?.handle,
+      tokenStoreResource.data?.tokens?.tokens,
+      tokenStoreResource.data?.tokens,
+      tokenStoreResource.data?.current_token_ownerships,
+      tokenStoreResource.data?.token_data,
       tokenStoreResource.data
     ];
     
-    // Find the first valid token map
+    // Try to find valid token map in any of the paths
     for (const path of possiblePaths) {
-      if (path && typeof path === 'object' && !Array.isArray(path)) {
+      if (path && typeof path === 'object') {
         tokenMap = path;
-        console.log("Found tokens using format:", path === tokenStoreResource.data.tokens?.tokens ? "V1-nested" :
-                                               path === tokenStoreResource.data.tokens ? "V1-flat" :
-                                               path === tokenStoreResource.data.token_data ? "V2" :
-                                               path === tokenStoreResource.data.data?.tokens ? "alt-nested" :
-                                               path === tokenStoreResource.data.data ? "alt-flat" : "direct");
         break;
       }
     }
     
-    if (!tokenMap) {
-      console.error("Could not find valid token map in resource");
-      return tokens;
+    if (!tokenMap || Object.keys(tokenMap).length === 0) {
+      console.log("No tokens found in resource data");
+      return [];
     }
     
-    console.log(`Processing tokens map with ${Object.keys(tokenMap).length} entries`);
+    console.log(`Found token map with ${Object.keys(tokenMap).length} tokens`);
     
-    // Process each token to find matches for our collection
+    // Extract tokens from the map
+    const tokens: BlockchainNFT[] = [];
+    
+    // Iterate through token handles
     for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
-      const lowerTokenId = tokenId.toLowerCase();
-      const lowerCollectionName = collectionName.toLowerCase();
-      const lowerCollectionId = NFT_COLLECTION_ID?.toLowerCase() || '';
-      const lowerCreatorAddress = CREATOR_ADDRESS.toLowerCase();
-      
-      // Check if this token belongs to our collection by ID, name, or creator
-      const matchesCollection = 
-        lowerTokenId.includes(lowerCollectionName) || 
-        (lowerCollectionId && lowerTokenId.includes(lowerCollectionId)) || 
-        lowerTokenId.includes(lowerCreatorAddress);
+      try {
+        // Skip empty or invalid entries
+        if (!tokenData) continue;
         
-      if (matchesCollection) {
-        console.log(`Found potentially matching token: ${tokenId}`);
+        // Normalize token ID format
+        const normalizedTokenId = tokenId.includes('::') ? tokenId.split('::').pop()! : tokenId;
         
-        try {
-          // Create a standard NFT entry with available data
+        // Check various collection matching conditions
+        const matchesCollection = 
+          // Match by token ID containing collection name
+          normalizedTokenId.toLowerCase().includes(collectionName.toLowerCase()) ||
+          // Match by token data containing collection name
+          (tokenData.collection_name && 
+           tokenData.collection_name.toLowerCase() === collectionName.toLowerCase()) ||
+          // Match by creator address in token data
+          (tokenData.creator && 
+           tokenData.creator.toLowerCase() === CREATOR_ADDRESS.toLowerCase()) ||
+          // Match by token ID containing creator address
+          normalizedTokenId.toLowerCase().includes(CREATOR_ADDRESS.toLowerCase());
+        
+        if (matchesCollection) {
+          // Create NFT object from token data
           const nft: BlockchainNFT = {
-            tokenId: tokenId,
-            name: `${NFT_COLLECTION_NAME} #${tokenId.substring(0, 6)}`,
-            imageUrl: "",
-            creator: CREATOR_ADDRESS,
+            tokenId: normalizedTokenId,
+            name: tokenData.name || `${NFT_COLLECTION_NAME} #${normalizedTokenId.substring(0, 6)}`,
+            imageUrl: tokenData.uri || "",
+            creator: tokenData.creator || CREATOR_ADDRESS,
             standard: "v2",
-            properties: "{}"
+            properties: tokenData.properties ? JSON.stringify(tokenData.properties) : "{}"
           };
           
-          // Try to extract additional data if available
-          if (tokenData && typeof tokenData === 'object') {
-            const tokenObj = tokenData as Record<string, any>;
-            
-            // Name extraction
-            if ('name' in tokenObj && typeof tokenObj.name === 'string') {
-              nft.name = tokenObj.name;
-            }
-            
-            // URI/Image extraction - multiple possible property names
-            const uriProperties = ['uri', 'metadata_uri', 'image', 'content_uri'];
-            for (const prop of uriProperties) {
-              if (prop in tokenObj && typeof tokenObj[prop] === 'string') {
-                nft.imageUrl = tokenObj[prop];
-                break;
-              }
-            }
-            
-            // Creator extraction
-            if ('creator' in tokenObj && typeof tokenObj.creator === 'string') {
-              nft.creator = tokenObj.creator;
-            }
-            
-            // Properties extraction
-            if ('properties' in tokenObj) {
-              try {
-                nft.properties = typeof tokenObj.properties === 'string' 
-                  ? tokenObj.properties 
-                  : JSON.stringify(tokenObj.properties);
-              } catch (e) {
-                nft.properties = "{}";
-              }
-            }
-          }
-          
           tokens.push(nft);
-          console.log(`Added token: ${nft.name} with ID ${nft.tokenId}`);
-        } catch (tokenError) {
-          console.error(`Error processing token ${tokenId}:`, tokenError);
+          console.log(`Found matching token: ${nft.name} (${nft.tokenId})`);
         }
+      } catch (tokenError) {
+        console.error(`Error processing token ${tokenId}:`, tokenError);
       }
     }
     
-    console.log(`Extracted ${tokens.length} tokens from resource`);
-  } catch (extractError) {
-    console.error("Error extracting tokens from resource:", extractError);
+    console.log(`Extracted ${tokens.length} matching tokens from resource`);
+    return tokens;
+  } catch (error) {
+    console.error("Error extracting tokens from resource:", error);
+    return [];
   }
-  
-  return tokens;
-}
+};
