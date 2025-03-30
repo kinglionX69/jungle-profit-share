@@ -2,6 +2,16 @@
 import { BlockchainNFT } from "../types";
 import { CREATOR_ADDRESS, NFT_COLLECTION_NAME } from "../constants";
 
+// Define an interface for token data to avoid "unknown" type errors
+interface TokenData {
+  collection_name?: string;
+  creator?: string;
+  name?: string;
+  uri?: string;
+  properties?: Record<string, any> | string;
+  [key: string]: any; // Allow for other properties
+}
+
 /**
  * Extract tokens from a token store resource
  * @param walletAddress The wallet address
@@ -50,10 +60,13 @@ export const extractTokensFromResource = async (
     const tokens: BlockchainNFT[] = [];
     
     // Iterate through token handles
-    for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
+    for (const [tokenId, tokenDataRaw] of Object.entries(tokenMap)) {
       try {
         // Skip empty or invalid entries
-        if (!tokenData) continue;
+        if (!tokenDataRaw) continue;
+        
+        // Cast tokenData to our interface for type safety
+        const tokenData = tokenDataRaw as TokenData;
         
         // Normalize token ID format
         const normalizedTokenId = tokenId.includes('::') ? tokenId.split('::').pop()! : tokenId;
@@ -79,7 +92,11 @@ export const extractTokensFromResource = async (
             imageUrl: tokenData.uri || "",
             creator: tokenData.creator || CREATOR_ADDRESS,
             standard: "v2",
-            properties: tokenData.properties ? JSON.stringify(tokenData.properties) : "{}"
+            properties: tokenData.properties ? 
+              (typeof tokenData.properties === 'string' ? 
+                tokenData.properties : 
+                JSON.stringify(tokenData.properties)
+              ) : "{}"
           };
           
           tokens.push(nft);

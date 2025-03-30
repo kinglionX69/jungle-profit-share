@@ -2,6 +2,35 @@
 import { BlockchainNFT } from "../types";
 import { APTOS_API, CREATOR_ADDRESS, NFT_COLLECTION_NAME, NFT_COLLECTION_ID } from "../constants";
 
+// Define interfaces for API responses to improve type safety
+interface TokenV2Data {
+  current_token_data?: {
+    collection_name?: string;
+    creator_address?: string;
+    name?: string;
+    uri?: string;
+  };
+  current_collection_data?: {
+    collection_id?: string;
+  };
+  token_data_id_hash?: string;
+  property_version?: string | number;
+  token_data_id?: string;
+  token_id?: string;
+  [key: string]: any;
+}
+
+interface TokenData {
+  collection_name?: string;
+  creator_address?: string;
+  token_data_id_hash?: string;
+  token_data_id?: string;
+  name?: string;
+  uri?: string;
+  collection_id?: string;
+  [key: string]: any;
+}
+
 /**
  * Try to fetch NFTs directly from the collection endpoint
  * @param walletAddress The wallet address
@@ -29,18 +58,18 @@ export async function tryDirectCollectionEndpoint(
         
         // Filter for our collection and map to NFT format
         const v2Tokens = v2Data
-          .filter((token: any) => {
+          .filter((token: TokenV2Data) => {
             // Check multiple criteria to identify our collection
             return (token.current_token_data?.collection_name === collectionName) || 
                    (token.current_token_data?.creator_address === CREATOR_ADDRESS) ||
                    (token.current_collection_data?.collection_id === NFT_COLLECTION_ID) ||
                    (token.token_data_id_hash && token.token_data_id_hash.includes(CREATOR_ADDRESS.toLowerCase()));
           })
-          .map((token: any) => {
+          .map((token: TokenV2Data) => {
             // Format token ID to match the explorer format (with collection ID and version)
             const tokenId = token.token_data_id_hash ? 
               `${token.token_data_id_hash}${token.property_version ? `/${token.property_version}` : '/0'}` : 
-              token.token_data_id || token.token_id;
+              token.token_data_id || token.token_id || '';
               
             return {
               tokenId: tokenId,
@@ -78,15 +107,15 @@ export async function tryDirectCollectionEndpoint(
         
         // Filter for our collection
         const tokens = tokenData
-          .filter((token: any) => 
+          .filter((token: TokenData) => 
             token.collection_name === collectionName || 
             token.creator_address === CREATOR_ADDRESS ||
             (token.collection_id && token.collection_id === NFT_COLLECTION_ID)
           )
-          .map((token: any) => {
+          .map((token: TokenData) => {
             // Format token ID to match the explorer format
             const tokenId = token.token_data_id_hash ? 
-              `${token.token_data_id_hash}/0` : token.token_data_id;
+              `${token.token_data_id_hash}/0` : token.token_data_id || '';
               
             return {
               tokenId: tokenId,
