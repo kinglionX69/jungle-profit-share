@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
 import { TransactionResult } from "./types";
+import { IS_TESTNET } from "./constants";
 
 /**
  * Submit a transaction to the blockchain to claim rewards
@@ -15,17 +16,22 @@ export const submitClaimTransaction = async (
   signTransaction: (txn: any) => Promise<any>
 ): Promise<TransactionResult> => {
   try {
+    console.log(`Submitting claim transaction on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    
     // Create the transaction payload
-    // This is a simplified example - you would need to create the actual transaction
-    // based on your smart contract's requirements
+    // For testnet, we use a different module address
+    const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
+    
     const payload = {
       type: "entry_function_payload",
-      function: "0x3::token::claim_rewards",  // Updated from 0x1::aptos_token to 0x3::token
+      function: `${moduleAddress}::token::claim_rewards`,
       type_arguments: [],
       arguments: [
         nftIds,  // The NFT token IDs being claimed
       ]
     };
+    
+    console.log("Transaction payload:", payload);
     
     // Sign and submit the transaction
     const result = await signTransaction(payload);
@@ -58,16 +64,25 @@ export const depositTokensTransaction = async (
   signTransaction: (txn: any) => Promise<any>
 ): Promise<TransactionResult> => {
   try {
+    console.log(`Depositing tokens on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    
+    // Use the appropriate token type for testnet
+    const actualTokenType = IS_TESTNET 
+      ? "0x1::aptos_coin::AptosCoin" // This is the same on testnet
+      : tokenType;
+    
     // Create the transaction payload for depositing tokens
     const payload = {
       type: "entry_function_payload",
-      function: "0x1::coin::transfer",  // This is correct, the coin module is at 0x1
-      type_arguments: [tokenType],  // e.g., "0x1::aptos_coin::AptosCoin"
+      function: "0x1::coin::transfer",
+      type_arguments: [actualTokenType],
       arguments: [
         "ESCROW_WALLET_ADDRESS",  // Replace with actual escrow wallet address
         amount.toString(),  // Amount in smallest units
       ]
     };
+    
+    console.log("Deposit payload:", payload);
     
     // Sign and submit the transaction
     const result = await signTransaction(payload);

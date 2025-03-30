@@ -1,6 +1,8 @@
+
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
 import { fetchFromIndexer, fetchFromNodeAPI, resolveImageUrl } from "./nftFetcher";
+import { IS_TESTNET } from "./constants";
 
 /**
  * Check if the user has NFTs from the specified collection
@@ -8,9 +10,10 @@ import { fetchFromIndexer, fetchFromNodeAPI, resolveImageUrl } from "./nftFetche
  * @param collectionName The collection name to filter by
  * @returns Array of NFTs owned by the wallet
  */
-export const getNFTsInWallet = async (walletAddress: string, collectionName: string = "Proud Lions Club") => {
+export const getNFTsInWallet = async (walletAddress: string, collectionName: string = IS_TESTNET ? "Testnet Lions" : "Proud Lions Club") => {
   try {
     console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+    console.log(`Using testnet: ${IS_TESTNET}`);
     
     if (!walletAddress) {
       console.error("No wallet address provided");

@@ -1,4 +1,3 @@
-
 /**
  * Type definitions for NFT-related functionality
  */
@@ -10,6 +9,9 @@ export interface NFT {
   isEligible: boolean;
   isLocked: boolean;
   unlockDate?: Date;
+  standard?: string;  // Added to support NFTGrid component
+  creator?: string;   // Added to support additional metadata
+  properties?: string; // Added to support additional metadata
 }
 
 export interface ClaimHistory {

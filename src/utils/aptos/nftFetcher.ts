@@ -1,6 +1,5 @@
-
 import { toast } from "sonner";
-import { APTOS_INDEXER_API } from "./constants";
+import { APTOS_INDEXER_API, IS_TESTNET } from "./constants";
 import { BlockchainNFT } from "./types";
 
 /**
@@ -12,6 +11,7 @@ import { BlockchainNFT } from "./types";
 export const fetchFromIndexer = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   try {
     console.log(`Querying Aptos Indexer for wallet: ${walletAddress}, collection: ${collectionName}`);
+    console.log(`Using testnet: ${IS_TESTNET}`);
     
     // Use the recommended GraphQL query format for Aptos
     const query = {
@@ -93,11 +93,40 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
 export const fetchFromNodeAPI = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress} from collection: ${collectionName}`);
+    console.log(`Using testnet: ${IS_TESTNET}`);
     
-    // In a production environment, we would implement a call to the Aptos Node API
-    // For this implementation, we'll use the existing mock data approach
+    // For testnet, we'll use more test data since collections might be different
+    if (IS_TESTNET) {
+      // Return testnet mock data
+      return [
+        {
+          tokenId: "testnet-token-1",
+          name: "Testnet Lion #1",
+          imageUrl: "https://picsum.photos/seed/testlion1/300/300",
+          creator: "0x1",
+          standard: "v2",
+          properties: "{}"
+        },
+        {
+          tokenId: "testnet-token-2",
+          name: "Testnet Lion #2",
+          imageUrl: "https://picsum.photos/seed/testlion2/300/300",
+          creator: "0x1",
+          standard: "v2",
+          properties: "{}"
+        },
+        {
+          tokenId: "testnet-token-3",
+          name: "Testnet Lion #3",
+          imageUrl: "https://picsum.photos/seed/testlion3/300/300",
+          creator: "0x1",
+          standard: "v2",
+          properties: "{}"
+        }
+      ];
+    }
     
-    // First try with the mainnet API
+    // Original mainnet fallback logic
     try {
       const tokenStoreResource = await fetch(`https://fullnode.mainnet.aptoslabs.com/v1/accounts/${walletAddress}/resource/0x3::token::TokenStore`);
       
@@ -190,4 +219,3 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
     return "https://picsum.photos/seed/default/300/300";
   }
 };
-
