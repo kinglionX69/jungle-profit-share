@@ -45,12 +45,21 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     
     try {
       if (walletName === 'petra' && window.aptos) {
-        const { address } = await window.aptos.connect();
-        const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
-        setAddress(address);
-        setConnected(true);
-        setIsAdmin(adminStatus);
-        setWalletType('petra');
+        console.log("Connecting to Petra wallet...");
+        try {
+          const { address } = await window.aptos.connect();
+          console.log("Petra wallet connected with address:", address);
+          const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
+          setAddress(address);
+          setConnected(true);
+          setIsAdmin(adminStatus);
+          setWalletType('petra');
+          toast.success("Petra wallet connected!");
+        } catch (error) {
+          console.error("Petra wallet connection error:", error);
+          toast.error("Failed to connect Petra wallet");
+          throw error;
+        }
       } else if (walletName === 'martian' && window.martian) {
         const response = await window.martian.connect();
         const { adminStatus } = await handleSuccessfulConnection(response.address, "Martian");
@@ -88,7 +97,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   // Main connect function to show wallet selector
   const connect = async () => {
-    setShowWalletSelector(true);
+    // Check if Petra wallet is installed first
+    if (window.aptos) {
+      // For this app, prioritize Petra wallet
+      try {
+        toast.loading("Connecting to Petra wallet...");
+        await connectWallet('petra');
+        toast.dismiss();
+      } catch (error) {
+        console.error("Petra auto-connect error:", error);
+        toast.dismiss();
+        // Show wallet selector if Petra auto-connect fails
+        setShowWalletSelector(true);
+      }
+    } else {
+      // No Petra wallet, show selector with other options
+      setShowWalletSelector(true);
+      toast.info("Petra wallet not detected. Please install it or choose another wallet.");
+    }
   };
   
   const disconnect = () => {

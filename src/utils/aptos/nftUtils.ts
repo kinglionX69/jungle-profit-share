@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
-import { NFT_COLLECTION_NAME, USE_DEMO_MODE } from "./constants";
+import { NFT_COLLECTION_NAME, USE_DEMO_MODE, CREATOR_ADDRESS } from "./constants";
 import { enhancedNFTFetch } from "./enhancedNFTFetcher";
 
 /**
@@ -13,6 +13,7 @@ import { enhancedNFTFetch } from "./enhancedNFTFetcher";
 export const getNFTsInWallet = async (walletAddress: string, collectionName: string = NFT_COLLECTION_NAME) => {
   try {
     console.log(`Attempting to get NFTs for wallet: ${walletAddress} from collection: ${collectionName}`);
+    console.log(`Looking for creator address: ${CREATOR_ADDRESS}`);
     
     if (!walletAddress) {
       console.error("No wallet address provided");
@@ -22,15 +23,18 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
     // Use enhanced fetcher that tries multiple approaches
     const allNfts = await enhancedNFTFetch(walletAddress, collectionName);
     
-    // Filter the NFTs to match our collection if specified
-    const filteredNfts = collectionName 
-      ? allNfts.filter(nft => 
-          nft.collectionName === collectionName || 
-          (nft.properties && nft.properties.includes(collectionName))
-        )
-      : allNfts;
+    // Filter the NFTs to match our collection name AND creator address
+    const filteredNfts = allNfts.filter(nft => {
+      const matchesCollection = nft.collectionName === collectionName || 
+                               (nft.properties && nft.properties.includes(collectionName));
       
-    console.log(`Found ${filteredNfts.length} NFTs matching collection ${collectionName}`);
+      const matchesCreator = nft.creator === CREATOR_ADDRESS || 
+                            (nft.properties && nft.properties.includes(CREATOR_ADDRESS));
+      
+      return matchesCollection && matchesCreator;
+    });
+      
+    console.log(`Found ${filteredNfts.length} NFTs matching collection '${collectionName}' and creator '${CREATOR_ADDRESS}'`);
     
     // If we found no NFTs but demo mode is enabled, return demo NFTs
     if (filteredNfts.length === 0 && USE_DEMO_MODE) {

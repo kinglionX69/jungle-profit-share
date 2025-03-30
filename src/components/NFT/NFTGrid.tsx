@@ -24,7 +24,7 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
         <NFTGridSkeleton />
         <div className="mt-6 flex items-center justify-center text-muted-foreground">
           <Loader className="h-5 w-5 animate-spin mr-2" />
-          <span>Searching for NFTs in your wallet...</span>
+          <span>Searching for Proud Lion NFTs in your wallet...</span>
         </div>
       </div>
     );

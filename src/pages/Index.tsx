@@ -1,13 +1,15 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Award, Clock, Shield, Leaf, Palmtree } from 'lucide-react';
+import { ArrowRight, Award, Clock, Shield, Leaf, Palmtree, Wallet } from 'lucide-react';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
 import WalletSelector from '@/components/Auth/WalletSelector';
+import { toast } from 'sonner';
+import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,14 +19,38 @@ const Index = () => {
     connectWallet, 
     connecting,
     showWalletSelector,
-    setShowWalletSelector
+    setShowWalletSelector,
+    walletType
   } = useWallet();
+  
+  // Check for Petra wallet on page load
+  useEffect(() => {
+    if (!window.aptos) {
+      console.log("Petra wallet not detected");
+    } else {
+      console.log("Petra wallet detected");
+    }
+  }, []);
+
+  const handleConnectPetra = async () => {
+    if (!window.aptos) {
+      toast.error("Please install Petra Wallet to continue");
+      window.open("https://petra.app", "_blank");
+      return;
+    }
+    
+    try {
+      await connectWallet('petra');
+    } catch (error) {
+      console.error("Failed to connect Petra wallet:", error);
+    }
+  };
   
   const features = [
     {
       icon: <Award className="h-10 w-10" />,
       title: 'Exclusive Rewards',
-      description: 'Earn APT tokens simply for holding your Proud Lions Club NFTs.',
+      description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos.`,
     },
     {
       icon: <Clock className="h-10 w-10" />,
@@ -49,7 +75,7 @@ const Index = () => {
             <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
               <div className="inline-block animate-float">
                 <div className="bg-amber-500/20 text-amber-400 px-4 py-1.5 rounded-full text-sm font-medium mb-8 font-nunito">
-                  Proud Lions Club NFT Rewards
+                  {NFT_COLLECTION_NAME} NFT Rewards on Aptos Testnet
                 </div>
               </div>
               
@@ -58,7 +84,7 @@ const Index = () => {
               </h1>
               
               <p className="text-xl text-muted-foreground mb-8 slide-up [animation-delay:400ms] max-w-2xl font-nunito">
-                Claim your share of the profits for holding Proud Lions Club NFTs. Connect your wallet to start earning rewards today.
+                Connect your Petra wallet on Aptos Testnet to view your {NFT_COLLECTION_NAME} NFTs and start earning rewards today.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 slide-up [animation-delay:600ms]">
@@ -74,12 +100,16 @@ const Index = () => {
                 ) : (
                   <Button 
                     size="lg" 
-                    onClick={connect}
+                    onClick={handleConnectPetra}
                     className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow"
                     disabled={connecting}
                   >
-                    {connecting ? 'Connecting...' : 'Connect Wallet'}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {connecting ? 'Connecting...' : (
+                      <>
+                        <Wallet className="mr-2 h-5 w-5" />
+                        Connect Petra Wallet
+                      </>
+                    )}
                   </Button>
                 )}
                 
@@ -128,14 +158,36 @@ const Index = () => {
             </div>
             
             <div className="mt-20 text-center">
-              <h2 className="text-3xl font-bold mb-4 font-poppins">Ready to claim your rewards?</h2>
+              <h2 className="text-3xl font-bold mb-6 font-poppins">
+                Connect your Petra Wallet to get started
+              </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto mb-8 font-nunito">
-                Connect your wallet to view your eligible NFTs and start claiming your rewards.
+                Connect your wallet to view your {NFT_COLLECTION_NAME} NFTs and start claiming your rewards.
               </p>
               
-              <div className="max-w-md mx-auto p-8 border border-jungle-700/20 rounded-xl glass">
-                <WalletConnect />
-              </div>
+              {!window.aptos ? (
+                <div className="max-w-md mx-auto p-8 border border-jungle-700/20 rounded-xl glass">
+                  <div className="bg-amber-500/20 p-3 rounded-full mb-4">
+                    <Wallet className="h-10 w-10 text-amber-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 font-poppins">Petra Wallet Required</h3>
+                  <p className="text-muted-foreground mb-6 font-nunito">
+                    Please install Petra Wallet to connect to the Aptos blockchain and view your NFTs.
+                  </p>
+                  <Button
+                    size="lg"
+                    onClick={() => window.open("https://petra.app", "_blank")}
+                    className="bg-amber-500 hover:bg-amber-600 text-black font-medium"
+                  >
+                    Install Petra Wallet
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="max-w-md mx-auto p-8 border border-jungle-700/20 rounded-xl glass">
+                  <WalletConnect />
+                </div>
+              )}
             </div>
           </PageContainer>
         </section>
