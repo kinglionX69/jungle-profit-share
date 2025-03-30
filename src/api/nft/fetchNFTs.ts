@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getNFTsInWallet } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
+import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
 
 /**
  * Fetches NFTs for a wallet from the blockchain and determines eligibility
@@ -11,6 +12,7 @@ import { NFT } from "../types/nft.types";
 export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
   try {
     console.log(`Attempting to fetch NFTs for wallet: ${walletAddress}`);
+    console.log(`Using collection name: ${NFT_COLLECTION_NAME}`);
     
     if (!walletAddress) {
       console.error("No wallet address provided");
@@ -19,7 +21,7 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
     
     // Get NFTs from blockchain
     try {
-      const blockchainNfts = await getNFTsInWallet(walletAddress);
+      const blockchainNfts = await getNFTsInWallet(walletAddress, NFT_COLLECTION_NAME);
       
       // If no NFTs found on blockchain, provide mock data for testing
       if (!blockchainNfts || blockchainNfts.length === 0) {
@@ -31,7 +33,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
             name: "Proud Lion #1",
             imageUrl: "https://picsum.photos/seed/lion1/300/300",
             isEligible: true,
-            isLocked: false
+            isLocked: false,
+            standard: "v2",
+            creator: "0x1"
           },
           {
             tokenId: "mock-token-2",
@@ -39,7 +43,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
             imageUrl: "https://picsum.photos/seed/lion2/300/300",
             isEligible: false,
             isLocked: true,
-            unlockDate: new Date(Date.now() + 86400000 * 15) // 15 days from now
+            unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
+            standard: "v2",
+            creator: "0x1"
           }
         ];
       }
@@ -52,7 +58,10 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
         name: nft.name,
         imageUrl: nft.imageUrl || "https://picsum.photos/seed/lion1/300/300", // Fallback image
         isEligible: true, // Default to eligible, we'll check locks below
-        isLocked: false
+        isLocked: false,
+        standard: nft.standard,
+        creator: nft.creator,
+        properties: nft.properties
       }));
       
       // Fetch NFT claims from Supabase to determine what's locked
@@ -89,7 +98,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
           name: "Proud Lion #1",
           imageUrl: "https://picsum.photos/seed/lion1/300/300",
           isEligible: true,
-          isLocked: false
+          isLocked: false,
+          standard: "v2",
+          creator: "0x1"
         },
         {
           tokenId: "mock-token-2",
@@ -97,14 +108,18 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
           imageUrl: "https://picsum.photos/seed/lion2/300/300",
           isEligible: false,
           isLocked: true,
-          unlockDate: new Date(Date.now() + 86400000 * 15) // 15 days from now
+          unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
+          standard: "v2",
+          creator: "0x1"
         },
         {
           tokenId: "mock-token-3",
           name: "Proud Lion #3",
           imageUrl: "https://picsum.photos/seed/lion3/300/300",
           isEligible: true,
-          isLocked: false
+          isLocked: false,
+          standard: "v2",
+          creator: "0x1"
         },
         {
           tokenId: "mock-token-4",
@@ -112,7 +127,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
           imageUrl: "https://picsum.photos/seed/lion4/300/300",
           isEligible: false,
           isLocked: true,
-          unlockDate: new Date(Date.now() + 86400000 * 5) // 5 days from now
+          unlockDate: new Date(Date.now() + 86400000 * 5), // 5 days from now
+          standard: "v2",
+          creator: "0x1"
         }
       ];
     }
@@ -127,7 +144,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
         name: "Proud Lion #1",
         imageUrl: "https://picsum.photos/seed/lion1/300/300",
         isEligible: true,
-        isLocked: false
+        isLocked: false,
+        standard: "v2",
+        creator: "0x1"
       },
       {
         tokenId: "mock-token-2",
@@ -135,7 +154,9 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
         imageUrl: "https://picsum.photos/seed/lion2/300/300",
         isEligible: false,
         isLocked: true,
-        unlockDate: new Date(Date.now() + 86400000 * 15) // 15 days from now
+        unlockDate: new Date(Date.now() + 86400000 * 15), // 15 days from now
+        standard: "v2",
+        creator: "0x1"
       }
     ];
   }

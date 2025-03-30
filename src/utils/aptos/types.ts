@@ -1,3 +1,4 @@
+
 /**
  * Type definitions for Aptos interactions
  */
@@ -10,6 +11,8 @@ export interface BlockchainNFT {
   creator?: string;
   standard?: string;
   properties?: string;
+  collectionName?: string;
+  collectionId?: string;
 }
 
 // Define types for transaction results

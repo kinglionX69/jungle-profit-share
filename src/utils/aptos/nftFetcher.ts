@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { APTOS_INDEXER_API, IS_TESTNET } from "./constants";
+import { APTOS_INDEXER_API, IS_TESTNET, NFT_COLLECTION_ID, NFT_COLLECTION_NAME } from "./constants";
 import { BlockchainNFT } from "./types";
 
 /**
@@ -11,22 +11,28 @@ import { BlockchainNFT } from "./types";
 export const fetchFromIndexer = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   try {
     console.log(`Querying Aptos Indexer for wallet: ${walletAddress}, collection: ${collectionName}`);
+    console.log(`Collection ID: ${NFT_COLLECTION_ID}`);
     console.log(`Using testnet: ${IS_TESTNET}`);
     
     // Use the recommended GraphQL query format for Aptos
+    // Adding collection_id filter for more precise matching
     const query = {
       query: `
-        query CurrentTokens($owner_address: String, $collection_name: String) {
+        query CurrentTokens($owner_address: String, $collection_name: String, $collection_id: String) {
           current_token_ownerships(
             where: {
               owner_address: {_eq: $owner_address},
               collection_name: {_eq: $collection_name},
-              amount: {_gt: "0"}
+              _or: [
+                {collection_id: {_eq: $collection_id}},
+                {amount: {_gt: "0"}}
+              ]
             }
             limit: 50
           ) {
             name
             collection_name
+            collection_id
             property_version
             token_data_id_hash
             creator_address
@@ -39,7 +45,8 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
       `,
       variables: {
         owner_address: walletAddress,
-        collection_name: collectionName
+        collection_name: collectionName,
+        collection_id: NFT_COLLECTION_ID
       },
     };
 
@@ -76,7 +83,9 @@ export const fetchFromIndexer = async (walletAddress: string, collectionName: st
       imageUrl: token.metadata_uri || "",
       creator: token.creator_address,
       standard: token.token_standard,
-      properties: token.token_properties
+      properties: token.token_properties,
+      collectionName: token.collection_name,
+      collectionId: token.collection_id
     }));
   } catch (error) {
     console.error("Error fetching from indexer:", error);

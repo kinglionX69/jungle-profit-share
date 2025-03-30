@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
 interface NFTGridProps {
   filterEligible?: boolean;
@@ -59,11 +60,11 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
           <AlertTitle>No NFTs Found</AlertTitle>
           <AlertDescription>
             {filterEligible ? 
-              "We couldn't find any eligible NFTs for claiming. This could be because all your NFTs are currently locked or you don't own any NFTs from the Proud Lions Club collection." :
-              "We couldn't find any Proud Lions Club NFTs in your wallet. This could be due to:"}
+              `We couldn't find any eligible NFTs for claiming. This could be because all your NFTs are currently locked or you don't own any NFTs from the ${NFT_COLLECTION_NAME} collection.` :
+              `We couldn't find any ${NFT_COLLECTION_NAME} NFTs in your wallet. This could be due to:`}
             {!filterEligible && (
               <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>You don't own any NFTs from the Proud Lions Club collection</li>
+                <li>You don't own any NFTs from the {NFT_COLLECTION_NAME} collection</li>
                 <li>There might be connection issues with the Aptos blockchain</li>
                 <li>The wallet might not be properly connected</li>
               </ul>
@@ -154,8 +155,10 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
                   <TooltipContent className="max-w-xs">
                     <div className="text-xs">
                       <p className="font-semibold mb-1">NFT Details</p>
+                      <p>Collection: {NFT_COLLECTION_NAME}</p>
                       <p>Token ID: {nft.tokenId}</p>
                       {nft.standard && <p>Standard: {nft.standard}</p>}
+                      {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
                       {nft.isLocked && nft.unlockDate && (
                         <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
                       )}
@@ -186,6 +189,9 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
                   </Badge>
                 )}
               </div>
+              <Badge variant="secondary" className="text-xs">
+                {NFT_COLLECTION_NAME}
+              </Badge>
             </div>
           </div>
         </div>
@@ -195,4 +201,3 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
 };
 
 export default NFTGrid;
-
