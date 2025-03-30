@@ -13,6 +13,21 @@ export const fetchFromNodeAPI = async (walletAddress: string, collectionName: st
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress} from collection: ${collectionName}`);
     
+    if (!walletAddress) {
+      throw new Error("Wallet address is required for Node API");
+    }
+    
+    if (!collectionName) {
+      throw new Error("Collection name is required for Node API");
+    }
+    
+    // Display wallet and collection for debugging
+    console.log("Wallet address format check:", {
+      length: walletAddress.length,
+      startsWithZeroX: walletAddress.startsWith("0x"),
+      containsOnlyHex: /^0x[0-9a-fA-F]+$/.test(walletAddress)
+    });
+    
     // Use the resources API endpoint to fetch NFTs
     return await fetchFromResourcesAPI(walletAddress, collectionName);
   } catch (error) {

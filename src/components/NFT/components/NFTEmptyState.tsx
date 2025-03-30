@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Copy, ExternalLink } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+import { NFT_COLLECTION_NAME, APTOS_API, IS_TESTNET } from '@/utils/aptos/constants';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface NFTEmptyStateProps {
   filterEligible: boolean;
@@ -17,12 +18,17 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
       timestamp: new Date().toISOString(),
       collection: NFT_COLLECTION_NAME,
       screen: `${window.innerWidth}x${window.innerHeight}`,
-      error: "No NFTs found"
+      error: "No NFTs found",
+      network: IS_TESTNET ? "testnet" : "mainnet",
+      apiEndpoint: APTOS_API
     };
     
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2))
-      .then(() => alert("Debug info copied to clipboard"))
-      .catch(err => console.error("Failed to copy debug info", err));
+      .then(() => toast.success("Debug info copied to clipboard"))
+      .catch(err => {
+        console.error("Failed to copy debug info", err);
+        toast.error("Failed to copy debug info");
+      });
   };
   
   return (
@@ -53,23 +59,41 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
         <ul className="text-sm text-left max-w-lg mx-auto mt-4 space-y-2">
           <li>• Refreshing the page</li>
           <li>• Disconnecting and reconnecting your wallet</li>
-          <li>• Making sure your wallet is connected to the Aptos Testnet</li>
+          <li>• Making sure your wallet is connected to the {IS_TESTNET ? "Aptos Testnet" : "Aptos Mainnet"}</li>
           <li>• Using a different browser or device</li>
+          <li>• Checking if you have NFTs in the {NFT_COLLECTION_NAME} collection</li>
         </ul>
-        <div className="mt-6 flex gap-4 justify-center">
-          <Button variant="outline" size="sm" onClick={copyDebugInfo}>
+        <div className="mt-6 flex flex-wrap gap-4 justify-center">
+          <Button variant="outline" size="sm" onClick={copyDebugInfo} className="flex items-center">
+            <Copy className="h-4 w-4 mr-2" />
             Copy Debug Info
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => window.open('https://explorer.aptoslabs.com/', '_blank')}
+            className="flex items-center"
           >
+            <ExternalLink className="h-4 w-4 mr-2" />
             Open Aptos Explorer
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              // Reload the page with debug parameter
+              const url = new URL(window.location.href);
+              url.searchParams.set('debug', 'true');
+              window.location.href = url.toString();
+            }}
+            className="flex items-center"
+          >
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Show Debug Info
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-4">
-          Add ?debug=true to the URL for more diagnostic information
+          Network: {IS_TESTNET ? "Testnet" : "Mainnet"} | API Endpoint: {APTOS_API.substring(0, 30)}...
         </p>
       </div>
     </div>

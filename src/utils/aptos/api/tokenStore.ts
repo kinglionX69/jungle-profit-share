@@ -1,5 +1,5 @@
 import { BlockchainNFT } from "../types";
-import { CREATOR_ADDRESS } from "../constants";
+import { CREATOR_ADDRESS, NFT_COLLECTION_NAME, NFT_COLLECTION_ID } from "../constants";
 
 /**
  * Extract tokens from a TokenStore resource
@@ -16,89 +16,122 @@ export async function extractTokensFromResource(
   const tokens: BlockchainNFT[] = [];
   
   try {
+    console.log("Extracting tokens from resource:", JSON.stringify(tokenStoreResource, null, 2).slice(0, 500) + "...");
+    
     // Look for tokens in the store that match our collection
-    if (tokenStoreResource.data) {
-      // Handle different token store data structures
-      let tokenMap = null;
-      
+    if (!tokenStoreResource.data) {
+      console.error("TokenStore resource has no data property");
+      return tokens;
+    }
+    
+    // Handle different token store data structures
+    let tokenMap = null;
+    
+    // Try multiple possible structures
+    const possiblePaths = [
       // V1 format
-      if (tokenStoreResource.data.tokens) {
-        tokenMap = tokenStoreResource.data.tokens.tokens || tokenStoreResource.data.tokens;
-        console.log("Found tokens in V1 TokenStore format");
-      } 
+      tokenStoreResource.data.tokens?.tokens,
+      tokenStoreResource.data.tokens,
       // V2 format
-      else if (tokenStoreResource.data.token_data) {
-        tokenMap = tokenStoreResource.data.token_data;
-        console.log("Found tokens in V2 TokenStore format");
-      }
+      tokenStoreResource.data.token_data,
       // Other potential formats
-      else if (tokenStoreResource.data.data) {
-        tokenMap = tokenStoreResource.data.data.tokens || tokenStoreResource.data.data;
-        console.log("Found tokens in alternative TokenStore format");
+      tokenStoreResource.data.data?.tokens,
+      tokenStoreResource.data.data,
+      // Direct access
+      tokenStoreResource.data
+    ];
+    
+    // Find the first valid token map
+    for (const path of possiblePaths) {
+      if (path && typeof path === 'object' && !Array.isArray(path)) {
+        tokenMap = path;
+        console.log("Found tokens using format:", path === tokenStoreResource.data.tokens?.tokens ? "V1-nested" :
+                                               path === tokenStoreResource.data.tokens ? "V1-flat" :
+                                               path === tokenStoreResource.data.token_data ? "V2" :
+                                               path === tokenStoreResource.data.data?.tokens ? "alt-nested" :
+                                               path === tokenStoreResource.data.data ? "alt-flat" : "direct");
+        break;
       }
+    }
+    
+    if (!tokenMap) {
+      console.error("Could not find valid token map in resource");
+      return tokens;
+    }
+    
+    console.log(`Processing tokens map with ${Object.keys(tokenMap).length} entries`);
+    
+    // Process each token to find matches for our collection
+    for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
+      const lowerTokenId = tokenId.toLowerCase();
+      const lowerCollectionName = collectionName.toLowerCase();
+      const lowerCollectionId = NFT_COLLECTION_ID?.toLowerCase() || '';
+      const lowerCreatorAddress = CREATOR_ADDRESS.toLowerCase();
       
-      if (tokenMap && typeof tokenMap === 'object') {
-        console.log("Processing tokens from TokenStore");
+      // Check if this token belongs to our collection by ID, name, or creator
+      const matchesCollection = 
+        lowerTokenId.includes(lowerCollectionName) || 
+        (lowerCollectionId && lowerTokenId.includes(lowerCollectionId)) || 
+        lowerTokenId.includes(lowerCreatorAddress);
         
-        // Process each token to find matches for our collection
-        for (const [tokenId, tokenData] of Object.entries(tokenMap)) {
-          // Check if this token belongs to our collection by ID, name, or creator
-          if (
-            tokenId.includes(collectionName) || 
-            tokenId.includes(process.env.NFT_COLLECTION_ID || '') || 
-            tokenId.includes(CREATOR_ADDRESS)
-          ) {
-            console.log(`Found matching token: ${tokenId}`);
+      if (matchesCollection) {
+        console.log(`Found potentially matching token: ${tokenId}`);
+        
+        try {
+          // Create a standard NFT entry with available data
+          const nft: BlockchainNFT = {
+            tokenId: tokenId,
+            name: `${NFT_COLLECTION_NAME} #${tokenId.substring(0, 6)}`,
+            imageUrl: "",
+            creator: CREATOR_ADDRESS,
+            standard: "v2",
+            properties: "{}"
+          };
+          
+          // Try to extract additional data if available
+          if (tokenData && typeof tokenData === 'object') {
+            const tokenObj = tokenData as Record<string, any>;
             
-            try {
-              // Use properly type-guarded access for tokenData properties
-              // First check if tokenData is an object
-              if (tokenData && typeof tokenData === 'object') {
-                // Using type assertion with 'as' and 'in' operator for safe property access
-                const tokenObj = tokenData as Record<string, any>;
-                
-                const name = 'name' in tokenObj && typeof tokenObj.name === 'string'
-                  ? tokenObj.name
-                  : `Proud Lion #${tokenId.substring(0, 6)}`;
-                  
-                const imageUrl = 'uri' in tokenObj && typeof tokenObj.uri === 'string'
-                  ? tokenObj.uri
-                  : "";
-                  
-                const creator = 'creator' in tokenObj && typeof tokenObj.creator === 'string'
-                  ? tokenObj.creator
-                  : CREATOR_ADDRESS;
-                  
-                const properties = 'properties' in tokenObj && tokenObj.properties
-                  ? JSON.stringify(tokenObj.properties)
-                  : "{}";
-                  
-                tokens.push({
-                  tokenId: tokenId,
-                  name: name,
-                  imageUrl: imageUrl,
-                  creator: creator,
-                  standard: "v2",
-                  properties: properties
-                });
-              } else {
-                // If tokenData is not an object, create a minimal NFT with defaults
-                tokens.push({
-                  tokenId: tokenId,
-                  name: `Proud Lion #${tokenId.substring(0, 6)}`,
-                  imageUrl: "",
-                  creator: CREATOR_ADDRESS,
-                  standard: "v2",
-                  properties: "{}"
-                });
+            // Name extraction
+            if ('name' in tokenObj && typeof tokenObj.name === 'string') {
+              nft.name = tokenObj.name;
+            }
+            
+            // URI/Image extraction - multiple possible property names
+            const uriProperties = ['uri', 'metadata_uri', 'image', 'content_uri'];
+            for (const prop of uriProperties) {
+              if (prop in tokenObj && typeof tokenObj[prop] === 'string') {
+                nft.imageUrl = tokenObj[prop];
+                break;
               }
-            } catch (tokenError) {
-              console.error(`Error processing token ${tokenId}:`, tokenError);
+            }
+            
+            // Creator extraction
+            if ('creator' in tokenObj && typeof tokenObj.creator === 'string') {
+              nft.creator = tokenObj.creator;
+            }
+            
+            // Properties extraction
+            if ('properties' in tokenObj) {
+              try {
+                nft.properties = typeof tokenObj.properties === 'string' 
+                  ? tokenObj.properties 
+                  : JSON.stringify(tokenObj.properties);
+              } catch (e) {
+                nft.properties = "{}";
+              }
             }
           }
+          
+          tokens.push(nft);
+          console.log(`Added token: ${nft.name} with ID ${nft.tokenId}`);
+        } catch (tokenError) {
+          console.error(`Error processing token ${tokenId}:`, tokenError);
         }
       }
     }
+    
+    console.log(`Extracted ${tokens.length} tokens from resource`);
   } catch (extractError) {
     console.error("Error extracting tokens from resource:", extractError);
   }
