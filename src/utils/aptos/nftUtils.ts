@@ -1,8 +1,8 @@
 
 import { toast } from "sonner";
 import { BlockchainNFT } from "./types";
-import { fetchNFTsWithFallback } from "./nftFetcher";
 import { NFT_COLLECTION_NAME } from "./constants";
+import { enhancedNFTFetch } from "./enhancedNFTFetcher";
 
 /**
  * Check if the user has NFTs from the specified collection
@@ -19,7 +19,8 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
       return [];
     }
     
-    return await fetchNFTsWithFallback(walletAddress, collectionName);
+    // Use the enhanced fetcher that tries multiple approaches
+    return await enhancedNFTFetch(walletAddress, collectionName);
   } catch (error) {
     console.error("Error getting NFTs:", error);
     toast.error("Failed to fetch NFTs. Please try again later.");

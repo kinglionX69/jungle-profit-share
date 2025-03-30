@@ -1,16 +1,23 @@
 
-import React from 'react';
-import { AlertCircle, Copy, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, Copy, ExternalLink, Sparkles, RefreshCw, HeartHandshake } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { NFT_COLLECTION_NAME, APTOS_API, IS_TESTNET } from '@/utils/aptos/constants';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useUser } from '@/context/UserContext';
+import { useWallet } from '@/context/WalletContext';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface NFTEmptyStateProps {
   filterEligible: boolean;
 }
 
 const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
+  const { fetchUserData } = useUser();
+  const { address } = useWallet();
+  const [attemptingFix, setAttemptingFix] = useState(false);
+  
   // Function to copy debug info to clipboard
   const copyDebugInfo = () => {
     const debugInfo = {
@@ -20,7 +27,8 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
       screen: `${window.innerWidth}x${window.innerHeight}`,
       error: "No NFTs found",
       network: IS_TESTNET ? "testnet" : "mainnet",
-      apiEndpoint: APTOS_API
+      apiEndpoint: APTOS_API,
+      walletAddress: address
     };
     
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2))
@@ -31,8 +39,28 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
       });
   };
   
+  // Function to attempt automatic fixes
+  const attemptFix = async () => {
+    setAttemptingFix(true);
+    toast.info("Attempting to fix NFT display issues...");
+    
+    try {
+      // Refresh NFT data with force flag
+      if (fetchUserData) {
+        await fetchUserData();
+      }
+      
+      toast.success("Refresh complete. Please check if your NFTs appear now.");
+    } catch (error) {
+      console.error("Error attempting fix:", error);
+      toast.error("Failed to fix issues automatically");
+    } finally {
+      setAttemptingFix(false);
+    }
+  };
+  
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Alert variant="default">
         <AlertCircle className="h-4 w-4 mr-2" />
         <AlertTitle>No NFTs Found</AlertTitle>
@@ -51,49 +79,106 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible }) => {
         </AlertDescription>
       </Alert>
       
-      <div className="text-center py-10 border rounded-lg bg-card">
-        <h3 className="text-lg font-medium">Troubleshooting</h3>
+      <div className="text-center py-8 border rounded-lg bg-card">
+        <div className="flex justify-center mb-4">
+          <HeartHandshake className="h-12 w-12 text-primary opacity-75" />
+        </div>
+        <h3 className="text-xl font-medium">We're Here to Help</h3>
         <p className="text-muted-foreground mt-2 max-w-xl mx-auto">
-          If you believe this is an error and you should see NFTs, please try:
+          Let's try to solve this together. Here are some steps you can take:
         </p>
-        <ul className="text-sm text-left max-w-lg mx-auto mt-4 space-y-2">
-          <li>• Refreshing the page</li>
-          <li>• Disconnecting and reconnecting your wallet</li>
-          <li>• Making sure your wallet is connected to the {IS_TESTNET ? "Aptos Testnet" : "Aptos Mainnet"}</li>
-          <li>• Using a different browser or device</li>
-          <li>• Checking if you have NFTs in the {NFT_COLLECTION_NAME} collection</li>
-        </ul>
-        <div className="mt-6 flex flex-wrap gap-4 justify-center">
-          <Button variant="outline" size="sm" onClick={copyDebugInfo} className="flex items-center">
+        
+        <Accordion type="single" collapsible className="max-w-lg mx-auto mt-6">
+          <AccordionItem value="troubleshooting">
+            <AccordionTrigger className="text-left px-4">Troubleshooting Steps</AccordionTrigger>
+            <AccordionContent className="text-left px-6 pb-4">
+              <ul className="text-sm space-y-3">
+                <li className="flex items-start gap-2">
+                  <div className="bg-muted rounded-full w-5 h-5 flex items-center justify-center mt-0.5 flex-shrink-0">1</div>
+                  <div>
+                    <p className="font-medium">Refresh the browser</p>
+                    <p className="text-muted-foreground">Sometimes a simple refresh can fix connection issues.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="bg-muted rounded-full w-5 h-5 flex items-center justify-center mt-0.5 flex-shrink-0">2</div>
+                  <div>
+                    <p className="font-medium">Check your wallet connection</p>
+                    <p className="text-muted-foreground">Disconnect and reconnect your wallet.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="bg-muted rounded-full w-5 h-5 flex items-center justify-center mt-0.5 flex-shrink-0">3</div>
+                  <div>
+                    <p className="font-medium">Verify network settings</p>
+                    <p className="text-muted-foreground">Make sure your wallet is connected to the {IS_TESTNET ? "Aptos Testnet" : "Aptos Mainnet"}.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="bg-muted rounded-full w-5 h-5 flex items-center justify-center mt-0.5 flex-shrink-0">4</div>
+                  <div>
+                    <p className="font-medium">Check NFT ownership</p>
+                    <p className="text-muted-foreground">Verify on Aptos Explorer that you own NFTs in the {NFT_COLLECTION_NAME} collection.</p>
+                  </div>
+                </li>
+              </ul>
+            </AccordionContent>
+          </AccordionItem>
+          
+          <AccordionItem value="technical-details">
+            <AccordionTrigger className="text-left px-4">Technical Details</AccordionTrigger>
+            <AccordionContent className="text-left px-6 pb-4 space-y-2 text-sm">
+              <p><strong>Wallet Address:</strong> {address || 'Not connected'}</p>
+              <p><strong>Network:</strong> {IS_TESTNET ? "Testnet" : "Mainnet"}</p>
+              <p><strong>Collection:</strong> {NFT_COLLECTION_NAME}</p>
+              <p><strong>API Endpoint:</strong> {APTOS_API.substring(0, 30)}...</p>
+              <p><strong>Browser:</strong> {navigator.userAgent.split(' ').slice(-2).join(' ')}</p>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        
+        <div className="mt-8 flex flex-wrap gap-4 justify-center">
+          <Button 
+            variant="default" 
+            className="flex items-center"
+            onClick={attemptFix}
+            disabled={attemptingFix}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            {attemptingFix ? "Attempting Fix..." : "Attempt Automatic Fix"}
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="flex items-center"
+            onClick={() => {
+              if (fetchUserData) {
+                toast.info("Refreshing NFT data...");
+                fetchUserData();
+              }
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh NFTs
+          </Button>
+          
+          <Button variant="outline" onClick={copyDebugInfo} className="flex items-center">
             <Copy className="h-4 w-4 mr-2" />
             Copy Debug Info
           </Button>
+          
           <Button 
-            variant="outline" 
-            size="sm" 
+            variant="outline"
             onClick={() => window.open('https://explorer.aptoslabs.com/', '_blank')}
             className="flex items-center"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             Open Aptos Explorer
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              // Reload the page with debug parameter
-              const url = new URL(window.location.href);
-              url.searchParams.set('debug', 'true');
-              window.location.href = url.toString();
-            }}
-            className="flex items-center"
-          >
-            <AlertCircle className="h-4 w-4 mr-2" />
-            Show Debug Info
-          </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-4">
-          Network: {IS_TESTNET ? "Testnet" : "Mainnet"} | API Endpoint: {APTOS_API.substring(0, 30)}...
+        
+        <p className="text-xs text-muted-foreground mt-6">
+          If none of these solutions work, try using a different wallet provider or browser.
         </p>
       </div>
     </div>

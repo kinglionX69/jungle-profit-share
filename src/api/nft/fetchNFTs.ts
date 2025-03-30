@@ -22,6 +22,7 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
     // Get NFTs from blockchain with improved logging
     try {
       console.log(`Fetching blockchain NFTs for wallet: ${walletAddress}`);
+      // This will use our enhanced fetcher via getNFTsInWallet
       const blockchainNfts = await getNFTsInWallet(walletAddress, NFT_COLLECTION_NAME);
       
       console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
