@@ -41,9 +41,15 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       
       // Check token_data_id if collection_name is still empty
       if (!collectionName && token.token_data_id) {
-        if (typeof token.token_data_id === 'object' && 'collection_id' in token.token_data_id) {
-          collectionName = String(token.token_data_id.collection_id || '');
-        } else if (typeof token.token_data_id === 'string' && token.token_data_id.includes(NFT_COLLECTION_NAME)) {
+        // Safely handle token_data_id that could be null/undefined
+        // Make sure we check for null before trying to access its properties
+        if (token.token_data_id && typeof token.token_data_id === 'object') {
+          const tokenDataId = token.token_data_id as Record<string, unknown>;
+          if ('collection_id' in tokenDataId) {
+            collectionName = String(tokenDataId.collection_id || '');
+          }
+        } else if (token.token_data_id && typeof token.token_data_id === 'string' && 
+                  token.token_data_id.includes(NFT_COLLECTION_NAME)) {
           // For string token_data_id, check if it contains the collection name
           collectionName = NFT_COLLECTION_NAME;
         }
