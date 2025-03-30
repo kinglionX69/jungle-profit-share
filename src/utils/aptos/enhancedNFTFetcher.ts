@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { 
   APTOS_API, 
@@ -28,7 +29,7 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
     walletAddress = `0x${walletAddress}`;
   }
   
-  let allNFTs: BlockchainNFT[] = [];
+  let allNfts: BlockchainNFT[] = [];
   let errors: string[] = [];
   
   // In test mode, directly return demo NFTs
@@ -55,8 +56,8 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
         
         // Add NFTs from this method, avoiding duplicates
         result.value.forEach(nft => {
-          if (!allNFTs.some(existingNft => existingNft.tokenId === nft.tokenId)) {
-            allNFTs.push(nft);
+          if (!allNfts.some(existingNft => existingNft.tokenId === nft.tokenId)) {
+            allNfts.push(nft);
           }
         });
       } else if (result.status === 'rejected') {
@@ -67,11 +68,11 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
       }
     });
     
-    console.log(`Combined results: ${allNFTs.length} unique NFTs found`);
+    console.log(`Combined results: ${allNfts.length} unique NFTs found`);
     
     // If we found any NFTs, process them
-    if (allNFTs.length > 0) {
-      const processedNFTs = await resolveNFTImages(allNFTs);
+    if (allNfts.length > 0) {
+      const processedNFTs = await resolveNFTImages(allNfts);
       console.log(`Processed ${processedNFTs.length} NFTs with images`);
       return processedNFTs;
     }
@@ -442,7 +443,7 @@ const fetchFromAccountResources = async (walletAddress: string, collectionName: 
       }
     }
     
-    return allNFTs;
+    return allNfts;
   } catch (error) {
     console.error("Error with account resources:", error);
     return [];
