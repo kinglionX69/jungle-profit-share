@@ -40,7 +40,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       }
       
       // Check token_data_id if collection_name is still empty
-      if (!collectionName && typeof token.token_data_id === 'object' && token.token_data_id) {
+      if (!collectionName && token.token_data_id && typeof token.token_data_id === 'object') {
         if ('collection_id' in token.token_data_id) {
           collectionName = String(token.token_data_id.collection_id || '');
         }
@@ -49,18 +49,24 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
       // Safely extract creator address
       if (typeof token === 'object' && token) {
         // Try to get creator from current_collection if it exists
-        if ('current_collection' in token && token.current_collection && 
-            typeof token.current_collection === 'object' && 
-            'creator_address' in token.current_collection) {
-          creatorAddress = String(token.current_collection.creator_address || '');
+        if ('current_collection' in token && 
+            token.current_collection && 
+            typeof token.current_collection === 'object') {
+          const collection = token.current_collection as Record<string, unknown>;
+          if ('creator_address' in collection) {
+            creatorAddress = String(collection.creator_address || '');
+          }
         }
         
         // Try to get creator from token_properties if it exists
-        if (!creatorAddress && 'token_properties_mutated_v1' in token && 
+        if (!creatorAddress && 
+            'token_properties_mutated_v1' in token && 
             token.token_properties_mutated_v1 && 
-            typeof token.token_properties_mutated_v1 === 'object' && 
-            'creator' in token.token_properties_mutated_v1) {
-          creatorAddress = String(token.token_properties_mutated_v1.creator || '');
+            typeof token.token_properties_mutated_v1 === 'object') {
+          const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+          if ('creator' in properties) {
+            creatorAddress = String(properties.creator || '');
+          }
         }
       }
       
@@ -85,45 +91,58 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         : JSON.stringify(token.token_data_id || {});
       
       // Try to extract name from token data
-      if (typeof token.token_data_id === 'object' && token.token_data_id && 'name' in token.token_data_id) {
-        name = String(token.token_data_id.name || name);
+      if (token.token_data_id && typeof token.token_data_id === 'object') {
+        const tokenDataId = token.token_data_id as Record<string, unknown>;
+        if ('name' in tokenDataId) {
+          name = String(tokenDataId.name || name);
+        }
       }
       
       // Try to extract name from token properties if available
       if (token.token_properties_mutated_v1 && 
-          typeof token.token_properties_mutated_v1 === 'object' && 
-          'name' in token.token_properties_mutated_v1) {
-        name = String(token.token_properties_mutated_v1.name || name);
+          typeof token.token_properties_mutated_v1 === 'object') {
+        const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+        if ('name' in properties) {
+          name = String(properties.name || name);
+        }
       }
       
       // Try to extract description
       if (token.current_token_data && 
-          typeof token.current_token_data === 'object' && 
-          'description' in token.current_token_data) {
-        description = String(token.current_token_data.description || '');
+          typeof token.current_token_data === 'object') {
+        const tokenData = token.current_token_data as Record<string, unknown>;
+        if ('description' in tokenData) {
+          description = String(tokenData.description || '');
+        }
       }
       
       // Try to get description from token properties if not found
       if (!description && 
           token.token_properties_mutated_v1 && 
-          typeof token.token_properties_mutated_v1 === 'object' && 
-          'description' in token.token_properties_mutated_v1) {
-        description = String(token.token_properties_mutated_v1.description || '');
+          typeof token.token_properties_mutated_v1 === 'object') {
+        const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+        if ('description' in properties) {
+          description = String(properties.description || '');
+        }
       }
       
       // Try to extract image URL
       if (token.token_properties_mutated_v1 && 
-          typeof token.token_properties_mutated_v1 === 'object' && 
-          'uri' in token.token_properties_mutated_v1) {
-        imageUrl = String(token.token_properties_mutated_v1.uri || '');
+          typeof token.token_properties_mutated_v1 === 'object') {
+        const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
+        if ('uri' in properties) {
+          imageUrl = String(properties.uri || '');
+        }
       }
       
       // Try to get URI from token data if not found
       if (!imageUrl && 
           token.current_token_data && 
-          typeof token.current_token_data === 'object' && 
-          'uri' in token.current_token_data) {
-        imageUrl = String(token.current_token_data.uri || '');
+          typeof token.current_token_data === 'object') {
+        const tokenData = token.current_token_data as Record<string, unknown>;
+        if ('uri' in tokenData) {
+          imageUrl = String(tokenData.uri || '');
+        }
       }
       
       // Build properties object
