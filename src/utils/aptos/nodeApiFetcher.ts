@@ -1,3 +1,4 @@
+
 import { BlockchainNFT } from "./types";
 import { APTOS_API, NFT_COLLECTION_ID, CREATOR_ADDRESS, TOKEN_STORE_ADDRESS } from "./constants";
 
@@ -111,31 +112,47 @@ async function extractTokensFromResource(
             console.log(`Found matching token: ${tokenId}`);
             
             try {
-              // Extract as much data as possible from the token
-              const name = typeof tokenData === 'object' && tokenData.name 
-                ? tokenData.name 
-                : `Proud Lion #${tokenId.substring(0, 6)}`;
+              // Use properly type-guarded access for tokenData properties
+              // First check if tokenData is an object
+              if (tokenData && typeof tokenData === 'object') {
+                // Using type assertion with 'as' and 'in' operator for safe property access
+                const tokenObj = tokenData as Record<string, any>;
                 
-              const imageUrl = typeof tokenData === 'object' && tokenData.uri 
-                ? tokenData.uri 
-                : "";
-                
-              const creator = typeof tokenData === 'object' && tokenData.creator 
-                ? tokenData.creator 
-                : CREATOR_ADDRESS;
-                
-              const properties = typeof tokenData === 'object' && tokenData.properties 
-                ? JSON.stringify(tokenData.properties) 
-                : "{}";
-                
-              tokens.push({
-                tokenId: tokenId,
-                name: name,
-                imageUrl: imageUrl,
-                creator: creator,
-                standard: "v2",
-                properties: properties
-              });
+                const name = 'name' in tokenObj && typeof tokenObj.name === 'string'
+                  ? tokenObj.name
+                  : `Proud Lion #${tokenId.substring(0, 6)}`;
+                  
+                const imageUrl = 'uri' in tokenObj && typeof tokenObj.uri === 'string'
+                  ? tokenObj.uri
+                  : "";
+                  
+                const creator = 'creator' in tokenObj && typeof tokenObj.creator === 'string'
+                  ? tokenObj.creator
+                  : CREATOR_ADDRESS;
+                  
+                const properties = 'properties' in tokenObj && tokenObj.properties
+                  ? JSON.stringify(tokenObj.properties)
+                  : "{}";
+                  
+                tokens.push({
+                  tokenId: tokenId,
+                  name: name,
+                  imageUrl: imageUrl,
+                  creator: creator,
+                  standard: "v2",
+                  properties: properties
+                });
+              } else {
+                // If tokenData is not an object, create a minimal NFT with defaults
+                tokens.push({
+                  tokenId: tokenId,
+                  name: `Proud Lion #${tokenId.substring(0, 6)}`,
+                  imageUrl: "",
+                  creator: CREATOR_ADDRESS,
+                  standard: "v2",
+                  properties: "{}"
+                });
+              }
             } catch (tokenError) {
               console.error(`Error processing token ${tokenId}:`, tokenError);
             }
