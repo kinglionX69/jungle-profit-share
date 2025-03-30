@@ -45,3 +45,12 @@ export interface ClaimResult {
   transactionHash?: string;
   error?: string;
 }
+
+/**
+ * Result of a transaction operation 
+ */
+export interface TransactionResult {
+  success: boolean;
+  transactionHash?: string | null;
+  error?: string;
+}
