@@ -21,35 +21,42 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Fetch all tokens owned by the wallet
     const tokens = await aptos.getAccountOwnedTokens({ 
-      ownerAddress: walletAddress
+      accountAddress: walletAddress 
     });
     
     console.log(`Found ${tokens.length} total tokens with Aptos SDK`);
     
     // Filter by collection name and creator
-    const filtered = tokens.filter(token => 
-      token.current_token_data?.collection_name === NFT_COLLECTION_NAME &&
-      token.current_token_data?.creator === CREATOR_ADDRESS
-    );
+    const filtered = tokens.filter(token => {
+      if (!token.current_token_data) return false;
+      
+      const collectionName = token.current_token_data.collection_id || '';
+      const creatorAddress = token.current_token_data.creator_address || '';
+      
+      return (
+        (collectionName.includes(NFT_COLLECTION_NAME) || collectionName === NFT_COLLECTION_NAME) &&
+        (creatorAddress === CREATOR_ADDRESS)
+      );
+    });
     
     console.log(`After filtering, found ${filtered.length} tokens matching collection and creator`);
     
     // Convert to our BlockchainNFT format
     const nfts: BlockchainNFT[] = filtered.map(token => {
-      const tokenData = token.current_token_data;
+      const tokenData = token.current_token_data || {};
       return {
-        tokenId: token.token_data_id,
-        name: tokenData?.token_name || `${NFT_COLLECTION_NAME} #Unknown`,
-        collectionName: tokenData?.collection_name || NFT_COLLECTION_NAME,
-        description: tokenData?.description || '',
-        imageUrl: tokenData?.metadata_uri || '',
-        creator: tokenData?.creator || CREATOR_ADDRESS,
+        tokenId: token.token_data_id || '',
+        name: tokenData.name || `${NFT_COLLECTION_NAME} #Unknown`,
+        collectionName: NFT_COLLECTION_NAME,
+        description: tokenData.description || '',
+        imageUrl: tokenData.uri || '',
+        creator: CREATOR_ADDRESS,
         properties: JSON.stringify({
           amount: token.amount,
-          property_version: token.property_version,
-          token_properties: token.token_properties,
+          property_version_v1: token.property_version_v1,
+          token_properties_mutated_v1: token.token_properties_mutated_v1,
         }),
-        standard: 'v2'
+        standard: token.token_standard || 'v2'
       };
     });
     

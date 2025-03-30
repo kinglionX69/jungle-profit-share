@@ -49,6 +49,18 @@ export const generateMockNFTs = (collectionName: string, errorMode = false): Blo
 };
 
 /**
+ * Fetch mock NFTs for demo and testing purposes
+ * @param collectionName The collection name to use for mock NFTs
+ * @param errorMode Whether to simulate an error state
+ * @returns Array of mock NFTs
+ */
+export const fetchMockNFTs = async (collectionName: string, errorMode = false): Promise<BlockchainNFT[]> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return generateMockNFTs(collectionName, errorMode);
+};
+
+/**
  * Determines if NFT data is mock/sample data
  * @param nfts Array of NFTs to check
  * @returns Boolean indicating if any NFT is mock data

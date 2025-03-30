@@ -9,7 +9,7 @@ import { fetchFromResourcesAPI } from "./api/resourceFetcher";
  * @param collectionName The collection name to filter by
  * @returns Array of NFTs from the Node API
  */
-export const fetchFromNodeAPI = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
+export const fetchWithNodeAPI = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
   try {
     console.log(`Using Node API fallback for wallet: ${walletAddress} from collection: ${collectionName}`);
     
