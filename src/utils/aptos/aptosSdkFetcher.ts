@@ -41,21 +41,18 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         }
         
         // Check token_data_id if collection_name is still empty
-        if (!collectionName) {
-          // Only proceed if token_data_id exists
-          if (token.token_data_id) {
-            // Handle token_data_id as object
-            if (typeof token.token_data_id === 'object') {
-              const tokenDataId = token.token_data_id as Record<string, unknown>;
-              if ('collection_id' in tokenDataId) {
-                collectionName = String(tokenDataId.collection_id || '');
-              }
-            } 
-            // Handle token_data_id as string
-            else if (typeof token.token_data_id === 'string') {
-              if (token.token_data_id.includes(NFT_COLLECTION_NAME)) {
-                collectionName = NFT_COLLECTION_NAME;
-              }
+        if (!collectionName && token.token_data_id) {
+          // Handle token_data_id as object
+          if (typeof token.token_data_id === 'object') {
+            const tokenDataId = token.token_data_id as Record<string, unknown>;
+            if ('collection_id' in tokenDataId) {
+              collectionName = String(tokenDataId.collection_id || '');
+            }
+          } 
+          // Handle token_data_id as string
+          else if (typeof token.token_data_id === 'string') {
+            if (token.token_data_id.includes(NFT_COLLECTION_NAME)) {
+              collectionName = NFT_COLLECTION_NAME;
             }
           }
         }
@@ -84,8 +81,27 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           }
         }
         
+        // For test logging - output what we're seeing for each token
+        if (token.current_token_data?.collection_name?.includes("Proud") ||
+            (collectionName && collectionName.includes("Lion"))) {
+          console.log("Found potential match:", {
+            name: token.current_token_data?.name,
+            collectionName: collectionName || token.current_token_data?.collection_name,
+            creator: creatorAddress,
+            tokenData: token.token_data_id
+          });
+        }
+        
         return (
-          (collectionName && collectionName.includes(NFT_COLLECTION_NAME)) &&
+          // More relaxed matching to catch more potential tokens
+          (collectionName && (
+            collectionName.includes(NFT_COLLECTION_NAME) || 
+            collectionName.includes("Lion")
+          )) ||
+          (token.current_token_data?.collection_name && (
+            token.current_token_data.collection_name.includes(NFT_COLLECTION_NAME) ||
+            token.current_token_data.collection_name.includes("Lion")
+          )) ||
           (creatorAddress === CREATOR_ADDRESS)
         );
       });
@@ -122,6 +138,13 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           }
         }
         
+        // Try to extract name from current_token_data first
+        if (token.current_token_data && 
+            typeof token.current_token_data === 'object' &&
+            token.current_token_data.name) {
+          name = token.current_token_data.name;
+        }
+        
         // Try to extract name from token properties if available
         if (token.token_properties_mutated_v1 && 
             typeof token.token_properties_mutated_v1 === 'object') {
@@ -150,22 +173,20 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
           }
         }
         
-        // Try to extract image URL
-        if (token.token_properties_mutated_v1 && 
+        // Try to extract image URL from current_token_data first
+        if (token.current_token_data && 
+            typeof token.current_token_data === 'object' &&
+            token.current_token_data.uri) {
+          imageUrl = token.current_token_data.uri;
+        }
+        
+        // Try to extract image URL from token properties if not found
+        if (!imageUrl && 
+            token.token_properties_mutated_v1 && 
             typeof token.token_properties_mutated_v1 === 'object') {
           const properties = token.token_properties_mutated_v1 as Record<string, unknown>;
           if ('uri' in properties) {
             imageUrl = String(properties.uri || '');
-          }
-        }
-        
-        // Try to get URI from token data if not found
-        if (!imageUrl && 
-            token.current_token_data && 
-            typeof token.current_token_data === 'object') {
-          const tokenData = token.current_token_data as Record<string, unknown>;
-          if ('uri' in tokenData) {
-            imageUrl = String(tokenData.uri || '');
           }
         }
         
@@ -192,6 +213,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         };
       });
       
+      console.log(`Converted ${nfts.length} NFTs from Aptos SDK format`);
       return nfts;
     } catch (apiError) {
       console.error("Aptos SDK API error:", apiError);

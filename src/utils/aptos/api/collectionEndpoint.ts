@@ -43,6 +43,8 @@ export async function tryDirectCollectionEndpoint(
 ): Promise<BlockchainNFT[]> {
   try {
     console.log(`Trying direct collection endpoint for wallet: ${walletAddress}, collection: ${collectionName}`);
+    console.log(`Looking for collection ID: ${NFT_COLLECTION_ID}`);
+    console.log(`Looking for creator: ${CREATOR_ADDRESS}`);
     
     // Approach 1: Try the Token V2 specific endpoint for current token ownerships
     // This is specifically designed for the Proud Lion collection format seen in the explorer
@@ -56,11 +58,33 @@ export async function tryDirectCollectionEndpoint(
         const v2Data = await v2Response.json();
         console.log(`V2 endpoint returned ${v2Data.length} tokens`);
         
-        // Filter for our collection and map to NFT format
+        // Log all tokens to see what we're getting
+        if (v2Data.length > 0) {
+          console.log(`Sample token from v2 endpoint:`, v2Data[0]);
+        }
+        
+        // Filter for our collection and map to NFT format with more relaxed criteria
         const v2Tokens = v2Data
           .filter((token: TokenV2Data) => {
-            // Check multiple criteria to identify our collection
-            return (token.current_token_data?.collection_name === collectionName) || 
+            // Enhanced logging for each token to identify any that might match Proud Lion
+            const possibleMatch = 
+              (token.current_token_data?.collection_name && token.current_token_data.collection_name.includes("Lion")) ||
+              (token.current_token_data?.creator_address === CREATOR_ADDRESS) ||
+              (token.current_collection_data?.collection_id === NFT_COLLECTION_ID);
+            
+            if (possibleMatch) {
+              console.log("Possible match found in v2 endpoint:", {
+                collection: token.current_token_data?.collection_name,
+                creator: token.current_token_data?.creator_address,
+                collection_id: token.current_collection_data?.collection_id,
+                name: token.current_token_data?.name
+              });
+            }
+            
+            // Check multiple criteria to identify our collection - more relaxed matching
+            return (token.current_token_data?.collection_name && 
+                    (token.current_token_data.collection_name.includes("Lion") || 
+                     token.current_token_data.collection_name.includes(collectionName))) || 
                    (token.current_token_data?.creator_address === CREATOR_ADDRESS) ||
                    (token.current_collection_data?.collection_id === NFT_COLLECTION_ID) ||
                    (token.token_data_id_hash && token.token_data_id_hash.includes(CREATOR_ADDRESS.toLowerCase()));
@@ -105,13 +129,34 @@ export async function tryDirectCollectionEndpoint(
         const tokenData = await tokenDataResponse.json();
         console.log(`Current token data endpoint returned ${tokenData.length} tokens`);
         
-        // Filter for our collection
+        // Log all tokens to see what we're getting
+        if (tokenData.length > 0) {
+          console.log(`Sample token from current_token_data endpoint:`, tokenData[0]);
+        }
+        
+        // Filter for our collection with more relaxed matching
         const tokens = tokenData
-          .filter((token: TokenData) => 
-            token.collection_name === collectionName || 
-            token.creator_address === CREATOR_ADDRESS ||
-            (token.collection_id && token.collection_id === NFT_COLLECTION_ID)
-          )
+          .filter((token: TokenData) => {
+            const possibleMatch = 
+              (token.collection_name && token.collection_name.includes("Lion")) ||
+              (token.creator_address === CREATOR_ADDRESS) ||
+              (token.collection_id === NFT_COLLECTION_ID);
+            
+            if (possibleMatch) {
+              console.log("Possible match found in current_token_data:", {
+                collection: token.collection_name,
+                creator: token.creator_address,
+                token_id: token.token_data_id_hash,
+                name: token.name
+              });
+            }
+            
+            return (token.collection_name && 
+                    (token.collection_name.includes("Lion") || 
+                     token.collection_name.includes(collectionName))) || 
+                   (token.creator_address === CREATOR_ADDRESS) ||
+                   (token.collection_id && token.collection_id === NFT_COLLECTION_ID);
+          })
           .map((token: TokenData) => {
             // Format token ID to match the explorer format
             const tokenId = token.token_data_id_hash ? 
@@ -170,55 +215,8 @@ export async function tryDirectCollectionEndpoint(
       console.error("Error with standard collection endpoint:", err);
     }
     
-    // Approach 3: Try the token_ownerships endpoint - Note: Skip this if the other methods failed
-    // Since we know this endpoint is returning 404 errors
+    // IMPORTANT: Skip the token_ownerships endpoint - it's returning 404 errors
     console.log("Skipping token_ownerships endpoint as it's returning 404 errors");
-    
-    /*
-    const ownershipsEndpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships`;
-    console.log(`Trying token_ownerships endpoint: ${ownershipsEndpoint}`);
-    
-    try {
-      const ownershipsResponse = await fetch(ownershipsEndpoint);
-      
-      if (ownershipsResponse.ok) {
-        const ownerships = await ownershipsResponse.json();
-        console.log(`Found ${ownerships.length} token ownerships`);
-        
-        // Filter for our collection and map to NFT format
-        const collectionTokens = ownerships
-          .filter((token: any) => 
-            token.collection_name === collectionName || 
-            token.collection_id === NFT_COLLECTION_ID ||
-            token.creator_address === CREATOR_ADDRESS
-          )
-          .map((token: any) => {
-            // Format token ID properly with version
-            const tokenId = token.token_data_id_hash ? 
-              `${token.token_data_id_hash}/${token.property_version || '0'}` : 
-              token.token_id || token.id;
-              
-            return {
-              tokenId: tokenId,
-              name: token.name || `${NFT_COLLECTION_NAME} #${(token.token_data_id_hash || "").substring(0, 6)}`,
-              imageUrl: token.uri || token.metadata_uri || "",
-              creator: token.creator_address || CREATOR_ADDRESS,
-              standard: token.token_standard || "v2",
-              properties: token.properties ? JSON.stringify(token.properties) : "{}"
-            };
-          });
-          
-        if (collectionTokens.length > 0) {
-          console.log(`Found ${collectionTokens.length} tokens from collection in ownerships`);
-          return collectionTokens;
-        }
-      } else {
-        console.log(`Token ownerships endpoint returned ${ownershipsResponse.status}`);
-      }
-    } catch (err) {
-      console.error("Error with token_ownerships endpoint:", err);
-    }
-    */
     
     console.log("No NFTs found after trying all collection endpoints");
     return [];
