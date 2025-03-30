@@ -192,12 +192,18 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
         // Try to extract name from current_token_data if still missing
         if (token.current_token_data && 
             typeof token.current_token_data === 'object') {
-          if (token.current_token_data.description) {
-            name = token.current_token_data.description;
+          // For the description field, which might contain the name
+          if ('description' in token.current_token_data && token.current_token_data.description) {
+            name = String(token.current_token_data.description);
           }
           
-          if (token.current_token_data.name && !name.includes(NFT_COLLECTION_NAME)) {
-            name = token.current_token_data.name;
+          // Look for a field called 'token_name' or similar in the token data
+          // Since 'name' property doesn't exist according to the error
+          if ('token_name' in token.current_token_data) {
+            const tokenName = String(token.current_token_data.token_name || '');
+            if (tokenName && !name.includes(NFT_COLLECTION_NAME)) {
+              name = tokenName;
+            }
           }
         }
         
