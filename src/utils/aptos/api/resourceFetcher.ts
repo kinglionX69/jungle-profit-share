@@ -28,33 +28,49 @@ export const fetchFromResourcesAPI = async (walletAddress: string, collectionNam
     }
     
     const resources = await resourcesResponse.json();
+    console.log(`Found ${resources.length} resources for the wallet`);
     
     // Find the TokenStore resource (using both v1 and v2 formats)
-    const tokenStoreResource = resources.find((r: any) => {
+    const tokenStoreResources = resources.filter((r: any) => {
       return r.type === TOKEN_STORE_ADDRESS || 
              r.type.includes('token::TokenStore') || 
-             r.type.includes('::token_store::') || 
-             r.type.includes('::token::');
+             r.type.includes('::token_store::') ||
+             r.type.includes('::token::TokenStore') ||
+             r.type.includes('0x3::token::TokenStore') ||
+             r.type.includes('0x4::token::TokenStore');
     });
     
-    if (!tokenStoreResource) {
-      // Try an alternative approach before giving up
+    console.log(`Found ${tokenStoreResources.length} token store resources`);
+    
+    if (tokenStoreResources.length === 0) {
       console.log("TokenStore resource not found, trying alternate collection endpoint directly");
       return await tryDirectCollectionEndpoint(walletAddress, collectionName);
     }
     
-    console.log("Found TokenStore resource:", tokenStoreResource);
+    // Try to extract tokens from each token store resource
+    let allTokens: BlockchainNFT[] = [];
     
-    // If we have token data, parse it to find NFTs from our collection
-    const tokens: BlockchainNFT[] = await extractTokensFromResource(walletAddress, tokenStoreResource, collectionName);
+    for (const tokenStoreResource of tokenStoreResources) {
+      console.log("Processing TokenStore resource:", tokenStoreResource.type);
+      
+      try {
+        const tokensFromResource = await extractTokensFromResource(walletAddress, tokenStoreResource, collectionName);
+        console.log(`Found ${tokensFromResource.length} tokens in this resource`);
+        
+        // Add tokens to our collection
+        allTokens.push(...tokensFromResource);
+      } catch (extractError) {
+        console.error("Error extracting tokens from resource:", extractError);
+      }
+    }
     
-    // If we found tokens from the collection, return them
-    if (tokens.length > 0) {
-      console.log(`Found ${tokens.length} tokens from Node API`);
-      return tokens;
+    // If we found tokens from any resources, return them
+    if (allTokens.length > 0) {
+      console.log(`Found ${allTokens.length} total tokens from resources API`);
+      return allTokens;
     } 
     
-    console.log("No tokens found in TokenStore, trying last resort check");
+    console.log("No tokens found in TokenStore resources, trying last resort check");
     
     // Try direct collection endpoint as last resort
     return await tryDirectCollectionEndpoint(walletAddress, collectionName);

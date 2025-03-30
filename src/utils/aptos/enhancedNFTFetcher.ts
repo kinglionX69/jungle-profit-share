@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { 
   APTOS_API, 
@@ -33,7 +32,8 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
     fetchFromToken2022Standard(walletAddress, collectionName),
     fetchFromAccountResources(walletAddress, collectionName),
     fetchFromTokenData(walletAddress, collectionName),
-    fetchFromIndexerApi(walletAddress, collectionName)
+    fetchFromIndexerApi(walletAddress, collectionName),
+    fetchFromOwnershipsEndpoint(walletAddress, collectionName) // Added new method for token ownerships endpoint
   ]);
   
   // Process results
@@ -61,7 +61,7 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
   }
   
   // If all methods failed, try demo mode or return empty
-  if (errors.length === 4) {
+  if (errors.length === results.length) {
     console.error("All fetching methods failed:", errors);
     toast.error("Could not fetch NFTs from blockchain");
     
@@ -72,6 +72,54 @@ export const enhancedNFTFetch = async (walletAddress: string, collectionName: st
   }
   
   return [];
+};
+
+/**
+ * NEW METHOD: Fetch NFTs using the ownerships endpoint (best for Token V2)
+ */
+const fetchFromOwnershipsEndpoint = async (walletAddress: string, collectionName: string): Promise<BlockchainNFT[]> => {
+  try {
+    console.log(`Trying Token V2 ownerships endpoint for wallet: ${walletAddress}`);
+    
+    // This endpoint is optimized for Token V2 standard
+    const endpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships?limit=100`;
+    console.log(`Fetching from: ${endpoint}`);
+    
+    const response = await fetch(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`Ownerships endpoint error: ${response.status}`);
+    }
+    
+    const ownerships = await response.json();
+    console.log(`Received ${ownerships.length} token ownerships`);
+    
+    // Filter for our collection and map to NFT format
+    const filteredTokens = ownerships
+      .filter((token: any) => {
+        const matchesCollection = token.current_token_data?.collection_name === collectionName;
+        const matchesCreator = token.current_token_data?.creator_address === CREATOR_ADDRESS;
+        const matchesCollectionId = token.current_collection_data?.collection_id === NFT_COLLECTION_ID;
+        
+        return matchesCollection || matchesCreator || matchesCollectionId;
+      })
+      .map((token: any) => ({
+        tokenId: token.token_data_id_hash || token.token_id || token.token_data_id,
+        name: token.current_token_data?.name || `${collectionName} #${(token.token_data_id_hash || "").substring(0, 6)}`,
+        imageUrl: token.current_token_data?.uri || "",
+        creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
+        standard: "v2",
+        properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
+        collectionName: token.current_token_data?.collection_name,
+        collectionId: token.current_collection_data?.collection_id
+      }));
+      
+    console.log(`Found ${filteredTokens.length} matching tokens from ownerships endpoint`);
+    return filteredTokens;
+  } catch (error) {
+    console.error("Error with token ownerships endpoint:", error);
+    return [];
+  }
 };
 
 /**

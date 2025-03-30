@@ -15,7 +15,47 @@ export async function tryDirectCollectionEndpoint(
   try {
     console.log(`Trying direct collection endpoint for wallet: ${walletAddress}, collection: ${collectionName}`);
     
-    // Approach 1: Try the standard collection endpoint
+    // Approach 1: Try the Token V2 specific endpoint
+    const v2Endpoint = `${APTOS_API}/accounts/${walletAddress}/current_token_ownerships_v2?limit=100`;
+    console.log(`Trying Token V2 endpoint: ${v2Endpoint}`);
+    
+    try {
+      const v2Response = await fetch(v2Endpoint);
+      
+      if (v2Response.ok) {
+        const v2Data = await v2Response.json();
+        console.log(`V2 endpoint returned ${v2Data.length} tokens`);
+        
+        // Filter for our collection and map to NFT format
+        const v2Tokens = v2Data
+          .filter((token: any) => 
+            token.current_token_data?.collection_name === collectionName || 
+            token.current_token_data?.creator_address === CREATOR_ADDRESS ||
+            token.current_collection_data?.collection_id === NFT_COLLECTION_ID
+          )
+          .map((token: any) => ({
+            tokenId: token.token_data_id_hash || token.token_id || token.token_data_id,
+            name: token.current_token_data?.name || `${NFT_COLLECTION_NAME} #${(token.token_data_id_hash || "").substring(0, 6)}`,
+            imageUrl: token.current_token_data?.uri || "",
+            creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
+            standard: "v2",
+            properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
+            collectionName: token.current_token_data?.collection_name,
+            collectionId: token.current_collection_data?.collection_id
+          }));
+          
+        if (v2Tokens.length > 0) {
+          console.log(`Found ${v2Tokens.length} tokens from V2 endpoint`);
+          return v2Tokens;
+        }
+      } else {
+        console.log(`V2 endpoint returned ${v2Response.status}`);
+      }
+    } catch (err) {
+      console.error("Error with Token V2 endpoint:", err);
+    }
+    
+    // Approach 2: Try the standard collection endpoint
     const collectionEndpoint = `${APTOS_API}/accounts/${walletAddress}/collection/${collectionName}`;
     console.log(`Trying standard collection endpoint: ${collectionEndpoint}`);
     
@@ -47,7 +87,7 @@ export async function tryDirectCollectionEndpoint(
       console.error("Error with standard collection endpoint:", err);
     }
     
-    // Approach 2: Try the new token_ownerships endpoint
+    // Approach 3: Try the token_ownerships endpoint
     const ownershipsEndpoint = `${APTOS_API}/accounts/${walletAddress}/token_ownerships`;
     console.log(`Trying token_ownerships endpoint: ${ownershipsEndpoint}`);
     
@@ -85,26 +125,6 @@ export async function tryDirectCollectionEndpoint(
       console.error("Error with token_ownerships endpoint:", err);
     }
     
-    // Approach 3: Look at the creator's collections and check for tokens in the wallet
-    try {
-      console.log("Trying creator's collections approach");
-      const creatorEndpoint = `${APTOS_API}/accounts/${CREATOR_ADDRESS}/resource/0x3::token::Collections`;
-      const creatorResponse = await fetch(creatorEndpoint);
-      
-      if (creatorResponse.ok) {
-        const creatorData = await creatorResponse.json();
-        console.log("Found creator's collections data");
-        
-        // This approach would require additional logic to check for each token
-        // if it's owned by this wallet, which is complex and might be inefficient
-        // Log relevant info for debugging instead
-        console.log(`Creator collections available: ${Object.keys(creatorData.data?.collections_table?.handle || {}).length}`);
-      }
-    } catch (err) {
-      console.error("Error with creator's collections approach:", err);
-    }
-    
-    // If all approaches failed, return empty array
     console.log("No NFTs found after trying all collection endpoints");
     return [];
   } catch (collectionError) {
