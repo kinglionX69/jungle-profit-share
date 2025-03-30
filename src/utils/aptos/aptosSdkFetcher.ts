@@ -28,24 +28,40 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Filter by collection name and creator
     const filtered = tokens.filter(token => {
-      // Navigate the token structure carefully with optional chaining
-      const tokenDataId = token.token_data_id || {};
-      const currentTokenData = token.current_token_data || {};
-      
-      // Try to extract collection name from different possible paths
+      // Initialize collection name and creator address
       let collectionName = '';
-      if (currentTokenData.collection_id) {
-        collectionName = currentTokenData.collection_id;
-      } else if (typeof tokenDataId === 'object' && 'collection_id' in tokenDataId) {
-        collectionName = tokenDataId.collection_id;
+      let creatorAddress = '';
+      
+      // Safely extract collection name
+      if (token.current_token_data && typeof token.current_token_data === 'object') {
+        if ('collection_id' in token.current_token_data) {
+          collectionName = String(token.current_token_data.collection_id || '');
+        }
       }
       
-      // Try to extract creator address from current token data
-      let creatorAddress = '';
-      if (token.current_collection && token.current_collection.creator_address) {
-        creatorAddress = token.current_collection.creator_address;
-      } else if (token.token_properties && token.token_properties.creator) {
-        creatorAddress = token.token_properties.creator;
+      // Check token_data_id if collection_name is still empty
+      if (!collectionName && typeof token.token_data_id === 'object' && token.token_data_id) {
+        if ('collection_id' in token.token_data_id) {
+          collectionName = String(token.token_data_id.collection_id || '');
+        }
+      }
+      
+      // Safely extract creator address
+      if (typeof token === 'object' && token) {
+        // Try to get creator from current_collection if it exists
+        if ('current_collection' in token && token.current_collection && 
+            typeof token.current_collection === 'object' && 
+            'creator_address' in token.current_collection) {
+          creatorAddress = String(token.current_collection.creator_address || '');
+        }
+        
+        // Try to get creator from token_properties if it exists
+        if (!creatorAddress && 'token_properties_mutated_v1' in token && 
+            token.token_properties_mutated_v1 && 
+            typeof token.token_properties_mutated_v1 === 'object' && 
+            'creator' in token.token_properties_mutated_v1) {
+          creatorAddress = String(token.token_properties_mutated_v1.creator || '');
+        }
       }
       
       return (
@@ -58,47 +74,77 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     
     // Convert to our BlockchainNFT format
     const nfts: BlockchainNFT[] = filtered.map(token => {
-      // Safely extract data
-      const tokenDataId = token.token_data_id || {};
-      const currentTokenData = token.current_token_data || {};
-      const properties = token.token_properties || {};
-      
-      // Build name from token identification data
+      // Initialize default values
       let name = `${NFT_COLLECTION_NAME} #Unknown`;
-      if (properties.name) {
-        name = properties.name as string;
-      } else if (typeof tokenDataId === 'object' && 'name' in tokenDataId) {
-        name = tokenDataId.name as string;
-      }
-      
-      // Extract description
       let description = '';
-      if (currentTokenData.description) {
-        description = currentTokenData.description;
-      } else if (properties.description) {
-        description = properties.description as string;
+      let imageUrl = '';
+      
+      // Safely extract token ID
+      const tokenId = typeof token.token_data_id === 'string' 
+        ? token.token_data_id 
+        : JSON.stringify(token.token_data_id || {});
+      
+      // Try to extract name from token data
+      if (typeof token.token_data_id === 'object' && token.token_data_id && 'name' in token.token_data_id) {
+        name = String(token.token_data_id.name || name);
       }
       
-      // Extract image URL
-      let imageUrl = '';
-      if (properties.uri) {
-        imageUrl = properties.uri as string;
-      } else if (currentTokenData.uri) {
-        imageUrl = currentTokenData.uri;
+      // Try to extract name from token properties if available
+      if (token.token_properties_mutated_v1 && 
+          typeof token.token_properties_mutated_v1 === 'object' && 
+          'name' in token.token_properties_mutated_v1) {
+        name = String(token.token_properties_mutated_v1.name || name);
+      }
+      
+      // Try to extract description
+      if (token.current_token_data && 
+          typeof token.current_token_data === 'object' && 
+          'description' in token.current_token_data) {
+        description = String(token.current_token_data.description || '');
+      }
+      
+      // Try to get description from token properties if not found
+      if (!description && 
+          token.token_properties_mutated_v1 && 
+          typeof token.token_properties_mutated_v1 === 'object' && 
+          'description' in token.token_properties_mutated_v1) {
+        description = String(token.token_properties_mutated_v1.description || '');
+      }
+      
+      // Try to extract image URL
+      if (token.token_properties_mutated_v1 && 
+          typeof token.token_properties_mutated_v1 === 'object' && 
+          'uri' in token.token_properties_mutated_v1) {
+        imageUrl = String(token.token_properties_mutated_v1.uri || '');
+      }
+      
+      // Try to get URI from token data if not found
+      if (!imageUrl && 
+          token.current_token_data && 
+          typeof token.current_token_data === 'object' && 
+          'uri' in token.current_token_data) {
+        imageUrl = String(token.current_token_data.uri || '');
+      }
+      
+      // Build properties object
+      const properties: Record<string, unknown> = {
+        amount: token.amount,
+        property_version_v1: token.property_version_v1
+      };
+      
+      // Add token properties if available
+      if (token.token_properties_mutated_v1) {
+        properties.token_properties = token.token_properties_mutated_v1;
       }
       
       return {
-        tokenId: typeof tokenDataId === 'string' ? tokenDataId : JSON.stringify(tokenDataId),
+        tokenId: tokenId,
         name: name,
         collectionName: NFT_COLLECTION_NAME,
         description: description,
         imageUrl: imageUrl,
         creator: CREATOR_ADDRESS,
-        properties: JSON.stringify({
-          amount: token.amount,
-          property_version_v1: token.property_version_v1,
-          token_properties: token.token_properties
-        }),
+        properties: JSON.stringify(properties),
         standard: token.token_standard || 'v2'
       };
     });
