@@ -45,11 +45,27 @@ export const signTransaction = async (transaction: any, address: string | null, 
   }
   
   try {
+    // Petra wallet
     if (window.aptos) {
+      console.log("Signing transaction with Petra wallet");
       return await window.aptos.signAndSubmitTransaction(transaction);
-    } else if (window.martian) {
+    } 
+    // Martian wallet
+    else if (window.martian) {
+      console.log("Signing transaction with Martian wallet");
       return await window.martian.signAndSubmitTransaction(transaction);
-    } else {
+    }
+    // Pontem wallet
+    else if (window.pontem) {
+      console.log("Signing transaction with Pontem wallet");
+      return await window.pontem.signAndSubmitTransaction(transaction);
+    }
+    // Rise wallet
+    else if (window.rise) {
+      console.log("Signing transaction with Rise wallet");
+      return await window.rise.signAndSubmitTransaction(transaction);
+    }
+    else {
       throw new Error("No wallet provider available");
     }
   } catch (error: any) {

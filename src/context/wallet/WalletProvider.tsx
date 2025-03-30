@@ -34,7 +34,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     isAdmin,
     setIsAdmin,
     showWalletSelector,
-    setShowWalletSelector
+    setShowWalletSelector,
+    walletType,
+    setWalletType
   } = useWalletConnection();
   
   // Connect to a specific wallet
@@ -48,24 +50,28 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         setAddress(address);
         setConnected(true);
         setIsAdmin(adminStatus);
+        setWalletType('petra');
       } else if (walletName === 'martian' && window.martian) {
         const response = await window.martian.connect();
         const { adminStatus } = await handleSuccessfulConnection(response.address, "Martian");
         setAddress(response.address);
         setConnected(true);
         setIsAdmin(adminStatus);
+        setWalletType('martian');
       } else if (walletName === 'pontem' && window.pontem) {
         const address = await window.pontem.connect();
         const { adminStatus } = await handleSuccessfulConnection(address, "Pontem");
         setAddress(address);
         setConnected(true);
         setIsAdmin(adminStatus);
+        setWalletType('pontem');
       } else if (walletName === 'rise' && window.rise) {
         const response = await window.rise.connect();
         const { adminStatus } = await handleSuccessfulConnection(response.address, "Rise");
         setAddress(response.address);
         setConnected(true);
         setIsAdmin(adminStatus);
+        setWalletType('rise');
       } else {
         throw new Error(`${walletName} wallet not installed`);
       }
@@ -91,12 +97,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         window.aptos.disconnect();
       } else if (window.martian) {
         window.martian.disconnect();
+      } else if (window.pontem) {
+        window.pontem.disconnect();
+      } else if (window.rise) {
+        window.rise.disconnect();
       }
-      // Add disconnect for other wallets as needed
       
       setAddress(null);
       setConnected(false);
       setIsAdmin(false);
+      setWalletType(null);
       
       // Clear Supabase headers
       updateSupabaseHeaders(null);
@@ -124,7 +134,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         isAdmin,
         signTransaction: handleSignTransaction,
         showWalletSelector,
-        setShowWalletSelector
+        setShowWalletSelector,
+        walletType
       }}
     >
       {children}

@@ -17,6 +17,8 @@ export const submitClaimTransaction = async (
 ): Promise<TransactionResult> => {
   try {
     console.log(`Submitting claim transaction on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    console.log(`Wallet address: ${walletAddress}`);
+    console.log(`NFT IDs to claim: ${nftIds.join(', ')}`);
     
     // Create the transaction payload
     // For testnet, we use a different module address
@@ -31,10 +33,12 @@ export const submitClaimTransaction = async (
       ]
     };
     
-    console.log("Transaction payload:", payload);
+    console.log("Transaction payload:", JSON.stringify(payload, null, 2));
     
     // Sign and submit the transaction
+    console.log("Signing and submitting transaction...");
     const result = await signTransaction(payload);
+    console.log("Transaction result:", result);
     
     return {
       success: !!result.hash,
@@ -65,6 +69,10 @@ export const depositTokensTransaction = async (
 ): Promise<TransactionResult> => {
   try {
     console.log(`Depositing tokens on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    console.log(`Admin wallet address: ${adminWalletAddress}`);
+    console.log(`Token type: ${tokenType}`);
+    console.log(`Amount: ${amount}`);
+    console.log(`Payout per NFT: ${payoutPerNFT}`);
     
     // Use the appropriate token type for testnet
     const actualTokenType = IS_TESTNET 
@@ -82,10 +90,12 @@ export const depositTokensTransaction = async (
       ]
     };
     
-    console.log("Deposit payload:", payload);
+    console.log("Deposit payload:", JSON.stringify(payload, null, 2));
     
     // Sign and submit the transaction
+    console.log("Signing and submitting deposit transaction...");
     const result = await signTransaction(payload);
+    console.log("Deposit transaction result:", result);
     
     return {
       success: !!result.hash,

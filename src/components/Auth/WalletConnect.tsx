@@ -17,10 +17,12 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className = '' }) => {
     connect, 
     connectWallet,
     showWalletSelector,
-    setShowWalletSelector
+    setShowWalletSelector,
+    walletType
   } = useWallet();
   
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
+  const walletName = walletType ? walletType.charAt(0).toUpperCase() + walletType.slice(1) : '';
   
   if (connected) {
     return (
@@ -31,7 +33,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className = '' }) => {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-1">
             <div className="h-2.5 w-2.5 rounded-full bg-success animate-pulse-light" />
-            <span className="font-medium">Connected</span>
+            <span className="font-medium">Connected {walletName && `(${walletName})`}</span>
           </div>
           <p className="text-sm text-muted-foreground">{shortAddress}</p>
         </div>

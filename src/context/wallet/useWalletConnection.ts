@@ -8,6 +8,7 @@ export const useWalletConnection = () => {
   const [address, setAddress] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const [walletType, setWalletType] = useState<string | null>(null);
   
   // Check if wallet is already connected
   useEffect(() => {
@@ -25,6 +26,7 @@ export const useWalletConnection = () => {
                 setAddress(address);
                 setConnected(true);
                 setIsAdmin(adminStatus);
+                setWalletType('petra');
               }
             }
           } catch (error) {
@@ -43,13 +45,51 @@ export const useWalletConnection = () => {
                 setAddress(address);
                 setConnected(true);
                 setIsAdmin(adminStatus);
+                setWalletType('martian');
               }
             }
           } catch (error) {
             console.error("Error checking Martian connection:", error);
           }
         }
-        // Add checks for other wallets as needed
+        // Check for Pontem wallet
+        else if (window.pontem) {
+          try {
+            const isConnected = await window.pontem.isConnected();
+            if (isConnected) {
+              const address = await window.pontem.connect();
+              if (address) {
+                console.log("Found connected Pontem wallet:", address);
+                const { adminStatus } = await handleSuccessfulConnection(address, "Pontem");
+                setAddress(address);
+                setConnected(true);
+                setIsAdmin(adminStatus);
+                setWalletType('pontem');
+              }
+            }
+          } catch (error) {
+            console.error("Error checking Pontem connection:", error);
+          }
+        }
+        // Check for Rise wallet
+        else if (window.rise) {
+          try {
+            const isConnected = await window.rise.isConnected();
+            if (isConnected) {
+              const response = await window.rise.getAccount();
+              if (response && response.address) {
+                console.log("Found connected Rise wallet:", response.address);
+                const { adminStatus } = await handleSuccessfulConnection(response.address, "Rise");
+                setAddress(response.address);
+                setConnected(true);
+                setIsAdmin(adminStatus);
+                setWalletType('rise');
+              }
+            }
+          } catch (error) {
+            console.error("Error checking Rise connection:", error);
+          }
+        }
       } catch (error) {
         console.error("Error checking wallet connections:", error);
       }
@@ -73,6 +113,8 @@ export const useWalletConnection = () => {
     isAdmin,
     setIsAdmin,
     showWalletSelector,
-    setShowWalletSelector
+    setShowWalletSelector,
+    walletType,
+    setWalletType
   };
 };

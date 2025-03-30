@@ -11,6 +11,7 @@ export interface WalletContextType {
   signTransaction: (transaction: any) => Promise<any>;
   showWalletSelector: boolean;
   setShowWalletSelector: (show: boolean) => void;
+  walletType: string | null;
 }
 
 // Add TypeScript definitions for the wallet providers
@@ -39,6 +40,7 @@ declare global {
     rise?: {
       connect: () => Promise<{ address: string }>;
       disconnect: () => Promise<void>;
+      getAccount: () => Promise<{ address: string }>;
       isConnected: () => Promise<boolean>;
       signAndSubmitTransaction: (transaction: any) => Promise<any>;
     };
