@@ -32,28 +32,20 @@ export const upsertUser = async (
       updated_at: new Date().toISOString()
     };
     
-    // Use service role client for operations requiring elevated permissions
-    // If the user doesn't exist, insert with elevated permissions
-    if (!existingUser) {
-      const { error } = await supabase
-        .from('users')
-        .insert([userData]);
-      
-      if (error) {
-        console.error("Error inserting user:", error);
-        throw error;
-      }
-    } else {
-      // If the user exists, update their record
-      const { error } = await supabase
-        .from('users')
-        .update(userData)
-        .eq('wallet_address', walletAddress);
-        
-      if (error) {
-        console.error("Error updating user:", error);
-        throw error;
-      }
+    // Use upsert operation which is more reliable
+    const { error } = await supabase
+      .from('users')
+      .upsert(
+        { ...userData },
+        { 
+          onConflict: 'wallet_address',
+          ignoreDuplicates: false
+        }
+      );
+    
+    if (error) {
+      console.error("Error upserting user:", error);
+      return false;
     }
     
     return true;

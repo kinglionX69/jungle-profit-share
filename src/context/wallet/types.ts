@@ -17,7 +17,16 @@ export interface WalletContextType {
 // Add TypeScript definitions for the wallet providers
 declare global {
   interface Window {
+    // Legacy Petra API
     aptos?: {
+      connect: () => Promise<{ address: string }>;
+      disconnect: () => Promise<void>;
+      account: () => Promise<{ address: string }>;
+      isConnected: () => Promise<boolean>;
+      signAndSubmitTransaction: (transaction: any) => Promise<any>;
+    };
+    // New Petra API following Aptos Wallet Standard
+    petra?: {
       connect: () => Promise<{ address: string }>;
       disconnect: () => Promise<void>;
       account: () => Promise<{ address: string }>;

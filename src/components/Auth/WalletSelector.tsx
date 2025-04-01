@@ -110,7 +110,7 @@ function checkWalletInstalled(walletName: string): boolean {
   const walletNameLower = walletName.toLowerCase();
   
   if (walletNameLower === 'petra') {
-    return !!window.aptos;
+    return !!window.petra || !!window.aptos;
   } else if (walletNameLower === 'martian') {
     return !!window.martian;
   } else if (walletNameLower === 'pontem') {

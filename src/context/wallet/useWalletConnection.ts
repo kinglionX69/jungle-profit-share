@@ -14,14 +14,33 @@ export const useWalletConnection = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        // Check for Petra wallet
-        if (window.aptos) {
+        // Check for Petra wallet (new API)
+        if (window.petra) {
+          try {
+            const isConnected = await window.petra.isConnected();
+            if (isConnected) {
+              const account = await window.petra.account();
+              if (account && account.address) {
+                console.log("Found connected Petra wallet (new API):", account.address);
+                const { adminStatus } = await handleSuccessfulConnection(account.address, "Petra");
+                setAddress(account.address);
+                setConnected(true);
+                setIsAdmin(adminStatus);
+                setWalletType('petra');
+              }
+            }
+          } catch (error) {
+            console.error("Error checking Petra connection (new API):", error);
+          }
+        }
+        // Check for Petra wallet (legacy API)
+        else if (window.aptos) {
           try {
             const isConnected = await window.aptos.isConnected();
             if (isConnected) {
               const { address } = await window.aptos.account();
               if (address) {
-                console.log("Found connected Petra wallet:", address);
+                console.log("Found connected Petra wallet (legacy API):", address);
                 const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
                 setAddress(address);
                 setConnected(true);
@@ -30,7 +49,7 @@ export const useWalletConnection = () => {
               }
             }
           } catch (error) {
-            console.error("Error checking Petra connection:", error);
+            console.error("Error checking Petra connection (legacy API):", error);
           }
         } 
         // Check for Martian wallet

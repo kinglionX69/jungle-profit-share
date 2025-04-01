@@ -44,8 +44,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setConnecting(true);
     
     try {
-      if (walletName === 'petra' && window.aptos) {
-        console.log("Connecting to Petra wallet...");
+      // Try Petra with new API first
+      if (walletName === 'petra' && window.petra) {
+        console.log("Connecting to Petra wallet (new API)...");
+        try {
+          const response = await window.petra.connect();
+          console.log("Petra wallet connected with address:", response.address);
+          const { adminStatus } = await handleSuccessfulConnection(response.address, "Petra");
+          setAddress(response.address);
+          setConnected(true);
+          setIsAdmin(adminStatus);
+          setWalletType('petra');
+        } catch (error) {
+          console.error("Petra wallet connection error:", error);
+          toast.error("Failed to connect Petra wallet");
+          throw error;
+        }
+      }
+      // Legacy Petra API fallback
+      else if (walletName === 'petra' && window.aptos) {
+        console.log("Connecting to Petra wallet (legacy API)...");
         try {
           const { address } = await window.aptos.connect();
           console.log("Petra wallet connected with address:", address);
@@ -54,7 +72,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           setConnected(true);
           setIsAdmin(adminStatus);
           setWalletType('petra');
-          toast.success("Petra wallet connected!");
         } catch (error) {
           console.error("Petra wallet connection error:", error);
           toast.error("Failed to connect Petra wallet");
@@ -97,8 +114,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   // Main connect function to show wallet selector
   const connect = async () => {
-    // Check if Petra wallet is installed first
-    if (window.aptos) {
+    // Check if Petra wallet is installed (either legacy or new API)
+    if (window.petra || window.aptos) {
       // For this app, prioritize Petra wallet
       try {
         toast.loading("Connecting to Petra wallet...");
@@ -119,7 +136,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   const disconnect = () => {
     try {
-      if (window.aptos) {
+      if (window.petra) {
+        window.petra.disconnect();
+      } else if (window.aptos) {
         window.aptos.disconnect();
       } else if (window.martian) {
         window.martian.disconnect();

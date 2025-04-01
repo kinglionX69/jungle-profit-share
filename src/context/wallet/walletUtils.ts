@@ -8,8 +8,9 @@ import { upsertUser } from "@/api/userApi";
 export const checkWalletInstalled = (walletName: string): boolean => {
   const walletNameLower = walletName.toLowerCase();
   
+  // Use window.aptos as a fallback for older implementations
   if (walletNameLower === 'petra') {
-    return !!window.aptos;
+    return !!window.aptos || !!window.petra;
   } else if (walletNameLower === 'martian') {
     return !!window.martian;
   } else if (walletNameLower === 'pontem') {
@@ -26,18 +27,24 @@ export const handleSuccessfulConnection = async (walletAddress: string, walletNa
   // Update Supabase headers before inserting user
   updateSupabaseHeaders(walletAddress);
   
-  // Insert user in database
-  const userCreated = await upsertUser(walletAddress);
-  if (!userCreated) {
-    console.warn("Failed to create/update user record in database");
+  try {
+    // Insert user in database
+    const userCreated = await upsertUser(walletAddress);
+    if (!userCreated) {
+      console.warn("Failed to create/update user record in database");
+    }
+    
+    // Check if the wallet is an admin
+    const adminStatus = await checkIsAdmin(walletAddress);
+    
+    toast.success(`${walletName} wallet connected!`);
+    
+    return { adminStatus };
+  } catch (error) {
+    console.error("Error during wallet connection:", error);
+    // Don't throw here, as we want to continue even if there's an error with user creation
+    return { adminStatus: false };
   }
-  
-  // Check if the wallet is an admin
-  const adminStatus = await checkIsAdmin(walletAddress);
-  
-  toast.success(`${walletName} wallet connected!`);
-  
-  return { adminStatus };
 };
 
 // Sign a transaction
@@ -48,9 +55,13 @@ export const signTransaction = async (transaction: any, address: string | null, 
   }
   
   try {
-    // Petra wallet
-    if (window.aptos) {
-      console.log("Signing transaction with Petra wallet");
+    // Petra wallet - Support both legacy and new API
+    if (window.petra) {
+      console.log("Signing transaction with Petra wallet (new API)");
+      return await window.petra.signAndSubmitTransaction(transaction);
+    }
+    else if (window.aptos) {
+      console.log("Signing transaction with Petra wallet (legacy API)");
       return await window.aptos.signAndSubmitTransaction(transaction);
     } 
     // Martian wallet
