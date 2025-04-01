@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,13 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   
+  // Get a numeric token ID if possible (for API URL construction)
+  const getNumericTokenId = () => {
+    if (!nft.tokenId) return null;
+    const matches = nft.tokenId.match(/(\d+)$/);
+    return matches && matches[1] ? matches[1] : null;
+  };
+  
   // Generate a fallback image URL based on the token ID for consistency
   const getFallbackImageUrl = () => {
     const hash = nft.tokenId.split('').reduce((acc, char) => {
@@ -60,14 +68,20 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
     return `https://picsum.photos/seed/${hash}/300/300`;
   };
   
-  const fetchMetadataDirectly = async (tokenId: string) => {
+  const fetchMetadataDirectly = async () => {
     setIsMetadataLoading(true);
     try {
-      // Extract tokenId if it's a full data ID
-      const extractedId = tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || tokenId;
-      const metadataUrl = `${NFT_IMAGE_BASE_URL}${extractedId}`;
+      // Try to extract numeric ID for the API URL
+      const numericId = getNumericTokenId();
       
-      console.log(`NFT Card fetching metadata directly from: ${metadataUrl}`);
+      if (!numericId) {
+        console.log(`Couldn't extract numeric ID from ${nft.tokenId}, using fallback`);
+        setImageUrl(getFallbackImageUrl());
+        return false;
+      }
+      
+      const metadataUrl = `${NFT_IMAGE_BASE_URL}${numericId}.json`;
+      console.log(`NFT Card fetching metadata from: ${metadataUrl}`);
       
       const response = await fetch(metadataUrl);
       if (!response.ok) {
@@ -75,32 +89,20 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         throw new Error(`Failed to fetch metadata: ${response.status}`);
       }
       
-      try {
-        const metadata = await response.json();
-        console.log('NFT Card parsed metadata:', metadata);
-        
-        if (metadata && metadata.image) {
-          console.log(`NFT Card found image in metadata: ${metadata.image}`);
-          
-          // Handle IPFS URLs in the metadata
-          if (metadata.image.startsWith('ipfs://')) {
-            setImageUrl(metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/'));
-          } else {
-            setImageUrl(metadata.image);
-          }
-          return true;
-        } else {
-          console.log('No image found in metadata, using fallback');
-          setImageUrl(getFallbackImageUrl());
-          return false;
-        }
-      } catch (jsonError) {
-        console.error("Error parsing metadata JSON:", jsonError);
+      const metadata = await response.json();
+      console.log('NFT Card parsed metadata:', metadata);
+      
+      if (metadata && metadata.image) {
+        console.log(`NFT Card found image in metadata: ${metadata.image}`);
+        setImageUrl(metadata.image);
+        return true;
+      } else {
+        console.log('No image found in metadata, using fallback');
         setImageUrl(getFallbackImageUrl());
         return false;
       }
     } catch (error) {
-      console.error(`Error fetching metadata for ${tokenId}:`, error);
+      console.error(`Error fetching metadata for ${nft.tokenId}:`, error);
       setImageUrl(getFallbackImageUrl());
       return false;
     } finally {
@@ -116,30 +118,26 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
     setIsMetadataLoading(false);
     
     const loadImage = async () => {
-      // Check if we have an image URL
-      if (nft.imageUrl) {
-        console.log(`NFT Card using image URL: ${nft.imageUrl}`);
-        
-        // If it's already an image URL (ends with image extension)
-        if (nft.imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)) {
-          setImageUrl(nft.imageUrl);
-        } 
-        // If it's a Pinata/IPFS URL
-        else if (nft.imageUrl.includes('ipfs') || nft.imageUrl.includes('pinata')) {
-          setImageUrl(nft.imageUrl);
-        }
-        // If it's an HTTP URL but not to our API
-        else if (nft.imageUrl.startsWith('http') && !nft.imageUrl.includes('api.proudlionsclub.com')) {
-          setImageUrl(nft.imageUrl);
-        }
-        // Otherwise try to use it as a token ID to fetch metadata
-        else {
-          console.log(`NFT Card needs to fetch metadata for: ${nft.tokenId}`);
-          await fetchMetadataDirectly(nft.tokenId);
-        }
+      // First try: If the NFT already has a valid image URL that looks like a proper image
+      if (nft.imageUrl && nft.imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)) {
+        console.log(`NFT Card using provided image URL: ${nft.imageUrl}`);
+        setImageUrl(nft.imageUrl);
+        return;
+      }
+      
+      // Second try: Look for a numeric ID and use it to fetch metadata
+      const numericId = getNumericTokenId();
+      if (numericId) {
+        console.log(`NFT Card has numeric ID ${numericId}, fetching metadata directly`);
+        await fetchMetadataDirectly();
+      } else if (nft.imageUrl) {
+        // Third try: Use whatever image URL was provided
+        console.log(`NFT Card using existing image URL: ${nft.imageUrl}`);
+        setImageUrl(nft.imageUrl);
       } else {
-        console.log(`No image URL for NFT ${nft.tokenId}, fetching metadata`);
-        await fetchMetadataDirectly(nft.tokenId);
+        // Last resort: Use fallback
+        console.log(`No viable image source for NFT ${nft.tokenId}, using fallback`);
+        setImageUrl(getFallbackImageUrl());
       }
     };
     
@@ -155,7 +153,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
       setRetryCount(prev => prev + 1);
       
       // Try direct metadata fetch as a last resort
-      const success = await fetchMetadataDirectly(nft.tokenId);
+      const success = await fetchMetadataDirectly();
       
       if (!success) {
         setImageError(true);
