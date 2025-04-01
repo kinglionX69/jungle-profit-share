@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS } from "../constants";
 import { aptosClient } from "../client";
+import { toStructTag } from "../helpers";
 
 /**
  * Check if a CoinStore is registered for the given token type and register it if not
@@ -49,9 +50,8 @@ export const registerCoinStoreIfNeeded = async (
         };
       }
       
-      // Correctly cast as a template literal type with the appropriate prefix
-      // The Aptos SDK expects the format `0x${string}::${string}::${string}`
-      const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
+      // Use the helper function to convert the string to a properly typed format
+      const formattedTokenType = toStructTag(tokenType);
       
       // Construct the resource type for the coin store
       const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;

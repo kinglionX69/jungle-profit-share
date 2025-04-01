@@ -1,6 +1,6 @@
-
 import { Aptos, AptosConfig, Network, AccountAddress } from "@aptos-labs/ts-sdk";
 import { IS_TESTNET } from "./constants";
+import { toStructTag } from "./helpers";
 
 // Create configurations for different networks
 const DEVNET_CONFIG = new AptosConfig({ network: Network.DEVNET });
@@ -76,9 +76,8 @@ export const getCoinBalance = async (
       return 0;
     }
     
-    // Correctly cast as a template literal type with the appropriate prefix
-    // The Aptos SDK expects the format `0x${string}::${string}::${string}`
-    const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
+    // Use the helper function to convert the string to a properly typed format
+    const formattedTokenType = toStructTag(tokenType);
     
     // Construct the resource type for the coin store
     const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
@@ -121,9 +120,8 @@ export const hasCoinRegistered = async (
       return false;
     }
     
-    // Correctly cast as a template literal type with the appropriate prefix
-    // The Aptos SDK expects the format `0x${string}::${string}::${string}`
-    const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
+    // Use the helper function to convert the string to a properly typed format
+    const formattedTokenType = toStructTag(tokenType);
     
     // Construct the resource type for the coin store
     const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
