@@ -3,7 +3,10 @@
 export interface WalletContextType {
   connected: boolean;
   connecting: boolean;
+  disconnecting?: boolean;
   address: string | null;
+  network: Network;
+  walletType: string | null;
   connect: () => Promise<void>;
   connectWallet: (walletName: string) => Promise<void>;
   disconnect: () => void;
@@ -11,7 +14,6 @@ export interface WalletContextType {
   signTransaction: (transaction: any) => Promise<any>;
   showWalletSelector: boolean;
   setShowWalletSelector: (show: boolean) => void;
-  walletType: string | null;
 }
 
 // Add TypeScript definitions for the wallet providers
