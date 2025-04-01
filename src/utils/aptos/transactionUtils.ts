@@ -53,6 +53,61 @@ export const submitClaimTransaction = async (
 };
 
 /**
+ * Check if a CoinStore is registered for the given token type and register it if not
+ * @param walletAddress The wallet address to check and register
+ * @param tokenType The token type to register
+ * @param signTransaction Function to sign and submit the transaction
+ * @returns Transaction result with success status and hash
+ */
+export const registerCoinStoreIfNeeded = async (
+  walletAddress: string,
+  tokenType: string,
+  signTransaction: (txn: any) => Promise<any>
+): Promise<TransactionResult> => {
+  try {
+    // First check if the token is APT, which is always registered by default
+    if (tokenType === "0x1::aptos_coin::AptosCoin") {
+      console.log("APT is already registered for all accounts by default");
+      return { success: true, transactionHash: null };
+    }
+    
+    console.log(`Checking if CoinStore is registered for ${tokenType}`);
+
+    // Create the transaction payload for registration
+    const payload = {
+      type: "entry_function_payload",
+      function: "0x1::managed_coin::register",
+      type_arguments: [tokenType],
+      arguments: []
+    };
+    
+    console.log("Registration payload:", JSON.stringify(payload, null, 2));
+    
+    // Sign and submit the transaction
+    console.log("Signing and submitting registration transaction...");
+    const result = await signTransaction(payload);
+    console.log("Registration result:", result);
+    
+    return {
+      success: !!result.hash,
+      transactionHash: result.hash || null
+    };
+  } catch (error) {
+    console.error("Error registering CoinStore:", error);
+    // If we get a specific error saying the store is already registered,
+    // we can consider this a success
+    if (error instanceof Error && 
+        error.message.includes("Store already exists")) {
+      console.log("CoinStore is already registered, proceeding with transfer");
+      return { success: true, transactionHash: null };
+    }
+    
+    toast.error("Failed to register token store");
+    throw error;
+  }
+};
+
+/**
  * Deposit tokens to the escrow wallet (admin only)
  * @param adminWalletAddress The admin wallet address
  * @param tokenType The token type to deposit
@@ -86,6 +141,23 @@ export const depositTokensTransaction = async (
       ? "0x1::aptos_coin::AptosCoin" // This is the same on testnet
       : tokenType;
     
+    // First, check and register the CoinStore if needed
+    if (actualTokenType !== "0x1::aptos_coin::AptosCoin") {
+      toast.loading("Registering token store...");
+      const registrationResult = await registerCoinStoreIfNeeded(
+        adminWalletAddress,
+        actualTokenType,
+        signTransaction
+      );
+      
+      if (!registrationResult.success) {
+        toast.dismiss();
+        toast.error("Failed to register token store");
+        return registrationResult;
+      }
+      toast.dismiss();
+    }
+    
     // Calculate the amount in smallest units (APT uses 8 decimal places)
     const amountInSmallestUnits = amount * 100000000; // 8 decimal places for APT
     
@@ -104,7 +176,9 @@ export const depositTokensTransaction = async (
     
     // Sign and submit the transaction
     console.log("Signing and submitting deposit transaction...");
+    toast.loading("Processing deposit transaction...");
     const result = await signTransaction(payload);
+    toast.dismiss();
     console.log("Deposit transaction result:", result);
     
     return {
@@ -113,6 +187,7 @@ export const depositTokensTransaction = async (
     };
   } catch (error) {
     console.error("Error depositing tokens:", error);
+    toast.dismiss();
     toast.error("Failed to deposit tokens");
     throw error;
   }

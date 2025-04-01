@@ -57,7 +57,7 @@ const TokenDeposit: React.FC = () => {
       
       console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with payout ${payoutValue} per NFT`);
       
-      // Execute the blockchain transaction
+      // Execute the blockchain transaction with the updated function that handles CoinStore registration
       const txResult = await depositTokensTransaction(
         address,
         tokenType,
@@ -67,7 +67,7 @@ const TokenDeposit: React.FC = () => {
       );
       
       if (txResult.success) {
-        toast.success(`Tokens deposited successfully! Transaction: ${txResult.transactionHash}`);
+        toast.success(`Tokens deposited successfully!${txResult.transactionHash ? ` Transaction: ${txResult.transactionHash}` : ''}`);
         
         // After successful blockchain transaction, update the payout in the database
         const dbResult = await createTokenPayout(
@@ -87,7 +87,18 @@ const TokenDeposit: React.FC = () => {
       }
     } catch (error) {
       console.error("Error depositing tokens:", error);
-      toast.error("Failed to deposit tokens");
+      let errorMessage = "Failed to deposit tokens";
+      
+      // Provide more helpful error messages
+      if (error instanceof Error) {
+        if (error.message.includes("Account hasn't registered")) {
+          errorMessage = "Your account needs to register for this token type first. Please try again.";
+        } else if (error.message.includes("insufficient balance")) {
+          errorMessage = "Insufficient balance to complete the transaction";
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }
