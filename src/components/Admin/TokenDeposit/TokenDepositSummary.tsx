@@ -22,7 +22,7 @@ const TokenDepositSummary: React.FC<TokenDepositSummaryProps> = ({
       </div>
       <div className="flex justify-between">
         <span className="text-muted-foreground">Payout per NFT:</span>
-        <span className="font-medium">{payoutPerNft} {isTestnet ? 'APT' : tokenName.toUpperCase()}</span>
+        <span className="font-medium">{payoutPerNft.toFixed(2)} {isTestnet ? 'APT' : tokenName.toUpperCase()}</span>
       </div>
       <div className="flex justify-between border-t pt-2 mt-2">
         <span className="text-muted-foreground">Expected claims:</span>

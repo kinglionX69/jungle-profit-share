@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -47,7 +46,6 @@ const WalletBalance: React.FC = () => {
         return IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
       }
       
-      // If no address is configured, use the default from constants
       const address = data?.escrow_wallet_address || (IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET);
       console.log("Retrieved escrow wallet address:", address);
       return address;
@@ -70,7 +68,6 @@ const WalletBalance: React.FC = () => {
         return;
       }
       
-      // Get the latest payout configuration for each token
       const payouts: {[key: string]: number} = {};
       
       data.forEach(payout => {
@@ -102,14 +99,11 @@ const WalletBalance: React.FC = () => {
       
       console.log(`Using escrow wallet: ${escrowWalletAddress}`);
       
-      // Fetch payout configuration
       await fetchPayoutConfiguration();
       
       const aptPrice = await getAptosPrice();
       console.log(`Current APT price: $${aptPrice}`);
       
-      // Fetch wallet balance from blockchain
-      console.log(`Fetching APT balance for ${escrowWalletAddress} on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
       const aptBalance = await getCoinBalance(
         escrowWalletAddress,
         SUPPORTED_TOKENS.APT,
@@ -163,7 +157,6 @@ const WalletBalance: React.FC = () => {
   
   const totalValue = balances.reduce((acc, item) => acc + item.value, 0);
   
-  // Calculate max claimable NFTs for each token
   const getMaxClaimableNfts = (symbol: string, amount: number) => {
     const payoutKey = symbol.toLowerCase();
     const payout = payoutsInfo[payoutKey];
@@ -241,7 +234,7 @@ const WalletBalance: React.FC = () => {
             {Object.entries(payoutsInfo).map(([token, payout]) => (
               <div key={token} className="flex justify-between">
                 <span>Payout per NFT ({token.toUpperCase()}):</span>
-                <span>{payout} {token.toUpperCase()}</span>
+                <span>{payout.toFixed(2)} {token.toUpperCase()}</span>
               </div>
             ))}
           </div>

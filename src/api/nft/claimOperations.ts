@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { submitClaimTransaction } from "@/utils/aptos";
@@ -28,7 +27,7 @@ export const calculateClaimableAmount = async (nfts: NFT[]): Promise<number> => 
     
     // Count eligible NFTs and multiply by fixed payout
     const eligibleCount = nfts.filter(nft => nft.isEligible).length;
-    return eligibleCount * FIXED_PAYOUT_PER_NFT;
+    return parseFloat((eligibleCount * FIXED_PAYOUT_PER_NFT).toFixed(2));
   } catch (error) {
     console.error("Error calculating claimable amount:", error);
     // Default to 0 if we encounter an error
@@ -74,7 +73,7 @@ export const submitClaim = async (
     }
     
     const tokenName = payoutData?.token_name || "APT";
-    const totalAmount = eligibleNfts.length * FIXED_PAYOUT_PER_NFT;
+    const totalAmount = parseFloat((eligibleNfts.length * FIXED_PAYOUT_PER_NFT).toFixed(2));
     
     // Explain to user that we're simulating the claim transaction
     toast.info("Processing claim transaction...");
@@ -101,7 +100,7 @@ export const submitClaim = async (
         .insert({
           wallet_address: walletAddress,
           token_id: nft.tokenId,
-          amount: FIXED_PAYOUT_PER_NFT,
+          amount: FIXED_PAYOUT_PER_NFT.toFixed(2),
           transaction_hash: transactionHash,
           claim_date: currentDate.toISOString()
         });

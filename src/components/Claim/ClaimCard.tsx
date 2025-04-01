@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
@@ -21,12 +20,10 @@ const ClaimCard: React.FC = () => {
   const eligibleCount = nfts.filter(nft => nft.isEligible).length;
   const lockedCount = nfts.filter(nft => nft.isLocked).length;
   
-  // Fetch token type only (not payout amount)
   useEffect(() => {
     const fetchPayoutConfig = async () => {
       setIsLoading(true);
       try {
-        // Get the latest token payout configuration just for the token type
         const { data, error } = await supabase
           .from('token_payouts')
           .select('token_name')
@@ -36,12 +33,10 @@ const ClaimCard: React.FC = () => {
           
         if (error) {
           console.error("Error fetching token type:", error);
-          // Default to APT if we can't get the token type
           setPayoutToken("APT");
         } else if (data) {
           setPayoutToken(data.token_name || "APT");
         } else {
-          // Default if no configuration exists
           setPayoutToken("APT");
         }
       } catch (error) {
@@ -66,12 +61,10 @@ const ClaimCard: React.FC = () => {
     }
   };
   
-  // Find the next NFT that will unlock
   const getNextUnlockDate = () => {
     const lockedNfts = nfts.filter(nft => nft.isLocked && nft.unlockDate);
     if (lockedNfts.length === 0) return null;
     
-    // Sort by unlock date (ascending) and get the earliest one
     return lockedNfts
       .map(nft => nft.unlockDate)
       .filter(date => date !== undefined)
@@ -98,7 +91,7 @@ const ClaimCard: React.FC = () => {
         
         <div className="mt-4 flex items-center justify-between">
           <div>
-            <div className="text-4xl font-bold">{claimableAmount} {payoutToken}</div>
+            <div className="text-4xl font-bold">{claimableAmount.toFixed(2)} {payoutToken}</div>
             <div className="text-sm text-muted-foreground mt-1">
               From {eligibleCount} eligible NFT{eligibleCount !== 1 ? 's' : ''}
             </div>
@@ -116,7 +109,7 @@ const ClaimCard: React.FC = () => {
             {isLoading ? (
               <div className="h-4 w-16 bg-muted animate-pulse rounded"></div>
             ) : (
-              <span className="font-medium">{FIXED_PAYOUT_PER_NFT} {payoutToken} per NFT</span>
+              <span className="font-medium">{FIXED_PAYOUT_PER_NFT.toFixed(2)} {payoutToken} per NFT</span>
             )}
           </div>
           
@@ -156,7 +149,7 @@ const ClaimCard: React.FC = () => {
           
           <div className="flex justify-between items-center">
             <span className="font-medium">Total claimable:</span>
-            <span className="font-bold">{claimableAmount} {payoutToken}</span>
+            <span className="font-bold">{claimableAmount.toFixed(2)} {payoutToken}</span>
           </div>
           
           <Button 
