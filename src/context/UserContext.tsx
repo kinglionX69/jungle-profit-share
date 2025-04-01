@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useWallet } from "./WalletContext";
 import { toast } from "sonner";
@@ -152,14 +151,32 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       toast.loading("Processing your claim...");
       
       // Submit the claim using the wallet's sign transaction function
-      const success = await submitClaim(address, eligibleNfts, signTransaction);
-      
-      if (success) {
-        // Refresh data
-        await fetchUserData();
-        toast.success("Claim processed successfully!");
-      } else {
-        toast.error("Failed to process claim");
+      try {
+        const success = await submitClaim(address, eligibleNfts, signTransaction);
+        
+        if (success) {
+          // Refresh data
+          await fetchUserData();
+          toast.success("Claim processed successfully!");
+        } else {
+          toast.error("Failed to process claim");
+        }
+      } catch (error) {
+        console.error("Error during claim processing:", error);
+        let errorMessage = "Failed to process claim. Please try again.";
+        
+        // Provide more helpful error messages based on error type
+        if (error instanceof Error) {
+          if (error.message.includes("API returned non-JSON")) {
+            errorMessage = "Server error: Please contact support.";
+          } else if (error.message.includes("user rejected")) {
+            errorMessage = "Transaction was rejected in your wallet.";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        toast.error(errorMessage);
       }
       
       toast.dismiss();

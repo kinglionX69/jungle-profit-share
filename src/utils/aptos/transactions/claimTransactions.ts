@@ -49,37 +49,66 @@ export const submitClaimTransaction = async (
     console.log(`- Amount: ${totalAmount}`);
     console.log(`- Recipient: ${walletAddress}`);
     
-    const response = await fetch('/api/withdraw-from-escrow', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        tokenType: SUPPORTED_TOKENS.APT,
-        amount: totalAmount,
-        recipientAddress: walletAddress,
-        network: escrowNetwork,
-        adminWalletAddress: "claim" // This is just for logging purposes
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Error from escrow endpoint:", errorData);
-      throw new Error(errorData.error || `Failed with status: ${response.status}`);
+    // Use direct URL to the Supabase Edge Function instead of relative URL
+    // When an app is served from a subfolder, relative URLs can cause issues
+    try {
+      // Get the base URL from window.location to ensure we're using the right path
+      const baseUrl = new URL(window.location.href).origin;
+      const apiUrl = `${baseUrl}/api/withdraw-from-escrow`;
+
+      console.log(`Calling API at: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tokenType: SUPPORTED_TOKENS.APT,
+          amount: totalAmount,
+          recipientAddress: walletAddress,
+          network: escrowNetwork,
+          adminWalletAddress: "claim" // This is just for logging purposes
+        })
+      });
+      
+      // Check if response is JSON by looking at Content-Type header
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If not JSON, get text and log it for debugging
+        const textResponse = await response.text();
+        console.error("Received non-JSON response:", textResponse);
+        throw new Error("API returned non-JSON response. Please check server logs.");
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error from escrow endpoint:", errorData);
+        throw new Error(errorData.error || `Failed with status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("Withdrawal transaction result:", result);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Unknown error processing claim");
+      }
+      
+      return {
+        success: true,
+        transactionHash: result.transactionHash
+      };
+    } catch (error) {
+      console.error("API request error:", error);
+      
+      // Provide more context about the error
+      if (error instanceof SyntaxError) {
+        throw new Error("API returned invalid JSON. The server might be misconfigured.");
+      }
+      
+      // Re-throw the error with better context
+      throw error;
     }
-    
-    const result = await response.json();
-    console.log("Withdrawal transaction result:", result);
-    
-    if (!result.success) {
-      throw new Error(result.error || "Unknown error processing claim");
-    }
-    
-    return {
-      success: true,
-      transactionHash: result.transactionHash
-    };
   } catch (error) {
     console.error("Error submitting claim transaction:", error);
     toast.error("Failed to submit blockchain transaction");
