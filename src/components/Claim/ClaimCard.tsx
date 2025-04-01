@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
-import { Coins, History, ChevronRight, Loader } from 'lucide-react';
+import { Coins, History, ChevronRight, Loader, Clock } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
+import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
 const ClaimCard: React.FC = () => {
   const { claimableAmount, nfts, claim, isVerified } = useUser();
@@ -12,6 +13,7 @@ const ClaimCard: React.FC = () => {
   const navigate = useNavigate();
   
   const eligibleCount = nfts.filter(nft => nft.isEligible).length;
+  const lockedCount = nfts.filter(nft => nft.isLocked).length;
   
   const handleClaim = async () => {
     if (claimableAmount <= 0 || !isVerified) return;
@@ -23,6 +25,20 @@ const ClaimCard: React.FC = () => {
       setClaiming(false);
     }
   };
+  
+  // Find the next NFT that will unlock
+  const getNextUnlockDate = () => {
+    const lockedNfts = nfts.filter(nft => nft.isLocked && nft.unlockDate);
+    if (lockedNfts.length === 0) return null;
+    
+    // Sort by unlock date (ascending) and get the earliest one
+    return lockedNfts
+      .map(nft => nft.unlockDate)
+      .filter(date => date !== undefined)
+      .sort((a, b) => (a && b) ? a.getTime() - b.getTime() : 0)[0];
+  };
+  
+  const nextUnlock = getNextUnlockDate();
   
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
@@ -61,9 +77,31 @@ const ClaimCard: React.FC = () => {
           </div>
           
           <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Collection:</span>
+            <span className="font-medium">{NFT_COLLECTION_NAME}</span>
+          </div>
+          
+          <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Eligible NFTs:</span>
             <span className="font-medium">{eligibleCount} NFT{eligibleCount !== 1 ? 's' : ''}</span>
           </div>
+          
+          {lockedCount > 0 && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Locked NFTs:</span>
+              <span className="font-medium">{lockedCount} NFT{lockedCount !== 1 ? 's' : ''}</span>
+            </div>
+          )}
+          
+          {nextUnlock && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Next unlock:</span>
+              <span className="font-medium flex items-center">
+                <Clock className="h-3 w-3 mr-1 text-amber-400" />
+                {nextUnlock.toLocaleDateString()}
+              </span>
+            </div>
+          )}
           
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Claim period:</span>

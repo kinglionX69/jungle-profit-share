@@ -1,8 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { submitClaimTransaction } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
+import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
 
 /**
  * Calculates the claimable amount based on eligible NFTs
@@ -82,7 +82,10 @@ export const submitClaim = async (
       return false;
     }
     
-    // Insert into nft_claims for each NFT
+    // Get current date for the claim
+    const currentDate = new Date();
+    
+    // Insert into nft_claims for each NFT (the unlock_date will be set automatically by the trigger)
     for (const nft of eligibleNfts) {
       const { error: claimError } = await supabase
         .from('nft_claims')
@@ -90,7 +93,8 @@ export const submitClaim = async (
           wallet_address: walletAddress,
           token_id: nft.tokenId,
           amount: payoutPerNft,
-          transaction_hash: transactionHash
+          transaction_hash: transactionHash,
+          claim_date: currentDate.toISOString()
         });
       
       if (claimError) {
@@ -106,9 +110,10 @@ export const submitClaim = async (
       .insert({
         wallet_address: walletAddress,
         token_name: tokenName,
-        token_ids: eligibleNfts.map(nft => nft.name),
+        token_ids: eligibleNfts.map(nft => NFT_COLLECTION_NAME),
         amount: totalAmount,
-        transaction_hash: transactionHash
+        transaction_hash: transactionHash,
+        claim_date: currentDate.toISOString()
       });
     
     if (historyError) {

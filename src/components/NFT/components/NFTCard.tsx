@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Info, ImageOff } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { NFT } from '@/api/types/nft.types';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
@@ -124,7 +123,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         {imageUrl && (
           <img 
             src={imageUrl} 
-            alt={nft.name || `NFT ${nft.tokenId}`} 
+            alt={NFT_COLLECTION_NAME}
             className={`w-full h-48 object-cover transition-opacity duration-300 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
@@ -135,54 +134,10 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         <NFTCardOverlay nft={nft} />
       </div>
       
-      <div className="p-4 font-nunito">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium truncate mr-2 text-left font-poppins">{nft.name || `NFT ${nft.tokenId.substring(0, 8)}...`}</h3>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="cursor-help">
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs glass border border-jungle-700/20 shadow-lg">
-                <div className="text-xs">
-                  <p className="font-semibold mb-1 font-poppins">NFT Details</p>
-                  <p>Collection: {NFT_COLLECTION_NAME}</p>
-                  {nft.standard && <p>Standard: {nft.standard}</p>}
-                  {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
-                  {nft.isLocked && nft.unlockDate && (
-                    <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
-                  )}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center">
-            {nft.isEligible ? (
-              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Available
-              </Badge>
-            ) : nft.isLocked ? (
-              <Badge variant="outline" className="text-muted-foreground border-muted">
-                <Clock className="h-3 w-3 mr-1" />
-                Locked
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-destructive border-destructive/30">
-                <XCircle className="h-3 w-3 mr-1" />
-                Ineligible
-              </Badge>
-            )}
-          </div>
-          <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20">
-            {NFT_COLLECTION_NAME}
-          </Badge>
-        </div>
+      <div className="p-4 font-nunito text-center">
+        <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20">
+          {NFT_COLLECTION_NAME}
+        </Badge>
       </div>
     </div>
   );
