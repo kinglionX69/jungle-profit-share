@@ -27,15 +27,22 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
             
             return (
               <TableRow key={nft.tokenId}>
-                <TableCell className="font-medium">
-                  {NFT_COLLECTION_NAME} #{nftNumber}
+                <TableCell className="font-medium font-bungee">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="/lovable-uploads/0f0cffbe-c021-49b7-b714-c4cec03f0893.png" 
+                      alt="Proud Lion Logo" 
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <span>{NFT_COLLECTION_NAME} #{nftNumber}</span>
+                  </div>
                 </TableCell>
-                <TableCell>2 APT</TableCell>
+                <TableCell className="font-bungee">2 APT</TableCell>
                 <TableCell>
                   {nft.isLocked ? (
                     <NFTCountdownTimer unlockDate={nft.unlockDate} />
                   ) : (
-                    <span className="text-green-500 font-medium">Available for Claim</span>
+                    <span className="text-green-500 font-medium font-bungee">Available for Claim</span>
                   )}
                 </TableCell>
               </TableRow>
