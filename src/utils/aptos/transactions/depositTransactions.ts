@@ -4,6 +4,7 @@ import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
 import { registerCoinStoreIfNeeded } from "./coinStoreRegistration";
 import { aptosClient } from "../client";
+import { toStructTag } from "../helpers";
 
 /**
  * Deposit tokens to the escrow wallet (admin only)
@@ -177,7 +178,7 @@ export const withdrawTokensTransaction = async (
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT
     
     // Prepare the tokenType in the format expected by the TypeScript SDK
-    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    const formattedTokenType = toStructTag(tokenType);
     
     // Create the transaction payload using the simpler object format
     const payload = {
