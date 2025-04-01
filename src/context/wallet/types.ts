@@ -55,3 +55,9 @@ declare global {
     };
   }
 }
+
+// Add the missing types
+export type Network = "Mainnet" | "Testnet";
+export type WalletName = "petra" | "martian" | "pontem" | "rise" | "fewcha" | "token-pocket" | 
+  "spacegate" | "hyperpay" | "okx" | "bitkeep" | "coin98" | "nightly" | "blocto" | "onekey" | 
+  "trust" | "safe";

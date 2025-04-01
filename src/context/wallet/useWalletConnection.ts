@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { handleSuccessfulConnection, updateSupabaseHeaders } from './walletUtils';
+import { checkIsAdmin } from '@/api/adminApi';
 
 export const useWalletConnection = () => {
   const [connected, setConnected] = useState(false);
@@ -28,11 +29,13 @@ export const useWalletConnection = () => {
               const account = await window.petra.account();
               if (account && account.address) {
                 console.log("Found connected Petra wallet (new API):", account.address);
-                const { adminStatus } = await handleSuccessfulConnection(account.address, "Petra");
                 setAddress(account.address);
                 setConnected(true);
-                setIsAdmin(adminStatus);
                 setWalletType('petra');
+                
+                // Check admin status
+                const adminStatus = await checkIsAdmin(account.address);
+                setIsAdmin(adminStatus);
               }
             }
           } catch (error) {
@@ -47,11 +50,13 @@ export const useWalletConnection = () => {
               const { address } = await window.aptos.account();
               if (address) {
                 console.log("Found connected Petra wallet (legacy API):", address);
-                const { adminStatus } = await handleSuccessfulConnection(address, "Petra");
                 setAddress(address);
                 setConnected(true);
-                setIsAdmin(adminStatus);
                 setWalletType('petra');
+                
+                // Check admin status
+                const adminStatus = await checkIsAdmin(address);
+                setIsAdmin(adminStatus);
               }
             }
           } catch (error) {
@@ -66,11 +71,13 @@ export const useWalletConnection = () => {
               const { address } = await window.martian.getAccount();
               if (address) {
                 console.log("Found connected Martian wallet:", address);
-                const { adminStatus } = await handleSuccessfulConnection(address, "Martian");
                 setAddress(address);
                 setConnected(true);
-                setIsAdmin(adminStatus);
                 setWalletType('martian');
+                
+                // Check admin status
+                const adminStatus = await checkIsAdmin(address);
+                setIsAdmin(adminStatus);
               }
             }
           } catch (error) {
@@ -85,11 +92,13 @@ export const useWalletConnection = () => {
               const address = await window.pontem.connect();
               if (address) {
                 console.log("Found connected Pontem wallet:", address);
-                const { adminStatus } = await handleSuccessfulConnection(address, "Pontem");
                 setAddress(address);
                 setConnected(true);
-                setIsAdmin(adminStatus);
                 setWalletType('pontem');
+                
+                // Check admin status
+                const adminStatus = await checkIsAdmin(address);
+                setIsAdmin(adminStatus);
               }
             }
           } catch (error) {
@@ -104,11 +113,13 @@ export const useWalletConnection = () => {
               const response = await window.rise.getAccount();
               if (response && response.address) {
                 console.log("Found connected Rise wallet:", response.address);
-                const { adminStatus } = await handleSuccessfulConnection(response.address, "Rise");
                 setAddress(response.address);
                 setConnected(true);
-                setIsAdmin(adminStatus);
                 setWalletType('rise');
+                
+                // Check admin status
+                const adminStatus = await checkIsAdmin(response.address);
+                setIsAdmin(adminStatus);
               }
             }
           } catch (error) {
