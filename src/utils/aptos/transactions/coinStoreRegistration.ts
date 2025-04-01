@@ -39,7 +39,8 @@ export const registerCoinStoreIfNeeded = async (
     try {
       const client = IS_TESTNET ? aptosClient('testnet') : aptosClient('mainnet');
       
-      // Cast the token type to the expected format for type safety
+      // Explicitly cast the token type to the expected format for type safety
+      // Using explicit type assertion to satisfy TypeScript's strict type checking
       const formattedTokenType = tokenType as `${string}::${string}::${string}`;
       
       // Construct the resource type for the coin store
@@ -58,13 +59,11 @@ export const registerCoinStoreIfNeeded = async (
       // Resource not found, need to register
       console.log("CoinStore not found, registering...");
       
-      // Prepare the tokenType in the format expected by the TypeScript SDK
-      const formattedTokenType = tokenType as `${string}::${string}::${string}`;
-      
       // Create the transaction payload using the simpler object format
+      // which is more compatible with different wallet implementations
       const payload = {
         function: "0x1::coin::register",
-        type_arguments: [formattedTokenType],
+        type_arguments: [tokenType], // The wallet will handle type formatting
         arguments: []
       };
       

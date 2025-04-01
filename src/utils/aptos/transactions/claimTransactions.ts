@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET } from "../constants";
-import { Aptos, AccountAddress, TransactionPayload, TransactionArgument } from "@aptos-labs/ts-sdk";
+import { Aptos, AccountAddress, TransactionPayload } from "@aptos-labs/ts-sdk";
 import { aptosClient } from "../client";
 
 /**

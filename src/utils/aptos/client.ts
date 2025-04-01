@@ -71,6 +71,7 @@ export const getCoinBalance = async (
     const client = aptosClient(network);
     
     // Properly cast the tokenType to the required format for type safety
+    // We're explicitly asserting this is in the correct format required by the SDK
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
@@ -109,6 +110,7 @@ export const hasCoinRegistered = async (
     const client = aptosClient(network);
     
     // Properly cast the tokenType to the required format for type safety
+    // We're explicitly asserting this is in the correct format required by the SDK
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
