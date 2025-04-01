@@ -8,10 +8,10 @@ export interface NFT {
   imageUrl: string;
   isEligible: boolean;
   isLocked: boolean;
+  standard?: string;
+  creator?: string;
+  properties?: any;
   unlockDate?: Date;
-  standard?: string;  // Added to support NFTGrid component
-  creator?: string;   // Added to support additional metadata
-  properties?: string; // Added to support additional metadata
 }
 
 export interface ClaimHistory {

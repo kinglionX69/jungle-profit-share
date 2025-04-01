@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
-import { updateUserEmail } from '@/api/userApi';
+import { updateUserEmail, getUserData } from '@/api/userApi';
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -26,6 +26,33 @@ const EmailVerification = () => {
       email: email || '',
     },
   });
+  
+  // Check for existing email when component mounts
+  useEffect(() => {
+    const checkExistingEmail = async () => {
+      if (address && !isVerified) {
+        try {
+          const userData = await getUserData(address);
+          if (userData && userData.email && userData.email_verified) {
+            setEmail(userData.email);
+            setIsVerified(true);
+            emailForm.reset({ email: userData.email });
+          }
+        } catch (error) {
+          console.error("Error checking for existing email:", error);
+        }
+      }
+    };
+    
+    checkExistingEmail();
+  }, [address, isVerified]);
+  
+  // Update form when email changes externally
+  useEffect(() => {
+    if (email) {
+      emailForm.reset({ email });
+    }
+  }, [email]);
   
   const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
     if (!address) {

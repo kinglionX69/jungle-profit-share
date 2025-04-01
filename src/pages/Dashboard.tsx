@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
@@ -12,16 +12,15 @@ import ClaimHistory from '@/components/Claim/ClaimHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/context/UserContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, InfoIcon, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { IS_TESTNET } from '@/utils/aptos/constants';
 
 const Dashboard = () => {
-  const { connected, address, walletType } = useWallet();
-  const { isVerified, nfts, email, fetchUserData, loadingNfts } = useUser();
+  const { connected, address } = useWallet();
+  const { isVerified, nfts, fetchUserData, loadingNfts } = useUser();
   const navigate = useNavigate();
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Redirect to home if not connected
   useEffect(() => {
@@ -29,26 +28,6 @@ const Dashboard = () => {
       navigate('/');
     }
   }, [connected, navigate]);
-  
-  useEffect(() => {
-    // Check for query parameter to show debug info
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('debug') === 'true') {
-      setShowDebugInfo(true);
-    }
-    
-    // Log debug info
-    if (connected) {
-      console.log("Dashboard debug info:");
-      console.log("- Wallet connected:", connected);
-      console.log("- Wallet type:", walletType);
-      console.log("- Wallet address:", address);
-      console.log("- Testnet mode:", IS_TESTNET);
-      console.log("- Email verified:", isVerified);
-      console.log("- NFTs loaded:", nfts.length);
-      console.log("- NFTs:", nfts);
-    }
-  }, [connected, address, isVerified, nfts, walletType]);
 
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
@@ -95,24 +74,6 @@ const Dashboard = () => {
           </Alert>
         )}
         
-        {showDebugInfo && (
-          <Alert className="mb-8" variant="default">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Debug Information</AlertTitle>
-            <AlertDescription>
-              <div className="mt-2">
-                <p><strong>Wallet Type:</strong> {walletType || 'Unknown'}</p>
-                <p><strong>Wallet Address:</strong> {address}</p>
-                <p><strong>Email:</strong> {email || 'Not set'}</p>
-                <p><strong>Email Verified:</strong> {isVerified ? 'Yes' : 'No'}</p>
-                <p><strong>NFTs Loaded:</strong> {nfts.length}</p>
-                <p><strong>Network:</strong> {IS_TESTNET ? 'TESTNET' : 'MAINNET'}</p>
-                <p><strong>Loading State:</strong> {loadingNfts ? 'Loading...' : 'Completed'}</p>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-        
         {!isVerified && (
           <div className="mb-8 max-w-md">
             <EmailVerification />
@@ -127,23 +88,11 @@ const Dashboard = () => {
                 <TabsTrigger value="all">All NFTs</TabsTrigger>
               </TabsList>
               <TabsContent value="eligible" className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-medium">Eligible for Claim</h2>
-                  <Button variant="ghost" size="sm" onClick={() => setShowDebugInfo(!showDebugInfo)}>
-                    <InfoIcon className="h-4 w-4 mr-2" />
-                    {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
-                  </Button>
-                </div>
+                <h2 className="text-xl font-medium">Eligible for Claim</h2>
                 <NFTGrid filterEligible={true} />
               </TabsContent>
               <TabsContent value="all" className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-medium">All Your NFTs</h2>
-                  <Button variant="ghost" size="sm" onClick={() => setShowDebugInfo(!showDebugInfo)}>
-                    <InfoIcon className="h-4 w-4 mr-2" />
-                    {showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info'}
-                  </Button>
-                </div>
+                <h2 className="text-xl font-medium">All Your NFTs</h2>
                 <NFTGrid filterEligible={false} />
               </TabsContent>
             </Tabs>

@@ -1,4 +1,3 @@
-
 /**
  * Types for Aptos blockchain interactions
  */
@@ -8,12 +7,13 @@
  */
 export interface BlockchainNFT {
   tokenId: string;
-  name: string;
-  description?: string;
+  name?: string;
   imageUrl: string;
-  creator: string;
-  standard: string;
-  properties: string;
+  uri?: string;
+  token_uri?: string;
+  creator?: string;
+  standard?: string;
+  properties?: string;
   collectionName?: string;
   collectionId?: string;
 }

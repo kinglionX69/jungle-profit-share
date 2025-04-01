@@ -13,6 +13,7 @@ import { testnetClient } from "@/utils/aptos/client";
 import {
   AccountAddressInput,
 } from "@aptos-labs/ts-sdk";
+
 /**
  * Fetches NFTs for a wallet from the blockchain and determines eligibility
  * @param walletAddress The wallet address to check NFTs for
@@ -174,7 +175,7 @@ export const getUserNfts = async (
       })
       .map((nft) => {
         // Extract token ID from the token_data_id
-        const tokenId = nft.token_data_id || nft.token.token_data_id || '';
+        const tokenId = nft.token_data_id || '';
         
         // Extract image URL from token URI if available
         const tokenUri = nft.current_token_data?.token_uri || '';

@@ -149,22 +149,16 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
                 <div className="text-xs">
                   <p className="font-semibold mb-1 font-poppins">NFT Details</p>
                   <p>Collection: {NFT_COLLECTION_NAME}</p>
-                  <p>Token ID: {nft.tokenId}</p>
                   {nft.standard && <p>Standard: {nft.standard}</p>}
                   {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
                   {nft.isLocked && nft.unlockDate && (
                     <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
-                  )}
-                  {nft.imageUrl && (
-                    <p className="truncate">Image: {nft.imageUrl.substring(0, 25)}...</p>
                   )}
                 </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        
-        <p className="text-sm text-muted-foreground text-left">Token ID: {nft.tokenId.substring(0, 12)}...</p>
         
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center">
