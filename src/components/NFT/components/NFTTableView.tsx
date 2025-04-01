@@ -77,7 +77,7 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
                     <span>{NFT_COLLECTION_NAME} #{nftNumber}</span>
                   </div>
                 </TableCell>
-                <TableCell className="font-bungee">2 APT</TableCell>
+                <TableCell className="font-bungee">0.1 APT</TableCell>
                 <TableCell>
                   {nft.isLocked ? (
                     <NFTCountdownTimer unlockDate={nft.unlockDate} />
