@@ -15,7 +15,7 @@ import { Download, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useWallet } from '@/context/WalletContext';
-import { withdrawTokensTransaction } from '@/utils/aptos/transactionUtils';
+import { withdrawFromEscrowWallet } from '@/utils/aptos/transactionUtils';
 import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 
 const TokenWithdrawal: React.FC = () => {
@@ -23,7 +23,7 @@ const TokenWithdrawal: React.FC = () => {
   const [selectedToken, setSelectedToken] = useState('apt');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [processing, setProcessing] = useState(false);
-  const { address, signTransaction } = useWallet();
+  const { address, isAdmin } = useWallet();
   
   const handleTokenChange = (value: string) => {
     if (IS_TESTNET && value !== 'apt') {
@@ -41,6 +41,11 @@ const TokenWithdrawal: React.FC = () => {
     
     if (!address) {
       toast.error("Wallet not connected");
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast.error("Only admins can withdraw tokens");
       return;
     }
     
@@ -65,13 +70,11 @@ const TokenWithdrawal: React.FC = () => {
       
       console.log(`Withdrawing ${amountValue} ${selectedToken.toUpperCase()} to ${recipient}`);
       
-      // Execute the blockchain transaction
-      const txResult = await withdrawTokensTransaction(
-        address,
+      // Execute the blockchain transaction using the escrow private key
+      const txResult = await withdrawFromEscrowWallet(
         tokenType,
         amountValue,
-        recipient,
-        signTransaction
+        recipient
       );
       
       if (txResult.success) {
