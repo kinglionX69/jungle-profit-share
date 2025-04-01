@@ -15,9 +15,9 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>NFT</TableHead>
-            <TableHead>Reward Amount</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead className="font-luckiest">NFT</TableHead>
+            <TableHead className="font-luckiest">Reward Amount</TableHead>
+            <TableHead className="font-luckiest">Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
