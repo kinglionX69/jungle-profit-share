@@ -32,16 +32,28 @@ export const upsertUser = async (
       updated_at: new Date().toISOString()
     };
     
-    // If user exists, update it; otherwise insert new record
-    const operation = existingUser ? 
-      supabase.from('users').update(userData).eq('wallet_address', walletAddress) :
-      supabase.from('users').insert([userData]);
+    // Use service role client for operations requiring elevated permissions
+    // If the user doesn't exist, insert with elevated permissions
+    if (!existingUser) {
+      const { error } = await supabase
+        .from('users')
+        .insert([userData]);
       
-    const { error } = await operation;
-
-    if (error) {
-      console.error("Error upserting user:", error);
-      throw error;
+      if (error) {
+        console.error("Error inserting user:", error);
+        throw error;
+      }
+    } else {
+      // If the user exists, update their record
+      const { error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('wallet_address', walletAddress);
+        
+      if (error) {
+        console.error("Error updating user:", error);
+        throw error;
+      }
     }
     
     return true;

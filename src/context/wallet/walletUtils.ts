@@ -27,7 +27,10 @@ export const handleSuccessfulConnection = async (walletAddress: string, walletNa
   updateSupabaseHeaders(walletAddress);
   
   // Insert user in database
-  await upsertUser(walletAddress);
+  const userCreated = await upsertUser(walletAddress);
+  if (!userCreated) {
+    console.warn("Failed to create/update user record in database");
+  }
   
   // Check if the wallet is an admin
   const adminStatus = await checkIsAdmin(walletAddress);
@@ -79,7 +82,6 @@ export const signTransaction = async (transaction: any, address: string | null, 
 export const updateSupabaseHeaders = (address: string | null) => {
   if (address) {
     // Set global auth for future requests
-    // Using the public methods instead of accessing protected 'rest' property
     supabase.auth.setSession({
       access_token: address,
       refresh_token: '',
@@ -88,7 +90,6 @@ export const updateSupabaseHeaders = (address: string | null) => {
     console.log("Updated Supabase headers with wallet address:", address);
   } else {
     // Clear authorization if address is null
-    // Using the public methods instead of accessing protected 'rest' property
     supabase.auth.setSession({
       access_token: null,
       refresh_token: null,
