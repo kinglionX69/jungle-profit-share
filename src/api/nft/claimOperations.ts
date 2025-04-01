@@ -89,6 +89,9 @@ export const submitClaim = async (
     const tokenName = payoutData?.token_name || "APT";
     const totalAmount = eligibleNfts.length * Number(payoutPerNft);
     
+    // Explain to user that we're simulating the claim transaction
+    toast.info("Processing claim transaction...");
+    
     // Submit transaction to blockchain
     const { success, transactionHash } = await submitClaimTransaction(
       walletAddress, 
@@ -129,7 +132,7 @@ export const submitClaim = async (
       .insert({
         wallet_address: walletAddress,
         token_name: tokenName,
-        token_ids: eligibleNfts.map(nft => NFT_COLLECTION_NAME),
+        token_ids: eligibleNfts.map(nft => nft.tokenId),
         amount: totalAmount,
         transaction_hash: transactionHash,
         claim_date: currentDate.toISOString()

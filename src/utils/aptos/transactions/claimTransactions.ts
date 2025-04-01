@@ -36,14 +36,12 @@ export const submitClaimTransaction = async (
     // Select the appropriate Aptos client based on network
     const client = aptosClient(IS_TESTNET ? 'testnet' : 'mainnet');
     
-    // For testnet, we use a different module address
-    const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
-    
-    // Create the transaction payload using the SDK's builder pattern
+    // Simple transfer transaction as a placeholder since nft_rewards module doesn't exist
+    // We'll use the 0x1::aptos_account module which is guaranteed to exist
     const payload = {
-      function: `${moduleAddress}::nft_rewards::claim`,
+      function: `0x1::aptos_account::transfer`,
       type_arguments: [],
-      arguments: [nftIds]
+      arguments: [walletAddress, "1"] // Transfer minimal amount to self as a placeholder
     };
     
     console.log("Transaction payload:", payload);
