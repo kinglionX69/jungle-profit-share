@@ -3,7 +3,7 @@ import { BlockchainNFT } from "./types";
 import { NFT_IMAGE_BASE_URL } from "./constants";
 
 /**
- * Helper function to resolve NFT image URLs
+ * Helper function to resolve NFT image URLs by fetching and parsing metadata
  * @param uri The metadata URI from the NFT
  * @returns A resolved image URL
  */
@@ -32,21 +32,6 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
       return ipfsUrl;
     }
     
-    // If URI contains a token ID, try to construct the image URL
-    const tokenIdMatch = uri.match(/0x[a-fA-F0-9]+/);
-    if (tokenIdMatch) {
-      const constructedUrl = `${NFT_IMAGE_BASE_URL}${tokenIdMatch[0]}`;
-      console.log(`Constructed URL from token ID: ${constructedUrl}`);
-      return constructedUrl;
-    }
-    
-    // If the URI is actually a token ID itself
-    if (uri.startsWith('0x')) {
-      const constructedUrl = `${NFT_IMAGE_BASE_URL}${uri}`;
-      console.log(`Constructed URL from 0x token ID: ${constructedUrl}`);
-      return constructedUrl;
-    }
-    
     // If URI is HTTP/HTTPS, try to fetch metadata
     if (uri.startsWith('http')) {
       try {
@@ -61,8 +46,8 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
         
         if (metadata.image) {
           console.log(`Found image in metadata: ${metadata.image}`);
-          // If metadata contains image URL, resolve it recursively
-          return resolveImageUrl(metadata.image);
+          // If metadata contains image URL pointing to Pinata or IPFS, use it directly
+          return metadata.image;
         } else if (metadata.uri) {
           console.log(`Found uri in metadata: ${metadata.uri}`);
           return resolveImageUrl(metadata.uri);
@@ -71,6 +56,21 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
         console.error("Error fetching metadata:", error);
         // Continue to fallback
       }
+    }
+    
+    // If the URI is actually a token ID itself
+    if (uri.startsWith('0x')) {
+      const constructedUrl = `${NFT_IMAGE_BASE_URL}${uri}`;
+      console.log(`Constructed URL from 0x token ID: ${constructedUrl}`);
+      return constructedUrl;
+    }
+    
+    // If URI contains a token ID, try to construct the image URL
+    const tokenIdMatch = uri.match(/0x[a-fA-F0-9]+/);
+    if (tokenIdMatch) {
+      const constructedUrl = `${NFT_IMAGE_BASE_URL}${tokenIdMatch[0]}`;
+      console.log(`Constructed URL from token ID: ${constructedUrl}`);
+      return constructedUrl;
     }
     
     // Generate a consistent random image based on the URI
