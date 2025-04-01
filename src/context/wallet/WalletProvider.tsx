@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -94,8 +95,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         console.log("Creating user record for newly connected wallet");
         await upsertUser(account.address);
         
-        // Check admin status
+        // Check admin status and log the result
+        console.log("Checking if wallet is admin:", account.address);
         const adminStatus = await checkIsAdmin(account.address);
+        console.log("Admin status result:", adminStatus);
         setIsAdmin(adminStatus);
       }
     } catch (error: any) {

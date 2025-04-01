@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Award, Clock, Shield, Leaf, Palmtree, Wallet } from 'lucide-react';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
-import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
 import WalletSelector from '@/components/Auth/WalletSelector';
 import { toast } from 'sonner';
@@ -19,24 +18,33 @@ const Index = () => {
     connecting,
     showWalletSelector,
     setShowWalletSelector,
-    walletType
+    walletType,
+    isAdmin,
+    address
   } = useWallet();
 
   useEffect(() => {
-    if (!window.aptos) {
-      console.log("Petra wallet not detected");
-    } else {
-      console.log("Petra wallet detected");
-    }
-  }, []);
+    console.log("Petra wallet detected:", !!window.petra || !!window.aptos);
+    console.log("Martian wallet detected:", !!window.martian);
+    console.log("Pontem wallet detected:", !!window.pontem);
+    console.log("Rise wallet detected:", !!window.rise);
+    
+    console.log("Wallet connection state:", {
+      connected,
+      walletType,
+      address,
+      isAdmin
+    });
+  }, [connected, walletType, address, isAdmin]);
 
   const handleConnectPetra = async () => {
-    if (!window.aptos) {
+    if (!window.petra && !window.aptos) {
       toast.error("Please install Petra Wallet to continue");
       window.open("https://petra.app", "_blank");
       return;
     }
     try {
+      console.log("Attempting to connect Petra wallet");
       await connectWallet('petra');
     } catch (error) {
       console.error("Failed to connect Petra wallet:", error);
@@ -79,17 +87,36 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 slide-up [animation-delay:600ms]">
-                {connected ? <Button size="lg" onClick={() => navigate('/dashboard')} className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow">
+                {connected ? (
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate('/dashboard')} 
+                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow"
+                  >
                     View Dashboard
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button> : <Button size="lg" onClick={handleConnectPetra} className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow" disabled={connecting}>
-                    {connecting ? 'Connecting...' : <>
+                  </Button>
+                ) : (
+                  <Button 
+                    size="lg" 
+                    onClick={handleConnectPetra} 
+                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow" 
+                    disabled={connecting}
+                  >
+                    {connecting ? 'Connecting...' : (
+                      <>
                         <Wallet className="mr-2 h-5 w-5" />
                         Connect Petra Wallet
-                      </>}
-                  </Button>}
+                      </>
+                    )}
+                  </Button>
+                )}
                 
-                <WalletSelector open={showWalletSelector} onOpenChange={setShowWalletSelector} onSelectWallet={connectWallet} />
+                <WalletSelector 
+                  open={showWalletSelector} 
+                  onOpenChange={setShowWalletSelector} 
+                  onSelectWallet={connectWallet} 
+                />
               </div>
             </div>
           </PageContainer>
@@ -112,15 +139,21 @@ const Index = () => {
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
-              {features.map((feature, index) => <div key={index} className="p-6 border border-jungle-700/20 glass rounded-lg scale-in hover-lift [animation-delay:var(--delay)] shadow-md" style={{
-              '--delay': `${800 + index * 200}ms`
-            } as React.CSSProperties}>
+              {features.map((feature, index) => (
+                <div 
+                  key={index} 
+                  className="p-6 border border-jungle-700/20 glass rounded-lg scale-in hover-lift [animation-delay:var(--delay)] shadow-md" 
+                  style={{
+                    '--delay': `${800 + index * 200}ms`
+                  } as React.CSSProperties}
+                >
                   <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg inline-block mb-4">
                     <div>{feature.icon}</div>
                   </div>
                   <h3 className="text-xl font-semibold mb-2 font-poppins">{feature.title}</h3>
                   <p className="text-muted-foreground font-nunito">{feature.description}</p>
-                </div>)}
+                </div>
+              ))}
             </div>
           </PageContainer>
         </section>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,7 @@ const TokenDeposit: React.FC = () => {
   const [selectedToken, setSelectedToken] = useState('apt');
   const [payoutAmount, setPayoutAmount] = useState('2');
   const [processing, setProcessing] = useState(false);
-  const { address, signTransaction } = useWallet();
+  const { address, signTransaction, isAdmin } = useWallet();
   
   // Testnet only supports APT
   const handleTokenChange = (value: string) => {
@@ -52,6 +51,11 @@ const TokenDeposit: React.FC = () => {
       return;
     }
     
+    if (!isAdmin) {
+      toast.error("Only admins can deposit tokens");
+      return;
+    }
+    
     // Testnet validation
     if (IS_TESTNET && selectedToken !== 'apt') {
       toast.error("Only APT tokens are supported on testnet");
@@ -73,6 +77,10 @@ const TokenDeposit: React.FC = () => {
       console.log(`Using escrow wallet: ${escrowWallet}`);
       
       // Execute the blockchain transaction
+      if (!signTransaction) {
+        throw new Error("Wallet signing function not available");
+      }
+      
       const txResult = await depositTokensTransaction(
         address,
         tokenType,
@@ -85,6 +93,7 @@ const TokenDeposit: React.FC = () => {
         toast.success(`Tokens deposited successfully!${txResult.transactionHash ? ` Transaction: ${txResult.transactionHash}` : ''}`);
         
         // After successful blockchain transaction, update the payout in the database
+        console.log("Updating token payout in database");
         const dbResult = await createTokenPayout(
           address,
           selectedToken.toUpperCase(),
@@ -215,7 +224,7 @@ const TokenDeposit: React.FC = () => {
         <Button 
           onClick={handleDeposit} 
           className="w-full"
-          disabled={!amount || !payoutAmount || processing}
+          disabled={!amount || !payoutAmount || processing || !address || !isAdmin}
         >
           {processing ? (
             <>

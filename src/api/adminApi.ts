@@ -23,6 +23,12 @@ export interface WalletBalance {
  */
 export const checkIsAdmin = async (walletAddress: string): Promise<boolean> => {
   try {
+    if (!walletAddress) {
+      console.error("No wallet address provided for admin check");
+      return false;
+    }
+    
+    console.log("Checking admin status for wallet:", walletAddress);
     const { data, error } = await supabase.rpc('is_admin', { wallet_address: walletAddress });
     
     if (error) {
@@ -30,6 +36,7 @@ export const checkIsAdmin = async (walletAddress: string): Promise<boolean> => {
       return false;
     }
     
+    console.log("Admin check result:", data);
     return data === true;
   } catch (error) {
     console.error("Error checking admin status:", error);
@@ -77,13 +84,23 @@ export const createTokenPayout = async (
   payoutPerNft: number
 ): Promise<boolean> => {
   try {
+    if (!walletAddress) {
+      console.error("No wallet address provided for token payout creation");
+      toast.error("Wallet not connected");
+      return false;
+    }
+    
+    console.log(`Creating token payout: ${tokenName} at ${payoutPerNft} per NFT by ${walletAddress}`);
+    
     // Check if wallet is admin
     const isAdmin = await checkIsAdmin(walletAddress);
     if (!isAdmin) {
+      console.error("Non-admin wallet attempted to create token payout:", walletAddress);
       toast.error("Only admins can set token payouts");
       return false;
     }
     
+    // Insert the token payout record
     const { error } = await supabase
       .from('token_payouts')
       .insert({
@@ -98,6 +115,7 @@ export const createTokenPayout = async (
       return false;
     }
     
+    console.log("Token payout created successfully");
     toast.success(`Successfully set ${tokenName} payout to ${payoutPerNft} per NFT`);
     return true;
   } catch (error) {
