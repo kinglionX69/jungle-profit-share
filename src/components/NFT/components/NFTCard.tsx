@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock, CheckCircle, XCircle, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -70,17 +70,37 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
 };
 
 const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
+  // Generate a fallback image URL based on the token ID for consistency
+  const getFallbackImageUrl = () => {
+    const hash = nft.tokenId.split('').reduce((acc, char) => {
+      return acc + char.charCodeAt(0);
+    }, 0);
+    
+    return `https://picsum.photos/seed/${hash}/300/300`;
+  };
+  
   return (
     <div className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
       <div className="relative">
+        {!imageLoaded && !imageError && (
+          <div className="w-full h-48 flex items-center justify-center bg-jungle-700/10">
+            <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        
         <img 
-          src={nft.imageUrl} 
+          src={imageError ? getFallbackImageUrl() : nft.imageUrl} 
           alt={nft.name} 
-          className="w-full h-48 object-cover"
+          className={`w-full h-48 object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = `https://picsum.photos/seed/${nft.tokenId}/300/300`;
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            console.log(`Image failed to load: ${nft.imageUrl}`);
+            setImageError(true);
+            setImageLoaded(true);
           }}
         />
         
@@ -106,6 +126,9 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
                   {nft.creator && <p>Creator: {nft.creator.substring(0, 10)}...</p>}
                   {nft.isLocked && nft.unlockDate && (
                     <p>Unlock Date: {nft.unlockDate.toLocaleDateString()}</p>
+                  )}
+                  {nft.imageUrl && (
+                    <p className="truncate">Image: {nft.imageUrl.substring(0, 25)}...</p>
                   )}
                 </div>
               </TooltipContent>

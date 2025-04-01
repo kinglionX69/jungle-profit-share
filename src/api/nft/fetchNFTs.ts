@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { getNFTsInWallet } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
 import { NFT_COLLECTION_NAME, USE_DEMO_MODE } from "@/utils/aptos/constants";
+import { resolveNFTImages } from "@/utils/aptos/nftImageResolver";
 
 /**
  * Fetches NFTs for a wallet from the blockchain and determines eligibility
@@ -36,17 +37,21 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       
       console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
       
-      if (blockchainNfts.length === 0 && !USE_DEMO_MODE) {
+      // Resolve image URLs for all NFTs before proceeding
+      const nftsWithResolvedImages = await resolveNFTImages(blockchainNfts);
+      console.log("NFTs after image resolution:", nftsWithResolvedImages);
+      
+      if (nftsWithResolvedImages.length === 0 && !USE_DEMO_MODE) {
         console.log("No NFTs found for this wallet");
         toast.info("No NFTs found in your wallet");
         return [];
       }
       
       // Convert blockchain NFTs to our application format
-      const nfts: NFT[] = blockchainNfts.map(nft => ({
+      const nfts: NFT[] = nftsWithResolvedImages.map(nft => ({
         tokenId: nft.tokenId,
         name: nft.name,
-        imageUrl: nft.imageUrl || "https://picsum.photos/seed/lion1/300/300", // Fallback image
+        imageUrl: nft.imageUrl || `https://picsum.photos/seed/${nft.tokenId}/300/300`, // Use resolved image or fallback
         isEligible: true, // Default to eligible, we'll check locks below
         isLocked: false,
         standard: nft.standard,
