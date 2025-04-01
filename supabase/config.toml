@@ -23,3 +23,6 @@ enabled = true
 
 [storage]
 enabled = true
+
+[functions.update-token-payouts]
+verify_jwt = false

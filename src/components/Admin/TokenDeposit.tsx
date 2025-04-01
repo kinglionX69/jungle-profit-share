@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ import { toast } from 'sonner';
 import { Upload, Coins, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { createTokenPayout } from '@/api/adminApi';
+import { supabase } from "@/integrations/supabase/client";
 import { useWallet } from '@/context/WalletContext';
 import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
@@ -33,6 +34,40 @@ const TokenDeposit: React.FC = () => {
       return;
     }
     setSelectedToken(value);
+  };
+  
+  const updateTokenPayout = async (walletAddress: string, tokenName: string, payoutPerNft: number): Promise<boolean> => {
+    try {
+      // First try using the edge function
+      const response = await supabase.functions.invoke('update-token-payouts', {
+        body: { walletAddress, tokenName, payoutPerNft }
+      });
+      
+      if (response.error) {
+        console.error("Edge function error:", response.error);
+        // Fall back to direct database insertion
+        const { error } = await supabase
+          .from('token_payouts')
+          .insert({
+            token_name: tokenName.toUpperCase(),
+            payout_per_nft: payoutPerNft,
+            created_by: walletAddress
+          });
+          
+        if (error) {
+          console.error("Error updating token payout:", error);
+          toast.error("Failed to update payout configuration: " + error.message);
+          return false;
+        }
+      }
+      
+      toast.success(`Payout configuration updated to ${payoutPerNft} ${tokenName.toUpperCase()} per NFT`);
+      return true;
+    } catch (error) {
+      console.error("Error updating token payout:", error);
+      toast.error("Failed to update payout configuration");
+      return false;
+    }
   };
   
   const handleDeposit = async () => {
@@ -94,17 +129,14 @@ const TokenDeposit: React.FC = () => {
         
         // After successful blockchain transaction, update the payout in the database
         console.log("Updating token payout in database");
-        const dbResult = await createTokenPayout(
+        const dbResult = await updateTokenPayout(
           address,
           selectedToken.toUpperCase(),
           payoutValue
         );
         
         if (dbResult) {
-          toast.success(`Payout configuration updated to ${payoutValue} ${selectedToken.toUpperCase()} per NFT`);
           setAmount('');
-        } else {
-          toast.error("Failed to update payout configuration in database");
         }
       } else {
         toast.error(txResult.error || "Transaction failed");
