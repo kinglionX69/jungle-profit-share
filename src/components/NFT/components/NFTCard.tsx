@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, ImageOff } from 'lucide-react';
+import { Clock, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NFT } from '@/api/types/nft.types';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
@@ -26,45 +26,22 @@ const formatTimeRemaining = (unlockDate?: Date) => {
 };
 
 const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
+  if (!nft.isLocked) return null;
+  
   return (
-    <>
-      <div className={`absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm ${
-        nft.isEligible 
-          ? 'bg-jungle-700/10' 
-          : nft.isLocked 
-            ? 'bg-destructive/10' 
-            : 'bg-amber-500/10'
-      }`}>
-        {nft.isEligible && (
-          <div className="bg-black/60 rounded-full p-3 shadow-glow animate-pulse-light">
-            <CheckCircle className="h-12 w-12 text-amber-400" />
-          </div>
-        )}
-        
-        {nft.isLocked && (
-          <div className="flex flex-col items-center p-4 glass rounded-xl shadow-md">
-            {nft.unlockDate && (
-              <>
-                <p className="text-xs text-muted-foreground mb-1 font-nunito">Unlocks in</p>
-                <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
-                <p className="text-xs text-muted-foreground font-nunito">Days:Hours:Mins</p>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+    <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm bg-destructive/10">
+      {nft.unlockDate && (
+        <div className="flex flex-col items-center p-4 glass rounded-xl shadow-md">
+          <p className="text-xs text-muted-foreground mb-1 font-nunito">Unlocks in</p>
+          <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
+          <p className="text-xs text-muted-foreground font-nunito">Days:Hours:Mins</p>
+        </div>
+      )}
       
-      <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium font-nunito
-        ${nft.isEligible 
-          ? 'bg-jungle-700/20 text-amber-400' 
-          : nft.isLocked 
-            ? 'bg-destructive/20 text-destructive' 
-            : 'bg-amber-500/20 text-amber-400'
-        }`}
-      >
-        {nft.isEligible ? 'Eligible' : nft.isLocked ? 'Locked' : 'Not Eligible'}
+      <div className="absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium font-nunito bg-destructive/20 text-destructive">
+        Locked
       </div>
-    </>
+    </div>
   );
 };
 
@@ -131,7 +108,8 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
           />
         )}
         
-        <NFTCardOverlay nft={nft} />
+        {/* Only show the overlay if the NFT is locked */}
+        {nft.isLocked && <NFTCardOverlay nft={nft} />}
       </div>
       
       <div className="p-4 font-nunito text-center">
