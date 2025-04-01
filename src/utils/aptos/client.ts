@@ -1,142 +1,143 @@
+import { AptosClient, AptosAccount, FaucetClient } from "aptos";
 
-import { Aptos, AptosConfig, Network, AccountAddress } from "@aptos-labs/ts-sdk";
-import { IS_TESTNET } from "./constants";
-import { toStructTag } from "./helpers";
+// const NODE_URL = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com";
+const NODE_URL = process.env.APTOS_NODE_URL || "https://testnet.aptoslabs.com";
+const FAUCET_URL = process.env.APTOS_FAUCET_URL || "https://faucet.testnet.aptoslabs.com";
 
-// Create configurations for different networks
-const DEVNET_CONFIG = new AptosConfig({ network: Network.DEVNET });
-const TESTNET_CONFIG = new AptosConfig({ network: Network.TESTNET });
-const MAINNET_CONFIG = new AptosConfig({ network: Network.MAINNET });
-
-// Initialize clients
-export const devnetClient = new Aptos(DEVNET_CONFIG);
-export const testnetClient = new Aptos(TESTNET_CONFIG);
-export const mainnetClient = new Aptos(MAINNET_CONFIG);
+export const aptosClient = new AptosClient(NODE_URL);
+export const faucetClient = new FaucetClient(NODE_URL, FAUCET_URL);
 
 /**
- * Get the appropriate Aptos client based on network name
- * @param network The network name ('devnet', 'testnet', 'mainnet')
- * @returns The Aptos client for the specified network
+ * Creates a new Aptos account and funds it using the FaucetClient.
+ * @returns The AptosAccount object representing the created account.
  */
-export const aptosClient = (network?: string): Aptos => {
-  // If no network specified, use the default based on IS_TESTNET
-  if (!network) {
-    return IS_TESTNET ? testnetClient : mainnetClient;
-  }
-  
-  // Return the appropriate client based on network name
-  const networkLower = network.toLowerCase();
-  if (networkLower === Network.DEVNET.toLowerCase()) {
-    return devnetClient;
-  } else if (networkLower === Network.TESTNET.toLowerCase()) {
-    return testnetClient;
-  } else if (networkLower === Network.MAINNET.toLowerCase()) {
-    if (IS_TESTNET) {
-      console.warn("Attempting to use mainnet client in testnet mode; using testnet client instead");
-      return testnetClient;
-    }
-    return mainnetClient;
-  } else {
-    throw new Error(`Unknown network: ${network}`);
-  }
+export const createFundedAccount = async (): Promise<AptosAccount> => {
+  const account = new AptosAccount();
+  await faucetClient.fundAccount(account.address(), 100_000_000);
+  return account;
 };
 
 /**
- * Check if a network can be used for sending transactions
+ * Converts a string to a Uint8Array.
+ * @param str The string to convert.
+ * @returns The Uint8Array representation of the string.
  */
-export const isSendableNetwork = (
-  connected: boolean,
-  network?: string
-): boolean => {
-  return (
-    connected &&
-    (network?.toLowerCase() === Network.DEVNET.toLowerCase() ||
-      network?.toLowerCase() === Network.TESTNET.toLowerCase() ||
-      network?.toLowerCase() === Network.MAINNET.toLowerCase())
-  );
+export const stringToUint8Array = (str: string): Uint8Array => {
+  const encoder = new TextEncoder();
+  return encoder.encode(str);
 };
 
 /**
- * Get the coin balance of a wallet address
- * @param walletAddress The wallet address to check
- * @param tokenType The token type to check balance for
- * @param network The network to check on
- * @returns The balance in standard units (e.g., 1 APT instead of 100000000 octas)
+ * Converts a Uint8Array to a string.
+ * @param arr The Uint8Array to convert.
+ * @returns The string representation of the Uint8Array.
  */
-export const getCoinBalance = async (
+export const uint8ArrayToString = (arr: Uint8Array): string => {
+  const decoder = new TextDecoder();
+  return decoder.decode(arr);
+};
+
+export const testnetClient = new AptosClient(
+  "https://testnet.aptoslabs.com"
+);
+
+/**
+ * Register a token store for a wallet if it doesn't already exist
+ */
+export const registerTokenStore = async (
   walletAddress: string,
-  tokenType: string = "0x1::aptos_coin::AptosCoin",
-  network?: string
-): Promise<number> => {
+  signTransaction: (payload: any) => Promise<{ hash: string }>
+): Promise<{ success: boolean; hash?: string }> => {
   try {
-    const client = aptosClient(network);
+    console.log(`Registering token store for ${walletAddress}`);
     
-    // Use a regular expression to validate the format before casting
-    if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
-      console.error(`Invalid token type format: ${tokenType}`);
-      return 0;
-    }
-    
-    // Use the helper function to convert the string to a properly typed format
-    const formattedTokenType = toStructTag(tokenType);
-    
-    // Construct the resource type for the coin store
-    const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
-    
-    // Get the coin store resource
-    const resource = await client.getAccountResource({
+    // Check if token store is already registered
+    const accountResources = await aptosClient.getAccountResources({
       accountAddress: walletAddress,
-      resourceType: resourceType,
     });
     
-    // Extract the balance from the resource
-    const balance = (resource.data as any)?.coin?.value || '0';
+    const tokenStoreResource = accountResources.find(
+      (r) => r.type === "0x3::token::TokenStore"
+    );
     
-    // Convert from smallest units (e.g., octas for APT) to standard units (e.g., APT)
-    return parseInt(balance) / 100000000; // 8 decimal places
+    if (tokenStoreResource) {
+      console.log("Token store already registered");
+      return { success: true };
+    }
+    
+    // Prepare transaction to register token store
+    const payload = {
+      function: "0x3::token::initialize_token_store",
+      type_arguments: [],
+      arguments: [],
+    };
+    
+    // Sign and submit transaction
+    const result = await signTransaction(payload);
+    console.log("Token store registration result:", result);
+    
+    return {
+      success: true,
+      hash: result.hash,
+    };
   } catch (error) {
-    console.error(`Error fetching balance for ${walletAddress}:`, error);
-    return 0; // Return 0 if there's an error
+    console.error("Error registering token store:", error);
+    return {
+      success: false,
+    };
   }
 };
 
 /**
- * Check if an account has a coin registered
- * @param walletAddress The wallet address to check
- * @param tokenType The token type to check
- * @param network The network to check on
- * @returns Whether the coin is registered
+ * Register a coin store for a wallet if it doesn't already exist
  */
-export const hasCoinRegistered = async (
+export const registerCoinStore = async (
   walletAddress: string,
-  tokenType: string,
-  network?: string
-): Promise<boolean> => {
+  coinType: string,
+  signTransaction: (payload: any) => Promise<{ hash: string }>
+): Promise<{ success: boolean; hash?: string }> => {
   try {
-    const client = aptosClient(network);
+    console.log(`Registering coin store for ${walletAddress} with coin type ${coinType}`);
     
-    // Use a regular expression to validate the format before casting
-    if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
-      console.error(`Invalid token type format: ${tokenType}`);
-      return false;
-    }
+    // Import the toStructTag function to ensure type safety
+    import { toStructTag } from "./helpers";
     
-    // Use the helper function to convert the string to a properly typed format
-    const formattedTokenType = toStructTag(tokenType);
-    
-    // Construct the resource type for the coin store
-    const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
-    
-    // Try to get the resource
-    await client.getAccountResource({
+    // Check if coin store is already registered
+    const accountResources = await aptosClient.getAccountResources({
       accountAddress: walletAddress,
-      resourceType: resourceType,
     });
     
-    // If we get here, the resource exists
-    return true;
+    const coinTypeStr = toStructTag(coinType);
+    
+    const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
+    const coinStoreResource = accountResources.find(
+      (r) => r.type === coinStoreType
+    );
+    
+    if (coinStoreResource) {
+      console.log("Coin store already registered");
+      return { success: true };
+    }
+    
+    // Prepare transaction to register coin store
+    const payload = {
+      function: "0x1::managed_coin::register",
+      type_arguments: [coinTypeStr],
+      arguments: [],
+    };
+    
+    // Sign and submit transaction
+    const result = await signTransaction(payload);
+    console.log("Coin store registration result:", result);
+    
+    return {
+      success: true,
+      hash: result.hash,
+    };
   } catch (error) {
-    // If we get a 404, the resource doesn't exist
-    return false;
+    console.error("Error registering coin store:", error);
+    return {
+      success: false,
+    };
   }
 };
