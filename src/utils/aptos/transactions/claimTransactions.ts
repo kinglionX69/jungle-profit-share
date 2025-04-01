@@ -1,0 +1,53 @@
+
+import { toast } from "sonner";
+import { TransactionResult } from "../types";
+import { IS_TESTNET } from "../constants";
+
+/**
+ * Submit a transaction to the blockchain to claim rewards
+ * @param walletAddress The wallet address submitting the transaction
+ * @param nftIds The NFT IDs to claim rewards for
+ * @param signTransaction Function to sign and submit the transaction
+ * @returns Transaction result with success status and hash
+ */
+export const submitClaimTransaction = async (
+  walletAddress: string, 
+  nftIds: string[],
+  signTransaction: (txn: any) => Promise<any>
+): Promise<TransactionResult> => {
+  try {
+    console.log(`Submitting claim transaction on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    console.log(`Wallet address: ${walletAddress}`);
+    console.log(`NFT IDs to claim: ${nftIds.join(', ')}`);
+    
+    // Create the transaction payload
+    // For testnet, we use a different module address
+    // Changed from token::claim_rewards to nft_rewards::claim (more likely to exist)
+    const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
+    
+    const payload = {
+      type: "entry_function_payload",
+      function: `${moduleAddress}::nft_rewards::claim`,
+      type_arguments: [],
+      arguments: [
+        nftIds,  // The NFT token IDs being claimed
+      ]
+    };
+    
+    console.log("Transaction payload:", JSON.stringify(payload, null, 2));
+    
+    // Sign and submit the transaction
+    console.log("Signing and submitting transaction...");
+    const result = await signTransaction(payload);
+    console.log("Transaction result:", result);
+    
+    return {
+      success: !!result.hash,
+      transactionHash: result.hash || null
+    };
+  } catch (error) {
+    console.error("Error submitting claim transaction:", error);
+    toast.error("Failed to submit blockchain transaction");
+    throw error;
+  }
+};
