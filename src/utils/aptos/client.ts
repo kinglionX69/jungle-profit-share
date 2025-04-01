@@ -1,4 +1,3 @@
-
 import { Aptos, AptosConfig, Network, AccountAddress } from "@aptos-labs/ts-sdk";
 import { IS_TESTNET } from "./constants";
 
@@ -70,8 +69,11 @@ export const getCoinBalance = async (
   try {
     const client = aptosClient(network);
     
+    // Properly cast the tokenType to the required format
+    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    
     // Construct the resource type for the coin store
-    const resourceType = `0x1::coin::CoinStore<${tokenType}>`;
+    const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
     
     // Get the coin store resource
     const resource = await client.getAccountResource({
@@ -105,8 +107,11 @@ export const hasCoinRegistered = async (
   try {
     const client = aptosClient(network);
     
+    // Properly cast the tokenType to the required format
+    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    
     // Construct the resource type for the coin store
-    const resourceType = `0x1::coin::CoinStore<${tokenType}>`;
+    const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
     
     // Try to get the resource
     await client.getAccountResource({

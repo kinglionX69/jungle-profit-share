@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS } from "../constants";
-import { EntryFunctionPayload } from "@aptos-labs/ts-sdk";
+import { TransactionPayload, EntryFunction } from "@aptos-labs/ts-sdk";
 import { aptosClient } from "../client";
 
 /**
@@ -40,8 +40,11 @@ export const registerCoinStoreIfNeeded = async (
     try {
       const client = IS_TESTNET ? aptosClient('testnet') : aptosClient('mainnet');
       
+      // Cast the token type to the expected format
+      const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+      
       // Construct the resource type for the coin store
-      const resourceType = `0x1::coin::CoinStore<${tokenType}>`;
+      const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
       
       // Check if the resource exists
       const resource = await client.getAccountResource({
@@ -56,12 +59,19 @@ export const registerCoinStoreIfNeeded = async (
       // Resource not found, need to register
       console.log("CoinStore not found, registering...");
       
-      // Create the transaction payload for registration using the SDK
-      const payload: EntryFunctionPayload = {
-        function: "0x1::coin::register",
-        typeArguments: [tokenType],
-        functionArguments: [],
-      };
+      // Cast the token type to the expected format
+      const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+      
+      // Create the entry function for registration
+      const entryFunction = new EntryFunction(
+        "0x1::coin", // module address::module name
+        "register", // function name
+        [formattedTokenType], // type arguments
+        [] // function arguments
+      );
+      
+      // Create the transaction payload
+      const payload = new TransactionPayload(entryFunction);
       
       console.log("Registration payload:", payload);
       

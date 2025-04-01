@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -12,19 +11,17 @@ import { toast } from 'sonner';
 import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
 import { getCoinBalance, aptosClient } from '@/utils/aptos/client';
-import { Refresh } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Get current USD value of APT
 const getAptosPrice = async (): Promise<number> => {
   try {
-    // Use CoinGecko API to get current APT price
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd");
     const data = await response.json();
-    return data?.aptos?.usd || 40; // Default to $40 if API fails
+    return data?.aptos?.usd || 40;
   } catch (error) {
     console.error("Error fetching APT price:", error);
-    return 40; // Default fallback price
+    return 40;
   }
 };
 
@@ -34,7 +31,6 @@ const WalletBalance: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { address } = useWallet();
   
-  // Get the correct escrow wallet address based on the network
   const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
   
   const fetchBalances = async () => {
@@ -47,11 +43,9 @@ const WalletBalance: React.FC = () => {
     try {
       setIsRefreshing(true);
       
-      // Get APT price in USD
       const aptPrice = await getAptosPrice();
       console.log(`Current APT price: $${aptPrice}`);
       
-      // Fetch APT balance using the SDK
       const aptBalance = await getCoinBalance(
         escrowWalletAddress,
         SUPPORTED_TOKENS.APT,
@@ -59,7 +53,6 @@ const WalletBalance: React.FC = () => {
       );
       console.log(`APT balance: ${aptBalance}`);
       
-      // Build the balances array
       const balancesData: WalletBalanceType[] = [
         {
           token: 'Aptos',
@@ -69,7 +62,6 @@ const WalletBalance: React.FC = () => {
         }
       ];
       
-      // If on mainnet, try to fetch EMOJICOIN too
       if (!IS_TESTNET) {
         try {
           const emojiCoinBalance = await getCoinBalance(
@@ -83,7 +75,7 @@ const WalletBalance: React.FC = () => {
               token: 'EmojiCoin',
               symbol: 'EMOJI',
               amount: emojiCoinBalance,
-              value: emojiCoinBalance, // Assume 1:1 with USD for simplicity
+              value: emojiCoinBalance,
             });
           }
         } catch (emojiError) {
@@ -101,7 +93,6 @@ const WalletBalance: React.FC = () => {
     }
   };
   
-  // Fetch balances on initial load
   useEffect(() => {
     fetchBalances();
   }, [escrowWalletAddress]);
@@ -121,7 +112,7 @@ const WalletBalance: React.FC = () => {
           onClick={fetchBalances}
           disabled={isRefreshing}
         >
-          <Refresh className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </Button>
       </CardHeader>
       <CardContent>

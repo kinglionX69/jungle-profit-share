@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
 import { registerCoinStoreIfNeeded } from "./coinStoreRegistration";
-import { EntryFunctionPayload } from "@aptos-labs/ts-sdk";
+import { TransactionPayload, EntryFunction } from "@aptos-labs/ts-sdk";
 import { aptosClient } from "../client";
 
 /**
@@ -74,15 +74,22 @@ export const depositTokensTransaction = async (
     // Calculate the amount in smallest units (APT uses 8 decimal places)
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT, ensure integer
     
-    // Create the transaction payload for depositing tokens using the SDK
-    const payload: EntryFunctionPayload = {
-      function: "0x1::coin::transfer",
-      typeArguments: [tokenType],
-      functionArguments: [
-        escrowWalletAddress, // Recipient address
-        amountInSmallestUnits.toString(), // Amount in smallest units
-      ],
-    };
+    // Cast the token type to the expected format
+    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    
+    // Create the entry function for token transfer
+    const entryFunction = new EntryFunction(
+      "0x1::coin", // module address::module name
+      "transfer", // function name
+      [formattedTokenType], // type arguments
+      [
+        aptosClient().serializer.serializeArg(escrowWalletAddress), // Recipient address
+        aptosClient().serializer.serializeArg(amountInSmallestUnits.toString()), // Amount in smallest units
+      ]
+    );
+    
+    // Create the transaction payload
+    const payload = new TransactionPayload(entryFunction);
     
     console.log("Deposit payload:", payload);
     
@@ -174,19 +181,22 @@ export const withdrawTokensTransaction = async (
     // Calculate the amount in smallest units (APT uses 8 decimal places)
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT
     
-    // Create the withdrawal transaction
-    // Note: In a real implementation, this would use a custom module that:
-    // 1. Verifies the caller is an admin
-    // 2. Transfers tokens from the escrow to the recipient
-    // For demo purposes, we'll use a simplified approach (would not work in production)
-    const payload: EntryFunctionPayload = {
-      function: "0x1::managed_coin::transfer",
-      typeArguments: [tokenType],
-      functionArguments: [
-        recipientAddress, // Recipient address  
-        amountInSmallestUnits.toString(), // Amount in smallest units
-      ],
-    };
+    // Cast the token type to the expected format
+    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    
+    // Create the entry function for the withdrawal
+    const entryFunction = new EntryFunction(
+      "0x1::managed_coin", // module address::module name
+      "transfer", // function name
+      [formattedTokenType], // type arguments
+      [
+        aptosClient().serializer.serializeArg(recipientAddress), // Recipient address  
+        aptosClient().serializer.serializeArg(amountInSmallestUnits.toString()), // Amount in smallest units
+      ]
+    );
+    
+    // Create the transaction payload
+    const payload = new TransactionPayload(entryFunction);
     
     console.log("Withdrawal payload:", payload);
     
