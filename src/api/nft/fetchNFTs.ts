@@ -186,7 +186,7 @@ export const getUserNfts = async (
         const creatorAddress = nft.current_token_data?.current_collection?.creator_address || '';
         const tokenStandard = nft.current_token_data?.current_collection?.token_standard || '';
         
-        // Create the NFT object
+        // Create the NFT object with the unlockDate property included
         return {
           tokenId,
           name: `${collectionName} #${tokenId.substring(tokenId.length - 8)}`,
@@ -196,6 +196,7 @@ export const getUserNfts = async (
           standard: tokenStandard,
           creator: creatorAddress,
           properties: JSON.stringify(nft.current_token_data || {}),
+          unlockDate: undefined // Initialize with undefined
         };
       });
 
