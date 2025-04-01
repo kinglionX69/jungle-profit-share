@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Clock, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NFT } from '@/api/types/nft.types';
-import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+import { NFT_COLLECTION_NAME, NFT_IMAGE_BASE_URL } from '@/utils/aptos/constants';
 
 interface NFTCardProps {
   nft: NFT;
@@ -50,6 +49,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isMetadataLoading, setIsMetadataLoading] = useState(false);
   
   // Generate a fallback image URL based on the token ID for consistency
   const getFallbackImageUrl = () => {
@@ -60,95 +60,120 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
     return `https://picsum.photos/seed/${hash}/300/300`;
   };
   
+  const fetchMetadataDirectly = async (tokenId: string) => {
+    setIsMetadataLoading(true);
+    try {
+      // Extract tokenId if it's a full data ID
+      const extractedId = tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || tokenId;
+      const metadataUrl = `${NFT_IMAGE_BASE_URL}${extractedId}`;
+      
+      console.log(`NFT Card fetching metadata directly from: ${metadataUrl}`);
+      
+      const response = await fetch(metadataUrl);
+      if (!response.ok) {
+        console.error(`Metadata fetch failed with status: ${response.status}`);
+        throw new Error(`Failed to fetch metadata: ${response.status}`);
+      }
+      
+      try {
+        const metadata = await response.json();
+        console.log('NFT Card parsed metadata:', metadata);
+        
+        if (metadata && metadata.image) {
+          console.log(`NFT Card found image in metadata: ${metadata.image}`);
+          
+          // Handle IPFS URLs in the metadata
+          if (metadata.image.startsWith('ipfs://')) {
+            setImageUrl(metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/'));
+          } else {
+            setImageUrl(metadata.image);
+          }
+          return true;
+        } else {
+          console.log('No image found in metadata, using fallback');
+          setImageUrl(getFallbackImageUrl());
+          return false;
+        }
+      } catch (jsonError) {
+        console.error("Error parsing metadata JSON:", jsonError);
+        setImageUrl(getFallbackImageUrl());
+        return false;
+      }
+    } catch (error) {
+      console.error(`Error fetching metadata for ${tokenId}:`, error);
+      setImageUrl(getFallbackImageUrl());
+      return false;
+    } finally {
+      setIsMetadataLoading(false);
+    }
+  };
+  
   useEffect(() => {
     // Reset states when NFT changes
     setImageError(false);
     setImageLoaded(false);
     setRetryCount(0);
+    setIsMetadataLoading(false);
     
-    // Check if we have an image URL
-    if (nft.imageUrl) {
-      console.log(`NFT Card using image URL: ${nft.imageUrl}`);
-      // Check if the URL is already valid, otherwise try to use it as a token ID
-      if (nft.imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || 
-          nft.imageUrl.startsWith('http') && !nft.imageUrl.includes('api.proudlionsclub.com')) {
-        setImageUrl(nft.imageUrl);
-      } else if (nft.imageUrl.includes('proudlionsclub.mypinata.cloud')) {
-        // Direct IPFS URL from Pinata, use it directly
-        setImageUrl(nft.imageUrl);
+    const loadImage = async () => {
+      // Check if we have an image URL
+      if (nft.imageUrl) {
+        console.log(`NFT Card using image URL: ${nft.imageUrl}`);
+        
+        // If it's already an image URL (ends with image extension)
+        if (nft.imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)) {
+          setImageUrl(nft.imageUrl);
+        } 
+        // If it's a Pinata/IPFS URL
+        else if (nft.imageUrl.includes('ipfs') || nft.imageUrl.includes('pinata')) {
+          setImageUrl(nft.imageUrl);
+        }
+        // If it's an HTTP URL but not to our API
+        else if (nft.imageUrl.startsWith('http') && !nft.imageUrl.includes('api.proudlionsclub.com')) {
+          setImageUrl(nft.imageUrl);
+        }
+        // Otherwise try to use it as a token ID to fetch metadata
+        else {
+          console.log(`NFT Card needs to fetch metadata for: ${nft.tokenId}`);
+          await fetchMetadataDirectly(nft.tokenId);
+        }
       } else {
-        console.log(`NFT image URL doesn't look like an image URL, might be token ID: ${nft.imageUrl}`);
-        // It might be metadata that needs to be fetched
-        fetchMetadataImage(nft.tokenId);
+        console.log(`No image URL for NFT ${nft.tokenId}, fetching metadata`);
+        await fetchMetadataDirectly(nft.tokenId);
       }
-    } else {
-      console.log(`No image URL for NFT ${nft.tokenId}, fetching metadata`);
-      fetchMetadataImage(nft.tokenId);
-    }
+    };
+    
+    loadImage();
   }, [nft]);
   
-  const fetchMetadataImage = async (tokenId: string) => {
-    try {
-      // Extract token ID if needed
-      const extractedId = tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || tokenId;
-      const metadataUrl = `https://api.proudlionsclub.com/tokenids/${extractedId}`;
-      
-      console.log(`Fetching metadata from ${metadataUrl}`);
-      const response = await fetch(metadataUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch metadata: ${response.status}`);
-      }
-      
-      const responseText = await response.text();
-      console.log(`Metadata response: ${responseText.substring(0, 200)}...`);
-      
-      try {
-        const metadata = JSON.parse(responseText);
-        console.log('Parsed metadata:', metadata);
-        
-        if (metadata && metadata.image) {
-          console.log(`Found image in metadata: ${metadata.image}`);
-          setImageUrl(metadata.image);
-        } else {
-          console.log('No image found in metadata, using fallback');
-          setImageUrl(getFallbackImageUrl());
-        }
-      } catch (jsonError) {
-        console.error("Error parsing metadata JSON:", jsonError);
-        setImageUrl(getFallbackImageUrl());
-      }
-    } catch (error) {
-      console.error(`Error fetching metadata for ${tokenId}:`, error);
-      setImageUrl(getFallbackImageUrl());
-    }
-  };
-  
-  const handleImageError = () => {
+  const handleImageError = async () => {
     console.log(`Image failed to load: ${imageUrl}`);
     
-    // If we have retries left and it's a metadata URL, try to fetch the metadata again
-    if (retryCount < 2 && imageUrl && !imageUrl.includes('picsum.photos')) {
+    // If we have retries left, try to fetch the metadata again
+    if (retryCount < 2) {
       console.log(`Retrying image load (${retryCount + 1}/2)`);
       setRetryCount(prev => prev + 1);
       
-      // If it's not already a fallback, try the token ID again
-      if (!imageUrl.includes('picsum.photos')) {
-        fetchMetadataImage(nft.tokenId);
-        return;
+      // Try direct metadata fetch as a last resort
+      const success = await fetchMetadataDirectly(nft.tokenId);
+      
+      if (!success) {
+        setImageError(true);
+        setImageUrl(getFallbackImageUrl());
       }
+    } else {
+      // If we've exhausted retries, show error state
+      setImageError(true);
+      setImageUrl(getFallbackImageUrl());
     }
     
-    // If we've exhausted retries or it's already a fallback, show error state
-    setImageError(true);
     setImageLoaded(true);
-    setImageUrl(getFallbackImageUrl());
   };
   
   return (
     <div className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
       <div className="relative w-full h-48">
-        {!imageLoaded && !imageError && (
+        {(isMetadataLoading || (!imageLoaded && !imageError)) && (
           <div className="w-full h-48 flex items-center justify-center bg-jungle-700/10">
             <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
           </div>

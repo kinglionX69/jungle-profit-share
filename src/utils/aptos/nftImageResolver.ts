@@ -26,7 +26,7 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
       return ipfsUrl;
     }
     
-    // If URI is a token ID, construct the metadata URL
+    // If URI is a token ID or not a URL, try to fetch from the Proud Lions API
     if (uri.startsWith('0x') || !uri.startsWith('http')) {
       // Extract token ID from the string
       const tokenId = uri.match(/0x[a-fA-F0-9]+/)?.[0] || uri;
@@ -36,31 +36,31 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
       try {
         const response = await fetch(metadataUrl);
         if (!response.ok) {
+          console.log(`Metadata fetch failed with status: ${response.status}`);
           throw new Error(`Failed to fetch metadata: ${response.status}`);
         }
         
-        // Parse the JSON response text
-        const responseText = await response.text();
-        console.log(`Metadata raw response: ${responseText.substring(0, 200)}...`);
+        // Parse the JSON response
+        const metadata = await response.json();
+        console.log('Parsed metadata successfully:', metadata);
         
-        try {
-          const metadata = JSON.parse(responseText);
-          console.log('Parsed metadata:', metadata);
+        if (metadata && metadata.image) {
+          console.log(`Found image in metadata: ${metadata.image}`);
           
-          if (metadata && metadata.image) {
-            console.log(`Found image in metadata: ${metadata.image}`);
-            return metadata.image;
+          // Handle IPFS URLs from metadata
+          if (metadata.image.startsWith('ipfs://')) {
+            return metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
           }
-        } catch (jsonError) {
-          console.error("Error parsing JSON metadata:", jsonError);
-          console.log("Raw response was not valid JSON:", responseText.substring(0, 100));
+          return metadata.image;
+        } else {
+          console.log('No image field found in metadata:', metadata);
         }
       } catch (error) {
         console.error(`Error fetching metadata from ${metadataUrl}:`, error);
       }
     }
     
-    // If URI is HTTP/HTTPS (but not an image), try to fetch metadata
+    // If URI is HTTP/HTTPS, try to fetch metadata
     if (uri.startsWith('http')) {
       try {
         console.log(`Attempting to fetch metadata from: ${uri}`);
@@ -70,26 +70,18 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
         }
         
         // Try to parse as JSON
-        const responseText = await response.text();
-        console.log(`HTTP metadata raw response: ${responseText.substring(0, 200)}...`);
+        const metadata = await response.json();
+        console.log('Parsed HTTP metadata:', metadata);
         
-        try {
-          const metadata = JSON.parse(responseText);
-          console.log('Parsed HTTP metadata:', metadata);
+        // Extract image URL from metadata
+        if (metadata.image) {
+          console.log(`Found image in HTTP metadata: ${metadata.image}`);
           
-          // Extract image URL from metadata
-          if (metadata.image) {
-            console.log(`Found image in HTTP metadata: ${metadata.image}`);
-            return metadata.image;
+          // Handle IPFS URLs from metadata
+          if (metadata.image.startsWith('ipfs://')) {
+            return metadata.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
           }
-        } catch (jsonError) {
-          console.error("Error parsing JSON from HTTP:", jsonError);
-          // If not JSON, check if it's an image response
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('image/')) {
-            console.log(`URI points directly to an image: ${uri}`);
-            return uri;
-          }
+          return metadata.image;
         }
       } catch (error) {
         console.error("Error fetching HTTP metadata:", error);
