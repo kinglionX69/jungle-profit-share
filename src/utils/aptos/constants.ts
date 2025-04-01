@@ -21,7 +21,7 @@ export const CREATOR_ADDRESS = "0x4be579ff825b21ef1620a50ed856f711f37bc4b7f1433b
 export const TOKEN_STORE_ADDRESS = "0x3::token::TokenStore"; // Used for resource lookup
 export const APTOS_TOKEN_ADDRESS = "0x1::aptos_coin::AptosCoin"; // Used for token transfers
 
-// Escrow wallet addresses - updated with the provided address
+// Escrow wallet addresses
 export const TESTNET_ESCROW_WALLET = "0x2afbb09094a37b84d14bc9aaf7deb6dd586acc20b0e3ba8c8c5a7cafd9eb5a0d"; // For testnet
 export const MAINNET_ESCROW_WALLET = "0x2afbb09094a37b84d14bc9aaf7deb6dd586acc20b0e3ba8c8c5a7cafd9eb5a0d"; // For mainnet (same as testnet for now)
 

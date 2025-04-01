@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { WalletBalance as WalletBalanceType } from '@/api/adminApi';
 import { toast } from 'sonner';
-import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
+import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
 import { getCoinBalance, aptosClient } from '@/utils/aptos/client';
 import { RefreshCw } from 'lucide-react';
@@ -36,6 +36,7 @@ const WalletBalance: React.FC = () => {
   
   const fetchEscrowWalletAddress = async () => {
     try {
+      console.log("Fetching escrow wallet address from admin_config table");
       const { data, error } = await supabase
         .from('admin_config')
         .select('escrow_wallet_address')
@@ -43,18 +44,22 @@ const WalletBalance: React.FC = () => {
         
       if (error) {
         console.error("Error fetching escrow wallet address:", error);
-        return null;
+        return IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
       }
       
-      return data?.escrow_wallet_address || null;
+      // If no address is configured, use the default from constants
+      const address = data?.escrow_wallet_address || (IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET);
+      console.log("Retrieved escrow wallet address:", address);
+      return address;
     } catch (error) {
-      console.error("Error fetching escrow wallet address:", error);
-      return null;
+      console.error("Exception fetching escrow wallet address:", error);
+      return IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
     }
   };
   
   const fetchPayoutConfiguration = async () => {
     try {
+      console.log("Fetching token payout configuration");
       const { data, error } = await supabase
         .from('token_payouts')
         .select('*')
@@ -103,6 +108,8 @@ const WalletBalance: React.FC = () => {
       const aptPrice = await getAptosPrice();
       console.log(`Current APT price: $${aptPrice}`);
       
+      // Fetch wallet balance from blockchain
+      console.log(`Fetching APT balance for ${escrowWalletAddress} on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
       const aptBalance = await getCoinBalance(
         escrowWalletAddress,
         SUPPORTED_TOKENS.APT,
