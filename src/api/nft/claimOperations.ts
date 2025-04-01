@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { submitClaimTransaction } from "@/utils/aptos";
@@ -20,19 +21,25 @@ export const calculateClaimableAmount = async (nfts: NFT[]): Promise<number> => 
     
     if (error) {
       console.error("Error fetching token payout:", error);
-      // Default to 2 APT per NFT if we can't get the payout amount
-      const eligibleCount = nfts.filter(nft => nft.isEligible).length;
-      return eligibleCount * 2;
+      // Default to 0 APT per NFT if we can't get the payout amount
+      return 0;
     }
     
-    const payoutPerNft = data?.payout_per_nft || 2; // Default to 2 if no payout is configured
+    // If no payout configuration exists, return 0
+    if (!data) {
+      console.log("No payout configuration found, defaulting to 0");
+      return 0;
+    }
+    
+    const payoutPerNft = data?.payout_per_nft || 0;
+    console.log(`Using payout of ${payoutPerNft} per NFT`);
+    
     const eligibleCount = nfts.filter(nft => nft.isEligible).length;
     return eligibleCount * Number(payoutPerNft);
   } catch (error) {
     console.error("Error calculating claimable amount:", error);
-    // Default to 2 APT per NFT if we encounter an error
-    const eligibleCount = nfts.filter(nft => nft.isEligible).length;
-    return eligibleCount * 2;
+    // Default to 0 APT per NFT if we encounter an error
+    return 0;
   }
 };
 
@@ -63,11 +70,23 @@ export const submitClaim = async (
     
     if (payoutError) {
       console.error("Error fetching token payout:", payoutError);
-      // Continue with default values
+      toast.error("Could not retrieve payout configuration");
+      return false;
     }
     
-    const payoutPerNft = payoutData?.payout_per_nft || 2; // Default to 2 if no payout is configured
-    const tokenName = payoutData?.token_name || "APT"; // Default to APT if no token is configured
+    // If no payout configuration exists, show error
+    if (!payoutData) {
+      toast.error("No payout configuration found");
+      return false;
+    }
+    
+    const payoutPerNft = payoutData?.payout_per_nft || 0;
+    if (payoutPerNft <= 0) {
+      toast.error("Invalid payout amount configured");
+      return false;
+    }
+    
+    const tokenName = payoutData?.token_name || "APT";
     const totalAmount = eligibleNfts.length * Number(payoutPerNft);
     
     // Submit transaction to blockchain

@@ -1,19 +1,58 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
 import { Coins, History, ChevronRight, Loader, Clock } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClaimCard: React.FC = () => {
   const { claimableAmount, nfts, claim, isVerified } = useUser();
   const [claiming, setClaiming] = useState(false);
+  const [payoutPerNft, setPayoutPerNft] = useState<number | null>(null);
+  const [payoutToken, setPayoutToken] = useState("APT");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   const eligibleCount = nfts.filter(nft => nft.isEligible).length;
   const lockedCount = nfts.filter(nft => nft.isLocked).length;
+  
+  // Fetch the current payout configuration
+  useEffect(() => {
+    const fetchPayoutConfig = async () => {
+      setIsLoading(true);
+      try {
+        // Get the latest token payout configuration
+        const { data, error } = await supabase
+          .from('token_payouts')
+          .select('payout_per_nft, token_name')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching token payout:", error);
+          // Default to 2 if we can't get the payout amount
+          setPayoutPerNft(2);
+        } else if (data) {
+          setPayoutPerNft(Number(data.payout_per_nft));
+          setPayoutToken(data.token_name || "APT");
+        } else {
+          // Default if no configuration exists
+          setPayoutPerNft(2);
+        }
+      } catch (error) {
+        console.error("Error fetching payout configuration:", error);
+        setPayoutPerNft(2);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPayoutConfig();
+  }, []);
   
   const handleClaim = async () => {
     if (claimableAmount <= 0 || !isVerified) return;
@@ -58,7 +97,7 @@ const ClaimCard: React.FC = () => {
         
         <div className="mt-4 flex items-center justify-between">
           <div>
-            <div className="text-4xl font-bold">{claimableAmount} APT</div>
+            <div className="text-4xl font-bold">{claimableAmount} {payoutToken}</div>
             <div className="text-sm text-muted-foreground mt-1">
               From {eligibleCount} eligible NFT{eligibleCount !== 1 ? 's' : ''}
             </div>
@@ -73,7 +112,11 @@ const ClaimCard: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Reward rate:</span>
-            <span className="font-medium">2 APT per NFT</span>
+            {isLoading ? (
+              <div className="h-4 w-16 bg-muted animate-pulse rounded"></div>
+            ) : (
+              <span className="font-medium">{payoutPerNft} {payoutToken} per NFT</span>
+            )}
           </div>
           
           <div className="flex justify-between items-center text-sm">
@@ -112,7 +155,7 @@ const ClaimCard: React.FC = () => {
           
           <div className="flex justify-between items-center">
             <span className="font-medium">Total claimable:</span>
-            <span className="font-bold">{claimableAmount} APT</span>
+            <span className="font-bold">{claimableAmount} {payoutToken}</span>
           </div>
           
           <Button 

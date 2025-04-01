@@ -76,6 +76,7 @@ const WalletBalance: React.FC = () => {
       });
       
       setPayoutsInfo(payouts);
+      console.log("Payouts per NFT:", payouts);
     } catch (error) {
       console.error("Error fetching payout configuration:", error);
     }

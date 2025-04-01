@@ -25,5 +25,3 @@ enabled = true
 enabled = true
 
 [functions]
-[functions.withdraw-from-escrow]
-verify_jwt = true
