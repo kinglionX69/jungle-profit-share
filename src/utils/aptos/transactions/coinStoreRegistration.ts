@@ -49,8 +49,8 @@ export const registerCoinStoreIfNeeded = async (
         };
       }
       
-      // Explicitly cast the token type to the expected format for type safety
-      // Using explicit type assertion to satisfy TypeScript's strict type checking
+      // Correctly cast as a template literal type with the appropriate prefix
+      // The Aptos SDK expects the format `0x${string}::${string}::${string}`
       const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
       
       // Construct the resource type for the coin store

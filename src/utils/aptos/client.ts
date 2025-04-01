@@ -70,14 +70,14 @@ export const getCoinBalance = async (
   try {
     const client = aptosClient(network);
     
-    // Properly cast the tokenType to the required format for type safety
     // Use a regular expression to validate the format before casting
     if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
       console.error(`Invalid token type format: ${tokenType}`);
       return 0;
     }
     
-    // Use type assertion with template literal type
+    // Correctly cast as a template literal type with the appropriate prefix
+    // The Aptos SDK expects the format `0x${string}::${string}::${string}`
     const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
@@ -115,14 +115,14 @@ export const hasCoinRegistered = async (
   try {
     const client = aptosClient(network);
     
-    // Properly cast the tokenType to the required format for type safety
     // Use a regular expression to validate the format before casting
     if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
       console.error(`Invalid token type format: ${tokenType}`);
       return false;
     }
     
-    // Use type assertion with template literal type
+    // Correctly cast as a template literal type with the appropriate prefix
+    // The Aptos SDK expects the format `0x${string}::${string}::${string}`
     const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
