@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +27,6 @@ const EmailVerification = () => {
     },
   });
   
-  // Check for existing email when component mounts
   useEffect(() => {
     const checkExistingEmail = async () => {
       if (address) {
@@ -38,13 +36,11 @@ const EmailVerification = () => {
           console.log("Fetched user data:", userData);
           
           if (userData) {
-            // Update both local state and context
             if (userData.email) {
               setEmail(userData.email);
               emailForm.setValue('email', userData.email);
             }
             
-            // If email exists and is marked as verified, update verification status
             if (userData.email_verified) {
               console.log("Email is verified:", userData.email);
               setIsVerified(true);
@@ -61,7 +57,6 @@ const EmailVerification = () => {
     checkExistingEmail();
   }, [address]);
   
-  // Update form when email changes externally
   useEffect(() => {
     if (email) {
       emailForm.setValue('email', email);
@@ -77,19 +72,15 @@ const EmailVerification = () => {
     setSubmitting(true);
     
     try {
-      // First update the local state
       setEmail(values.email);
       
       console.log(`Saving email ${values.email} for wallet ${address}`);
       
-      // Call API to update user email
       const success = await updateUserEmail(address, values.email);
       
       if (success) {
         setIsVerified(true);
         toast.success('Email saved successfully');
-        
-        // Refresh user data after the update
         await fetchUserData();
       } else {
         toast.error('Failed to save email. Please try again.');
@@ -125,7 +116,7 @@ const EmailVerification = () => {
       <h3 className="text-lg font-luckiest mb-4">Add Your Email</h3>
       
       <p className="text-sm text-muted-foreground mb-4 font-bungee">
-        Add your email to receive important updates
+        Add Email to verify Claim
       </p>
       <Form {...emailForm}>
         <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
