@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
@@ -6,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 const FIXED_PAYOUT_PER_NFT = 0.1;
 
