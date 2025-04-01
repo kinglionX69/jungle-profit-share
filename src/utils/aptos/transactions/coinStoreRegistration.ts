@@ -51,7 +51,7 @@ export const registerCoinStoreIfNeeded = async (
       
       // Explicitly cast the token type to the expected format for type safety
       // Using explicit type assertion to satisfy TypeScript's strict type checking
-      const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+      const formattedTokenType = tokenType as `0x${string}::${string}::${string}`;
       
       // Construct the resource type for the coin store
       const resourceType = `0x1::coin::CoinStore<${formattedTokenType}>`;
