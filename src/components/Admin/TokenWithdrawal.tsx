@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -17,13 +17,76 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useWallet } from '@/context/WalletContext';
 import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 import { supabase } from '@/integrations/supabase/client';
+import { getCoinBalance } from '@/utils/aptos/client';
 
 const TokenWithdrawal: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [payoutPerNft, setPayoutPerNft] = useState<number | null>(null);
+  const [escrowBalance, setEscrowBalance] = useState<number | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const { address, isAdmin } = useWallet();
+  
+  // Fetch current payout configuration and escrow balance
+  useEffect(() => {
+    const fetchPayoutAndBalance = async () => {
+      setIsLoadingData(true);
+      try {
+        // Fetch latest token payout configuration
+        const { data: payoutData, error: payoutError } = await supabase
+          .from('token_payouts')
+          .select('*')
+          .eq('token_name', selectedToken.toUpperCase())
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (payoutError) {
+          console.error("Error fetching token payout:", payoutError);
+        } else if (payoutData && payoutData.length > 0) {
+          const payout = Number(payoutData[0].payout_per_nft);
+          setPayoutPerNft(payout);
+          console.log(`Current payout for ${selectedToken.toUpperCase()}: ${payout} per NFT`);
+        } else {
+          setPayoutPerNft(null);
+          console.log(`No payout configuration found for ${selectedToken.toUpperCase()}`);
+        }
+        
+        // Fetch current balance
+        const tokenType = selectedToken === 'apt' ? SUPPORTED_TOKENS.APT : SUPPORTED_TOKENS.EMOJICOIN;
+        const network = IS_TESTNET ? 'testnet' : 'mainnet';
+        
+        // Get the escrow address from Supabase
+        const { data: adminConfig, error: adminError } = await supabase
+          .from('admin_config')
+          .select('escrow_wallet_address')
+          .single();
+          
+        if (adminError) {
+          console.error("Error fetching escrow wallet address:", adminError);
+          return;
+        }
+        
+        if (adminConfig && adminConfig.escrow_wallet_address) {
+          const balance = await getCoinBalance(
+            adminConfig.escrow_wallet_address,
+            tokenType,
+            network
+          );
+          
+          setEscrowBalance(balance);
+          console.log(`Current escrow balance for ${selectedToken.toUpperCase()}: ${balance}`);
+        }
+      } catch (error) {
+        console.error("Error fetching payout and balance:", error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    fetchPayoutAndBalance();
+  }, [selectedToken]);
   
   const handleTokenChange = (value: string) => {
     if (IS_TESTNET && value !== 'apt') {
@@ -60,6 +123,12 @@ const TokenWithdrawal: React.FC = () => {
       return;
     }
     
+    // Balance validation
+    if (escrowBalance !== null && Number(amount) > escrowBalance) {
+      toast.error(`Insufficient balance in escrow wallet. Available: ${escrowBalance.toFixed(4)} ${selectedToken.toUpperCase()}`);
+      return;
+    }
+    
     setProcessing(true);
     
     try {
@@ -90,6 +159,36 @@ const TokenWithdrawal: React.FC = () => {
         toast.success(`Tokens withdrawn successfully!${data.transactionHash ? ` Transaction: ${data.transactionHash}` : ''}`);
         setAmount('');
         setRecipientAddress('');
+        
+        // Refresh balance after withdrawal
+        setTimeout(() => {
+          const fetchUpdatedBalance = async () => {
+            try {
+              const tokenType = selectedToken === 'apt' ? SUPPORTED_TOKENS.APT : SUPPORTED_TOKENS.EMOJICOIN;
+              const network = IS_TESTNET ? 'testnet' : 'mainnet';
+              
+              // Get the escrow address from Supabase
+              const { data: adminConfig } = await supabase
+                .from('admin_config')
+                .select('escrow_wallet_address')
+                .single();
+                
+              if (adminConfig && adminConfig.escrow_wallet_address) {
+                const balance = await getCoinBalance(
+                  adminConfig.escrow_wallet_address,
+                  tokenType,
+                  network
+                );
+                
+                setEscrowBalance(balance);
+              }
+            } catch (error) {
+              console.error("Error refreshing balance:", error);
+            }
+          };
+          
+          fetchUpdatedBalance();
+        }, 2000);
       } else {
         toast.error(data.error || "Transaction failed");
       }
@@ -106,6 +205,14 @@ const TokenWithdrawal: React.FC = () => {
       setProcessing(false);
     }
   };
+  
+  // Calculate maximum NFTs that can be claimed
+  const maxClaimableNfts = useMemo(() => {
+    if (escrowBalance !== null && payoutPerNft !== null && payoutPerNft > 0) {
+      return Math.floor(escrowBalance / payoutPerNft);
+    }
+    return 0;
+  }, [escrowBalance, payoutPerNft]);
   
   return (
     <Card className="w-full">
@@ -172,13 +279,46 @@ const TokenWithdrawal: React.FC = () => {
             If left empty, tokens will be sent to your wallet
           </p>
         </div>
+        
+        <div className="bg-muted rounded-md p-4 text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Available balance:</span>
+            {isLoadingData ? (
+              <div className="h-4 w-20 bg-muted-foreground/20 animate-pulse rounded"></div>
+            ) : (
+              <span className="font-medium">
+                {escrowBalance !== null ? `${escrowBalance.toFixed(4)} ${IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}` : 'Not available'}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Current payout per NFT:</span>
+            {isLoadingData ? (
+              <div className="h-4 w-20 bg-muted-foreground/20 animate-pulse rounded"></div>
+            ) : (
+              <span className="font-medium">
+                {payoutPerNft !== null ? `${payoutPerNft} ${IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}` : 'Not configured'}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between border-t pt-2 mt-2">
+            <span className="text-muted-foreground">Max claimable NFTs:</span>
+            {isLoadingData ? (
+              <div className="h-4 w-20 bg-muted-foreground/20 animate-pulse rounded"></div>
+            ) : (
+              <span className="font-medium">
+                {maxClaimableNfts} NFTs
+              </span>
+            )}
+          </div>
+        </div>
       </CardContent>
       <CardFooter>
         <Button 
           onClick={handleWithdraw} 
           className="w-full"
           variant="outline"
-          disabled={!amount || processing}
+          disabled={!amount || processing || !address || !isAdmin}
         >
           {processing ? (
             <>

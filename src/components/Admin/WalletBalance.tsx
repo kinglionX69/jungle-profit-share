@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -8,11 +9,12 @@ import {
 } from '@/components/ui/card';
 import { WalletBalance as WalletBalanceType } from '@/api/adminApi';
 import { toast } from 'sonner';
-import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
+import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
 import { getCoinBalance, aptosClient } from '@/utils/aptos/client';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 const getAptosPrice = async (): Promise<number> => {
   try {
@@ -29,19 +31,73 @@ const WalletBalance: React.FC = () => {
   const [balances, setBalances] = useState<WalletBalanceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [payoutsInfo, setPayoutsInfo] = useState<{[key: string]: number}>({});
   const { address } = useWallet();
   
-  const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
+  const fetchEscrowWalletAddress = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_config')
+        .select('escrow_wallet_address')
+        .single();
+        
+      if (error) {
+        console.error("Error fetching escrow wallet address:", error);
+        return null;
+      }
+      
+      return data?.escrow_wallet_address || null;
+    } catch (error) {
+      console.error("Error fetching escrow wallet address:", error);
+      return null;
+    }
+  };
+  
+  const fetchPayoutConfiguration = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('token_payouts')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching token payouts:", error);
+        return;
+      }
+      
+      // Get the latest payout configuration for each token
+      const payouts: {[key: string]: number} = {};
+      
+      data.forEach(payout => {
+        const tokenName = payout.token_name.toLowerCase();
+        if (!payouts[tokenName]) {
+          payouts[tokenName] = Number(payout.payout_per_nft);
+        }
+      });
+      
+      setPayoutsInfo(payouts);
+    } catch (error) {
+      console.error("Error fetching payout configuration:", error);
+    }
+  };
   
   const fetchBalances = async () => {
-    if (!escrowWalletAddress) {
-      toast.error("Escrow wallet address not configured");
-      setIsLoading(false);
-      return;
-    }
+    setIsRefreshing(true);
     
     try {
-      setIsRefreshing(true);
+      const escrowWalletAddress = await fetchEscrowWalletAddress();
+      
+      if (!escrowWalletAddress) {
+        toast.error("Escrow wallet address not configured");
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+      
+      console.log(`Using escrow wallet: ${escrowWalletAddress}`);
+      
+      // Fetch payout configuration
+      await fetchPayoutConfiguration();
       
       const aptPrice = await getAptosPrice();
       console.log(`Current APT price: $${aptPrice}`);
@@ -95,9 +151,21 @@ const WalletBalance: React.FC = () => {
   
   useEffect(() => {
     fetchBalances();
-  }, [escrowWalletAddress]);
+  }, []);
   
   const totalValue = balances.reduce((acc, item) => acc + item.value, 0);
+  
+  // Calculate max claimable NFTs for each token
+  const getMaxClaimableNfts = (symbol: string, amount: number) => {
+    const payoutKey = symbol.toLowerCase();
+    const payout = payoutsInfo[payoutKey];
+    
+    if (payout && payout > 0) {
+      return Math.floor(amount / payout);
+    }
+    
+    return 'N/A';
+  };
   
   return (
     <Card>
@@ -142,8 +210,13 @@ const WalletBalance: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <div className="font-medium">${item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : '0'}%
+                    <div className="text-sm text-muted-foreground flex flex-col items-end">
+                      <span>{totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : '0'}%</span>
+                      {payoutsInfo[item.symbol.toLowerCase()] ? (
+                        <span className="text-xs mt-1">
+                          Max NFTs: {getMaxClaimableNfts(item.symbol, item.amount)}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -156,8 +229,13 @@ const WalletBalance: React.FC = () => {
             <span className="text-muted-foreground">Total Value</span>
             <span className="text-xl font-bold">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Escrow Address: {escrowWalletAddress?.slice(0, 6)}...{escrowWalletAddress?.slice(-4)}
+          <div className="text-xs text-muted-foreground mt-2 flex flex-col space-y-1">
+            {Object.entries(payoutsInfo).map(([token, payout]) => (
+              <div key={token} className="flex justify-between">
+                <span>Payout per NFT ({token.toUpperCase()}):</span>
+                <span>{payout} {token.toUpperCase()}</span>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>
