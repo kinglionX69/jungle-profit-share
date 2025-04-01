@@ -3,9 +3,9 @@ import { toStructTag } from "./helpers";
 // Note: We need to add a dependency for aptos
 import { AptosClient, AptosAccount, FaucetClient, Types } from "aptos";
 
-// const NODE_URL = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com";
-const NODE_URL = process.env.APTOS_NODE_URL || "https://testnet.aptoslabs.com";
-const FAUCET_URL = process.env.APTOS_FAUCET_URL || "https://faucet.testnet.aptoslabs.com";
+// Replace process.env usage with direct URLs
+const NODE_URL = "https://testnet.aptoslabs.com";
+const FAUCET_URL = "https://faucet.testnet.aptoslabs.com";
 
 export const aptosClient = new AptosClient(NODE_URL);
 export const faucetClient = new FaucetClient(NODE_URL, FAUCET_URL);
