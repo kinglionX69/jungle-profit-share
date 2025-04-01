@@ -48,7 +48,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Check if this is an admin request
+    // Parse the request body
     const { tokenType, amount, recipientAddress, network, adminWalletAddress } = await req.json() as WithdrawalRequest;
     
     console.log(`Processing withdrawal request from admin ${adminWalletAddress}`);
@@ -81,6 +81,8 @@ serve(async (req: Request) => {
     // Calculate the amount in smallest units (8 decimal places for APT)
     const amountInSmallestUnits = Math.floor(amount * 100000000);
     
+    console.log(`Converting ${amount} APT to ${amountInSmallestUnits} octas (smallest units)`);
+    
     // Create the transaction payload
     const payload: Types.TransactionPayload = {
       type: "entry_function_payload",
@@ -92,18 +94,29 @@ serve(async (req: Request) => {
       ]
     };
     
-    console.log("Creating withdrawal transaction");
+    console.log("Creating withdrawal transaction with payload:", JSON.stringify(payload));
     
     // Generate, sign, and submit the transaction
     const rawTxn = await client.generateTransaction(escrowAccount.address(), payload);
-    const signedTxn = await client.signTransaction(escrowAccount, rawTxn);
-    const pendingTxn = await client.submitTransaction(signedTxn);
+    console.log("Raw transaction generated");
     
-    console.log("Waiting for transaction confirmation");
+    const signedTxn = await client.signTransaction(escrowAccount, rawTxn);
+    console.log("Transaction signed");
+    
+    const pendingTxn = await client.submitTransaction(signedTxn);
+    console.log("Transaction submitted with hash:", pendingTxn.hash);
+    
     // Wait for transaction to complete
+    console.log("Waiting for transaction confirmation...");
     const txnResult = await client.waitForTransaction(pendingTxn.hash);
     
     console.log("Withdrawal transaction completed:", txnResult.hash);
+    console.log("Transaction success:", txnResult.success);
+    
+    if (!txnResult.success) {
+      console.error("Transaction failed:", txnResult);
+      throw new Error("Transaction execution failed");
+    }
     
     return new Response(
       JSON.stringify({

@@ -1,8 +1,8 @@
 
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
-import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
-import { AptosClient } from "aptos";
+import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET, SUPPORTED_TOKENS } from "../constants";
+import { AptosClient, Types } from "aptos";
 
 /**
  * Get an Aptos client instance for the specified network
@@ -41,13 +41,21 @@ export const submitClaimTransaction = async (
     // We need to call the withdraw-from-escrow edge function
     // This function will transfer APT from the escrow wallet to the user's wallet
     const escrowNetwork = IS_TESTNET ? 'testnet' : 'mainnet';
+    
+    // Log the request details for debugging
+    console.log(`Sending withdraw request to escrow function with:`);
+    console.log(`- Network: ${escrowNetwork}`);
+    console.log(`- Token: ${SUPPORTED_TOKENS.APT}`);
+    console.log(`- Amount: ${totalAmount}`);
+    console.log(`- Recipient: ${walletAddress}`);
+    
     const response = await fetch('/api/withdraw-from-escrow', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        tokenType: "0x1::aptos_coin::AptosCoin",
+        tokenType: SUPPORTED_TOKENS.APT,
         amount: totalAmount,
         recipientAddress: walletAddress,
         network: escrowNetwork,

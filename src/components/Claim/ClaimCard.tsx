@@ -59,6 +59,15 @@ const ClaimCard: React.FC = () => {
     
     try {
       await claim();
+      // After successful claim, show a more detailed success message
+      toast.success(`Successfully claimed ${claimableAmount.toFixed(2)} ${payoutToken} to your wallet!`, {
+        description: "Check your wallet for the transferred tokens."
+      });
+    } catch (error) {
+      console.error("Claim failed:", error);
+      toast.error("Failed to process your claim", {
+        description: "Please try again or contact support if the issue persists."
+      });
     } finally {
       setClaiming(false);
       toast.dismiss();
