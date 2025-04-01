@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,15 +14,22 @@ import { toast } from 'sonner';
 import { Upload, Coins, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { depositToEscrowWallet } from '@/api/adminApi';
+import { createTokenPayout } from '@/api/adminApi';
 import { useWallet } from '@/context/WalletContext';
+import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
+
+// Token types
+const TOKEN_TYPES = {
+  apt: "0x1::aptos_coin::AptosCoin",
+  usdc: "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
+};
 
 const TokenDeposit: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
   const [payoutAmount, setPayoutAmount] = useState('2');
   const [processing, setProcessing] = useState(false);
-  const { address } = useWallet();
+  const { address, signTransaction } = useWallet();
   
   const handleDeposit = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -34,18 +42,48 @@ const TokenDeposit: React.FC = () => {
       return;
     }
     
+    if (!address) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
     setProcessing(true);
     
     try {
-      const success = await depositToEscrowWallet(
-        selectedToken,
-        Number(amount),
-        Number(payoutAmount),
-        address || undefined
+      // First, execute the blockchain transaction
+      const tokenType = TOKEN_TYPES[selectedToken as keyof typeof TOKEN_TYPES];
+      const amountValue = Number(amount);
+      const payoutValue = Number(payoutAmount);
+      
+      console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with payout ${payoutValue} per NFT`);
+      
+      // Execute the blockchain transaction
+      const txResult = await depositTokensTransaction(
+        address,
+        tokenType,
+        amountValue,
+        payoutValue,
+        signTransaction
       );
       
-      if (success) {
-        setAmount('');
+      if (txResult.success) {
+        toast.success(`Tokens deposited successfully! Transaction: ${txResult.transactionHash}`);
+        
+        // After successful blockchain transaction, update the payout in the database
+        const dbResult = await createTokenPayout(
+          address,
+          selectedToken.toUpperCase(),
+          payoutValue
+        );
+        
+        if (dbResult) {
+          toast.success(`Payout configuration updated to ${payoutValue} ${selectedToken.toUpperCase()} per NFT`);
+          setAmount('');
+        } else {
+          toast.error("Failed to update payout configuration in database");
+        }
+      } else {
+        toast.error("Transaction failed");
       }
     } catch (error) {
       console.error("Error depositing tokens:", error);

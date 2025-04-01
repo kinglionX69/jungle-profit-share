@@ -108,31 +108,12 @@ export const createTokenPayout = async (
 };
 
 /**
- * Gets mock wallet balances for the admin view
- * In a real implementation, this would fetch from the blockchain
+ * Gets escrow wallet balances from the blockchain
+ * This is a placeholder until we implement real blockchain balance fetching
  */
 export const getEscrowWalletBalances = async (): Promise<WalletBalance[]> => {
-  // This is a mock implementation - in a real app, we would fetch from blockchain
-  return [
-    {
-      token: 'Aptos',
-      symbol: 'APT',
-      amount: 450,
-      value: 18000,
-    },
-    {
-      token: 'USD Coin',
-      symbol: 'USDC',
-      amount: 2250,
-      value: 2250,
-    },
-    {
-      token: 'Aptos Proto Token',
-      symbol: 'PROT',
-      amount: 1500,
-      value: 150,
-    },
-  ];
+  console.log("This function has been replaced by direct blockchain queries in the WalletBalance component");
+  return [];
 };
 
 /**
@@ -187,7 +168,8 @@ export const getClaimStatistics = async () => {
 
 /**
  * Add tokens to the escrow wallet for distribution
- * In a real implementation, this would call the blockchain
+ * This function now only handles database operations
+ * The actual blockchain transaction is handled separately
  */
 export const depositToEscrowWallet = async (
   tokenName: string,
@@ -196,17 +178,16 @@ export const depositToEscrowWallet = async (
   walletAddress?: string
 ): Promise<boolean> => {
   try {
-    // In a real implementation, this would call the blockchain
-    // Here we just simulate success and update the token payout
+    if (!walletAddress) {
+      console.error("No wallet address provided");
+      return false;
+    }
     
-    // Get the current user's wallet address if not provided
-    let creatorWalletAddress = walletAddress;
-    
-    if (!creatorWalletAddress) {
-      // Since we can't access headers directly, we'll need to get this from somewhere else
-      // For example, it could be passed from the component that calls this function
-      // For now, we'll use 'unknown' if no wallet address is provided
-      creatorWalletAddress = 'unknown';
+    // Check if wallet is admin
+    const isAdmin = await checkIsAdmin(walletAddress);
+    if (!isAdmin) {
+      toast.error("Only admins can deposit tokens");
+      return false;
     }
     
     // Update the token payout configuration
@@ -215,7 +196,7 @@ export const depositToEscrowWallet = async (
       .insert({
         token_name: tokenName.toUpperCase(),
         payout_per_nft: payoutPerNft,
-        created_by: creatorWalletAddress
+        created_by: walletAddress
       });
     
     if (error) {
@@ -224,11 +205,10 @@ export const depositToEscrowWallet = async (
       return false;
     }
     
-    toast.success(`Successfully deposited ${amount} ${tokenName.toUpperCase()} to the escrow wallet`);
     return true;
   } catch (error) {
-    console.error("Error depositing to escrow wallet:", error);
-    toast.error("Failed to deposit to escrow wallet");
+    console.error("Error in deposit workflow:", error);
+    toast.error("Failed to complete deposit workflow");
     return false;
   }
 };

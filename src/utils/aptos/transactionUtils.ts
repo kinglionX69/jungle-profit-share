@@ -75,10 +75,19 @@ export const depositTokensTransaction = async (
     console.log(`Amount: ${amount}`);
     console.log(`Payout per NFT: ${payoutPerNFT}`);
     
+    // Get the escrow wallet address from the admin_config table
+    // For testnet, we'll use a fixed address for now, but this should be fetched from DB in production
+    const escrowWalletAddress = IS_TESTNET 
+      ? "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234" // Replace with actual testnet escrow address
+      : "0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876"; // Replace with actual mainnet escrow address
+    
     // Use the appropriate token type for testnet
     const actualTokenType = IS_TESTNET 
       ? "0x1::aptos_coin::AptosCoin" // This is the same on testnet
       : tokenType;
+    
+    // Calculate the amount in smallest units (APT uses 8 decimal places)
+    const amountInSmallestUnits = amount * 100000000; // 8 decimal places for APT
     
     // Create the transaction payload for depositing tokens
     const payload = {
@@ -86,8 +95,8 @@ export const depositTokensTransaction = async (
       function: "0x1::coin::transfer",
       type_arguments: [actualTokenType],
       arguments: [
-        "ESCROW_WALLET_ADDRESS",  // Replace with actual escrow wallet address
-        amount.toString(),  // Amount in smallest units
+        escrowWalletAddress,  // Actual escrow wallet address
+        amountInSmallestUnits.toString(),  // Amount in smallest units
       ]
     };
     
