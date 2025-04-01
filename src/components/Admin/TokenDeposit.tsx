@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createTokenPayout } from '@/api/adminApi';
 import { useWallet } from '@/context/WalletContext';
 import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
-import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
+import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 
 const TokenDeposit: React.FC = () => {
   const [amount, setAmount] = useState('');
@@ -52,7 +52,11 @@ const TokenDeposit: React.FC = () => {
       
       console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with payout ${payoutValue} per NFT`);
       
-      // Execute the blockchain transaction with the updated function that handles CoinStore registration
+      // Display the escrow wallet address being used (for debugging)
+      const escrowWallet = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
+      console.log(`Using escrow wallet: ${escrowWallet}`);
+      
+      // Execute the blockchain transaction
       const txResult = await depositTokensTransaction(
         address,
         tokenType,
@@ -78,7 +82,7 @@ const TokenDeposit: React.FC = () => {
           toast.error("Failed to update payout configuration in database");
         }
       } else {
-        toast.error("Transaction failed");
+        toast.error(txResult.error || "Transaction failed");
       }
     } catch (error) {
       console.error("Error depositing tokens:", error);
@@ -87,9 +91,13 @@ const TokenDeposit: React.FC = () => {
       // Provide more helpful error messages
       if (error instanceof Error) {
         if (error.message.includes("Account hasn't registered")) {
-          errorMessage = "Your account needs to register for this token type first. Please try again.";
+          errorMessage = "Token registration required. Please try again.";
         } else if (error.message.includes("insufficient balance")) {
           errorMessage = "Insufficient balance to complete the transaction";
+        } else if (error.message.includes("rejected")) {
+          errorMessage = "Transaction rejected by wallet";
+        } else {
+          errorMessage = error.message;
         }
       }
       

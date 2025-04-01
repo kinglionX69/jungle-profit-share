@@ -71,12 +71,13 @@ export const registerCoinStoreIfNeeded = async (
       return { success: true, transactionHash: null };
     }
     
-    console.log(`Checking if CoinStore is registered for ${tokenType}`);
+    console.log(`Registering CoinStore for ${tokenType}`);
 
     // Create the transaction payload for registration
+    // In Aptos, proper way to register a coin is through the coin module's register function
     const payload = {
       type: "entry_function_payload",
-      function: "0x1::managed_coin::register",
+      function: "0x1::coin::register",
       type_arguments: [tokenType],
       arguments: []
     };
@@ -97,7 +98,8 @@ export const registerCoinStoreIfNeeded = async (
     // If we get a specific error saying the store is already registered,
     // we can consider this a success
     if (error instanceof Error && 
-        error.message.includes("Store already exists")) {
+        (error.message.includes("Store already exists") || 
+         error.message.includes("already registered"))) {
       console.log("CoinStore is already registered, proceeding with transfer");
       return { success: true, transactionHash: null };
     }
@@ -151,25 +153,33 @@ export const depositTokensTransaction = async (
       ? "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234" // Replace with actual testnet escrow address
       : "0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876"; // Replace with actual mainnet escrow address
     
-    // First, check and register the CoinStore if needed
+    // First, check and register the CoinStore for non-APT tokens on both the admin and escrow wallets
     if (tokenType !== SUPPORTED_TOKENS.APT) {
       toast.loading("Registering token store...");
-      const registrationResult = await registerCoinStoreIfNeeded(
+      
+      // Register for admin wallet
+      console.log(`Registering token ${tokenType} for admin wallet ${adminWalletAddress}...`);
+      const adminRegistrationResult = await registerCoinStoreIfNeeded(
         adminWalletAddress,
         tokenType,
         signTransaction
       );
       
-      if (!registrationResult.success) {
+      if (!adminRegistrationResult.success) {
         toast.dismiss();
-        toast.error("Failed to register token store");
-        return registrationResult;
+        toast.error("Failed to register token store for your wallet");
+        return adminRegistrationResult;
       }
+      
+      // Also register for escrow wallet if needed
+      // This should be done by a separate admin function since the escrow wallet
+      // will need to call register() itself, but we'll skip this for now
+      
       toast.dismiss();
     }
     
     // Calculate the amount in smallest units (APT uses 8 decimal places)
-    const amountInSmallestUnits = amount * 100000000; // 8 decimal places for APT
+    const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT, ensure integer
     
     // Create the transaction payload for depositing tokens
     const payload = {
@@ -177,7 +187,7 @@ export const depositTokensTransaction = async (
       function: "0x1::coin::transfer",
       type_arguments: [tokenType],
       arguments: [
-        escrowWalletAddress,  // Actual escrow wallet address
+        escrowWalletAddress,  // Recipient address
         amountInSmallestUnits.toString(),  // Amount in smallest units
       ]
     };
@@ -198,7 +208,19 @@ export const depositTokensTransaction = async (
   } catch (error) {
     console.error("Error depositing tokens:", error);
     toast.dismiss();
-    toast.error("Failed to deposit tokens");
+    
+    // Provide more helpful error messages
+    let errorMessage = "Failed to deposit tokens";
+    if (error instanceof Error) {
+      if (error.message.includes("Account hasn't registered") || 
+          error.message.includes("CoinStore")) {
+        errorMessage = "Token registration required. Please try again.";
+      } else if (error.message.includes("insufficient balance")) {
+        errorMessage = "Insufficient balance to complete the transaction";
+      }
+    }
+    
+    toast.error(errorMessage);
     throw error;
   }
 };
