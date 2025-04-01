@@ -9,6 +9,7 @@ import { useWallet } from '@/context/WalletContext';
 import WalletSelector from '@/components/Auth/WalletSelector';
 import { toast } from 'sonner';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+
 const Index = () => {
   const navigate = useNavigate();
   const {
@@ -21,7 +22,6 @@ const Index = () => {
     walletType
   } = useWallet();
 
-  // Check for Petra wallet on page load
   useEffect(() => {
     if (!window.aptos) {
       console.log("Petra wallet not detected");
@@ -29,6 +29,7 @@ const Index = () => {
       console.log("Petra wallet detected");
     }
   }, []);
+
   const handleConnectPetra = async () => {
     if (!window.aptos) {
       toast.error("Please install Petra Wallet to continue");
@@ -41,10 +42,11 @@ const Index = () => {
       console.error("Failed to connect Petra wallet:", error);
     }
   };
+
   const features = [{
     icon: <Award className="h-10 w-10" />,
     title: 'Exclusive Rewards',
-    description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos.`
+    description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos. The only project on Aptos that has a registered company and is sharing profits with its NFT holders. 20% profits back to the community!`
   }, {
     icon: <Clock className="h-10 w-10" />,
     title: '30-Day Claim Cycle',
@@ -54,10 +56,10 @@ const Index = () => {
     title: 'Secure Escrow System',
     description: 'All rewards are held in a secure escrow wallet until claimed.'
   }];
+
   return <>
       <Header />
       <main className="min-h-[calc(100vh-64px)]">
-        {/* Hero Section */}
         <section className="relative overflow-hidden py-20 md:py-32 bg-jungle-pattern">
           <div className="absolute inset-0 bg-gradient-to-b from-jungle-700/30 to-jungle-900/50 z-0"></div>
           <PageContainer className="relative z-10">
@@ -92,7 +94,6 @@ const Index = () => {
             </div>
           </PageContainer>
           
-          {/* Decorative elements */}
           <div className="absolute -bottom-10 -left-10 w-40 h-40 text-jungle-700/20 animate-leaf-sway">
             <Leaf className="w-full h-full" />
           </div>
@@ -101,7 +102,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Features Section */}
         <section className="py-20 lion-texture">
           <PageContainer>
             <div className="text-center mb-16">
@@ -122,11 +122,10 @@ const Index = () => {
                   <p className="text-muted-foreground font-nunito">{feature.description}</p>
                 </div>)}
             </div>
-            
-            
           </PageContainer>
         </section>
       </main>
     </>;
 };
+
 export default Index;
