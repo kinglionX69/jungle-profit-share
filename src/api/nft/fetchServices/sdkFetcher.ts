@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { testnetClient } from "@/utils/aptos/client";
 import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
 import { NFT } from "../../types/nft.types";
-import { Aptos, AptosConfig, Network, TokenStandard } from '@aptos-labs/ts-sdk';
+import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 
 /**
  * Fetches NFTs using the Aptos SDK
@@ -26,34 +26,36 @@ export const fetchNFTsWithSDK = async (
     const config = new AptosConfig({ network: Network.TESTNET });
     const aptos = new Aptos(config);
     
-    // Use the SDK to fetch tokens
-    const response = await aptos.getAccountNFTs({
-      accountAddress: walletAddress,
-      minimumLedgerVersion: BigInt(0) // Start from genesis
+    // Use the SDK to fetch tokens - using getAccountOwnedTokens which exists in the SDK
+    const response = await aptos.getAccountOwnedTokens({
+      accountAddress: walletAddress
     });
     
-    const _nfts = response.current_token_ownerships || [];
+    const _nfts = response || [];
     
     console.log(`Found ${_nfts.length} tokens via SDK`, _nfts);
 
     const nfts = _nfts
       .filter((nft) => {
-        const collectionNameMatches = nft.current_collection_data?.collection_name === NFT_COLLECTION_NAME;
-        console.log(`NFT collection name check: ${nft.current_collection_data?.collection_name} === ${NFT_COLLECTION_NAME}: ${collectionNameMatches}`);
+        // Check if the collection name matches
+        const collectionData = nft.current_token_data?.current_collection;
+        const collectionNameMatches = collectionData?.collection_name === NFT_COLLECTION_NAME;
+        console.log(`NFT collection name check: ${collectionData?.collection_name} === ${NFT_COLLECTION_NAME}: ${collectionNameMatches}`);
         return collectionNameMatches;
       })
       .map((nft) => {
         // Extract token ID from the token_data_id
-        const tokenId = nft.token_data_id_hash || '';
+        const tokenId = nft.token_data_id || '';
         
         // Extract image URL from token URI if available
         const tokenUri = nft.current_token_data?.token_uri || '';
         console.log(`Token URI for ${tokenId}: ${tokenUri}`);
         
         // Try to get collection info
-        const collectionName = nft.current_collection_data?.collection_name || NFT_COLLECTION_NAME;
-        const creatorAddress = nft.current_collection_data?.creator_address || '';
-        const tokenStandard = nft.token_standard || TokenStandard.V2;
+        const collectionData = nft.current_token_data?.current_collection;
+        const collectionName = collectionData?.collection_name || NFT_COLLECTION_NAME;
+        const creatorAddress = collectionData?.creator_address || '';
+        const tokenStandard = nft.token_standard || 'v2'; // Use string literal instead of enum
         
         // Create the NFT object with the unlockDate property included
         return {
@@ -62,7 +64,7 @@ export const fetchNFTsWithSDK = async (
           imageUrl: tokenUri || `https://picsum.photos/seed/${tokenId}/300/300`,
           isEligible: true,
           isLocked: false,
-          standard: tokenStandard.toString(),
+          standard: tokenStandard,
           creator: creatorAddress,
           properties: JSON.stringify(nft.current_token_data || {}),
           unlockDate: undefined // Initialize with undefined

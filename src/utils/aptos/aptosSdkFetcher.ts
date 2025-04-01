@@ -29,7 +29,7 @@ export const fetchWithAptosSdk = async (walletAddress: string): Promise<Blockcha
     console.log(`Configured Aptos SDK for ${network}`);
     
     try {
-      // Fetch all tokens owned by the wallet
+      // Fetch all tokens owned by the wallet using getAccountOwnedTokens which exists in the SDK
       const tokens = await aptos.getAccountOwnedTokens({ 
         accountAddress: walletAddress 
       });
