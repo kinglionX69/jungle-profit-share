@@ -1,3 +1,6 @@
+
+import { toStructTag } from "./helpers";
+// Note: We need to add a dependency for aptos
 import { AptosClient, AptosAccount, FaucetClient } from "aptos";
 
 // const NODE_URL = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com";
@@ -40,6 +43,46 @@ export const uint8ArrayToString = (arr: Uint8Array): string => {
 export const testnetClient = new AptosClient(
   "https://testnet.aptoslabs.com"
 );
+
+/**
+ * Get coin balance for a wallet address
+ * @param address Wallet address to check balance for
+ * @param coinType The type of coin to check balance for
+ * @param network 'mainnet' or 'testnet'
+ * @returns The balance as a number
+ */
+export const getCoinBalance = async (
+  address: string,
+  coinType: string,
+  network: 'mainnet' | 'testnet' = 'testnet'
+): Promise<number> => {
+  try {
+    const client = network === 'mainnet' 
+      ? new AptosClient("https://fullnode.mainnet.aptoslabs.com") 
+      : testnetClient;
+      
+    const resources = await client.getAccountResources({
+      accountAddress: address,
+    });
+    
+    const coinTypeStr = toStructTag(coinType);
+    const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
+    
+    const resource = resources.find((r) => r.type === coinStoreType);
+    
+    if (!resource) {
+      console.log(`No ${coinType} found for ${address}`);
+      return 0;
+    }
+    
+    // @ts-ignore - The structure is expected to have a coin.value field
+    const balance = resource.data.coin?.value || "0";
+    return parseInt(balance) / 100000000; // Convert from octas to APT
+  } catch (error) {
+    console.error(`Error fetching ${coinType} balance:`, error);
+    return 0;
+  }
+};
 
 /**
  * Register a token store for a wallet if it doesn't already exist
@@ -98,9 +141,6 @@ export const registerCoinStore = async (
 ): Promise<{ success: boolean; hash?: string }> => {
   try {
     console.log(`Registering coin store for ${walletAddress} with coin type ${coinType}`);
-    
-    // Import the toStructTag function to ensure type safety
-    import { toStructTag } from "./helpers";
     
     // Check if coin store is already registered
     const accountResources = await aptosClient.getAccountResources({

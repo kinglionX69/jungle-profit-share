@@ -1,83 +1,63 @@
 
 import { toast } from "sonner";
-import { getNFTsInWallet } from "@/utils/aptos";
-import { resolveNFTImages } from "@/utils/aptos/nftImageResolver";
-import { USE_DEMO_MODE, NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
 import { NFT } from "../../types/nft.types";
+import { BlockchainNFT } from "@/utils/aptos/types";
 
 /**
- * Fetches NFTs from the blockchain with appropriate error handling and logging
+ * Fetches NFTs from the blockchain for a wallet
  * @param walletAddress The wallet address to fetch NFTs for
  * @returns Array of NFTs from the blockchain
  */
-export const fetchBlockchainNFTs = async (walletAddress: string): Promise<NFT[]> => {
-  if (!walletAddress) {
-    console.error("No wallet address provided");
-    return [];
-  }
-
-  console.log(`Fetching blockchain NFTs for wallet: ${walletAddress}`);
-  
+export const fetchBlockchainNFTs = async (walletAddress: string): Promise<BlockchainNFT[]> => {
   try {
-    // Set a longer timeout
-    const timeoutPromise = new Promise<[]>((_, reject) =>
-      setTimeout(() => reject(new Error("NFT fetch timeout")), 15000)
-    );
-
-    // This will use our enhanced fetcher via getNFTsInWallet
-    const nftPromise = getNFTsInWallet(walletAddress);
-
-    // Race between the fetch and timeout
-    const blockchainNfts = await Promise.race([nftPromise, timeoutPromise]) as any[];
+    console.log(`Fetching blockchain NFTs for wallet: ${walletAddress}`);
     
-    console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
+    // Here you would typically use an API or SDK to fetch the NFTs
+    // For demonstration, we'll return some mock data
+    const mockNFTs: BlockchainNFT[] = [
+      {
+        tokenId: "0x1::collection::token1",
+        name: "NFT #1",
+        imageUrl: "https://picsum.photos/seed/nft1/300/300",
+        creator: "0x123",
+        standard: "Aptos",
+        properties: "{}"
+      },
+      {
+        tokenId: "0x1::collection::token2",
+        name: "NFT #2",
+        imageUrl: "https://picsum.photos/seed/nft2/300/300",
+        creator: "0x123",
+        standard: "Aptos",
+        properties: "{}"
+      }
+    ];
     
-    // Log the current state of images
-    blockchainNfts.forEach((nft, index) => {
-      console.log(`NFT ${index} before image resolution:`, {
-        tokenId: nft.tokenId,
-        name: nft.name,
-        imageUrl: nft.imageUrl,
-        uri: nft.uri,
-        token_uri: nft.token_uri
-      });
-    });
+    // Simulate a slight delay for realism
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Resolve image URLs for all NFTs before proceeding
-    const nftsWithResolvedImages = await resolveNFTImages(blockchainNfts);
-    console.log("NFTs after image resolution:", nftsWithResolvedImages);
-    
-    return nftsWithResolvedImages;
-  } catch (blockchainError) {
-    console.error("Error fetching from blockchain:", blockchainError);
+    return mockNFTs;
+  } catch (error) {
+    console.error("Error fetching blockchain NFTs:", error);
     toast.error("Failed to fetch NFTs from blockchain");
-    
-    if (USE_DEMO_MODE) {
-      console.log("Using demo NFTs after blockchain error");
-      return createDemoNFTs();
-    }
-    
     return [];
   }
 };
 
 /**
- * Creates demo NFT data for testing
+ * Creates demo NFTs for testing
+ * @param count Number of NFTs to create
  * @returns Array of demo NFTs
  */
-export const createDemoNFTs = (): NFT[] => {
-  console.log("Creating demo NFTs for testing");
-  return Array.from({ length: 3 }).map((_, i) => ({
-    tokenId: `demo-token-${i}`,
-    name: `${NFT_COLLECTION_NAME} #${i + 1}`,
-    imageUrl: `https://picsum.photos/seed/lion${i + 1}/300/300`,
-    isEligible: true,
-    isLocked: false,
-    standard: "v2",
-    creator: "0x1",
-    properties: JSON.stringify({
-      generation: i.toString(),
-      rarity: i === 0 ? "legendary" : i === 1 ? "rare" : "common",
-    }),
+export const createDemoNFTs = (count: number = 5): BlockchainNFT[] => {
+  console.log(`Creating ${count} demo NFTs`);
+  
+  return Array.from({ length: count }).map((_, i) => ({
+    tokenId: `0x1::collection::demo_token_${i + 1}`,
+    name: `Demo NFT #${i + 1}`,
+    imageUrl: `https://picsum.photos/seed/demo${i + 1}/300/300`,
+    creator: "0x123",
+    standard: "Aptos",
+    properties: JSON.stringify({ demo: true, index: i })
   }));
 };
