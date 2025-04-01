@@ -74,7 +74,7 @@ export const depositTokensTransaction = async (
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT, ensure integer
     
     // Prepare the tokenType in the format expected by the TypeScript SDK
-    const formattedTokenType = tokenType as `${string}::${string}::${string}`;
+    const formattedTokenType = toStructTag(tokenType);
     
     // Create the transaction payload using the simpler object format
     const payload = {
