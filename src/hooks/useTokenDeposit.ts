@@ -1,19 +1,6 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { Upload, Coins, Loader } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from "@/integrations/supabase/client";
 import { useWallet } from '@/context/WalletContext';
 import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
@@ -22,8 +9,7 @@ import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WAL
 // Fixed payout amount per NFT
 const FIXED_PAYOUT_PER_NFT = 0.1;
 
-const TokenDeposit: React.FC = () => {
-  // Force selectedToken to be 'apt' on testnet - no other options
+export const useTokenDeposit = () => {
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
   const [processing, setProcessing] = useState(false);
@@ -202,96 +188,13 @@ const TokenDeposit: React.FC = () => {
     }
   };
   
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Upload className="h-5 w-5" />
-          Deposit Tokens
-        </CardTitle>
-        <CardDescription>
-          Add tokens to the escrow wallet for NFT holder rewards
-          {IS_TESTNET && <span className="text-amber-500 ml-1">(Testnet mode: only APT supported)</span>}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="token-amount">Amount</Label>
-          <div className="flex gap-2">
-            <Input
-              id="token-amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="flex-1"
-            />
-            {/* On testnet, only show APT option - on mainnet, show both options */}
-            {IS_TESTNET ? (
-              <div className="flex items-center px-3 py-2 bg-muted rounded-md font-medium">
-                APT
-              </div>
-            ) : (
-              <RadioGroup 
-                value={selectedToken}
-                onValueChange={handleTokenChange}
-                className="flex gap-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="apt" id="apt" />
-                  <Label htmlFor="apt" className="cursor-pointer">APT</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="emojicoin" id="emojicoin" />
-                  <Label htmlFor="emojicoin" className="cursor-pointer">EMOJICOIN</Label>
-                </div>
-              </RadioGroup>
-            )}
-          </div>
-        </div>
-        
-        <div className="bg-muted rounded-md p-4 text-sm space-y-2">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Deposit amount:</span>
-            <span className="font-medium">{amount || '0'} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Payout per NFT:</span>
-            <span className="font-medium">{FIXED_PAYOUT_PER_NFT} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
-          </div>
-          <div className="flex justify-between border-t pt-2 mt-2">
-            <span className="text-muted-foreground">Expected claims:</span>
-            <span className="font-medium">
-              {amount && Number(amount) > 0
-                ? Math.floor(Number(amount) / FIXED_PAYOUT_PER_NFT)
-                : '0'} NFTs
-            </span>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handleDeposit} 
-          className="w-full"
-          disabled={!amount || processing || !address || !isAdmin}
-        >
-          {processing ? (
-            <>
-              <Loader className="mr-2 h-4 w-4 animate-spin" />
-              Processing Deposit...
-            </>
-          ) : (
-            <>
-              <Coins className="mr-2 h-4 w-4" />
-              Deposit to Escrow Wallet
-            </>
-          )}
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+  return {
+    amount,
+    setAmount,
+    selectedToken,
+    handleTokenChange,
+    processing,
+    handleDeposit,
+    FIXED_PAYOUT_PER_NFT
+  };
 };
-
-export default TokenDeposit;
