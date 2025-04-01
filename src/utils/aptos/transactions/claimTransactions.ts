@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
-import { IS_TESTNET } from "../constants";
+import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
 import { AptosClient } from "aptos";
 
 /**
@@ -33,27 +33,44 @@ export const submitClaimTransaction = async (
     console.log(`Wallet address: ${walletAddress}`);
     console.log(`NFT IDs to claim: ${nftIds.join(', ')}`);
     
-    // Select the appropriate Aptos client based on network
-    const client = aptosClient(IS_TESTNET ? 'testnet' : 'mainnet');
+    // The amount to claim is 0.1 APT per NFT
+    const amountPerNft = 0.1;
+    const totalAmount = nftIds.length * amountPerNft;
+    console.log(`Total amount to claim: ${totalAmount.toFixed(2)} APT`);
     
-    // Simple transfer transaction as a placeholder since nft_rewards module doesn't exist
-    // We'll use the 0x1::aptos_account module which is guaranteed to exist
-    const payload = {
-      function: `0x1::aptos_account::transfer`,
-      type_arguments: [],
-      arguments: [walletAddress, "1"] // Transfer minimal amount to self as a placeholder
-    };
+    // We need to call the withdraw-from-escrow edge function
+    // This function will transfer APT from the escrow wallet to the user's wallet
+    const escrowNetwork = IS_TESTNET ? 'testnet' : 'mainnet';
+    const response = await fetch('/api/withdraw-from-escrow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tokenType: "0x1::aptos_coin::AptosCoin",
+        amount: totalAmount,
+        recipientAddress: walletAddress,
+        network: escrowNetwork,
+        adminWalletAddress: "claim" // This is just for logging purposes
+      })
+    });
     
-    console.log("Transaction payload:", payload);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error from escrow endpoint:", errorData);
+      throw new Error(errorData.error || `Failed with status: ${response.status}`);
+    }
     
-    // Build the raw transaction for signing
-    // Note: Using the wallet's signAndSubmitTransaction because some wallets don't expose direct signing
-    const result = await signTransaction(payload);
-    console.log("Transaction result:", result);
+    const result = await response.json();
+    console.log("Withdrawal transaction result:", result);
+    
+    if (!result.success) {
+      throw new Error(result.error || "Unknown error processing claim");
+    }
     
     return {
-      success: !!result.hash,
-      transactionHash: result.hash || null
+      success: true,
+      transactionHash: result.transactionHash
     };
   } catch (error) {
     console.error("Error submitting claim transaction:", error);

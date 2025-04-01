@@ -1,4 +1,3 @@
-
 /**
  * Constants for Aptos API interactions
  */
@@ -22,8 +21,8 @@ export const TOKEN_STORE_ADDRESS = "0x3::token::TokenStore"; // Used for resourc
 export const APTOS_TOKEN_ADDRESS = "0x1::aptos_coin::AptosCoin"; // Used for token transfers
 
 // Escrow wallet addresses
-export const TESTNET_ESCROW_WALLET = "0x2afbb09094a37b84d14bc9aaf7deb6dd586acc20b0e3ba8c8c5a7cafd9eb5a0d"; // For testnet
-export const MAINNET_ESCROW_WALLET = "0x2afbb09094a37b84d14bc9aaf7deb6dd586acc20b0e3ba8c8c5a7cafd9eb5a0d"; // For mainnet (same as testnet for now)
+export const TESTNET_ESCROW_WALLET = "0x5af503b5c379bd69f32dac9bcbae33f5a8941a4bb98d6f7341bb6fbdcb496d69";
+export const MAINNET_ESCROW_WALLET = "0x9a5d795152a50243398329387026ef55886ee6c10f3bfa7c454e8487fe62c5e2";
 
 // Mainnet specific constants (only used when IS_TESTNET = false)
 export const EMOJICOIN_TOKEN_ADDRESS = "0x173fcd3fda2c89d4702e3d307d4dcc8358b03d9f36189179d2bddd9585e96e27::coin_factory::Emojicoin";
