@@ -72,6 +72,12 @@ export const getCoinBalance = async (
     
     // Properly cast the tokenType to the required format for type safety
     // We're explicitly asserting this is in the correct format required by the SDK
+    // Use a regular expression to validate the format before casting
+    if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
+      console.error(`Invalid token type format: ${tokenType}`);
+      return 0;
+    }
+    
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
@@ -111,6 +117,12 @@ export const hasCoinRegistered = async (
     
     // Properly cast the tokenType to the required format for type safety
     // We're explicitly asserting this is in the correct format required by the SDK
+    // Use a regular expression to validate the format before casting
+    if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
+      console.error(`Invalid token type format: ${tokenType}`);
+      return false;
+    }
+    
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store

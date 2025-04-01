@@ -39,6 +39,16 @@ export const registerCoinStoreIfNeeded = async (
     try {
       const client = IS_TESTNET ? aptosClient('testnet') : aptosClient('mainnet');
       
+      // Validate the token type format using a regular expression
+      if (!/^0x[a-zA-Z0-9]+::[a-zA-Z0-9_]+::[a-zA-Z0-9_]+$/.test(tokenType)) {
+        console.error(`Invalid token type format: ${tokenType}`);
+        return {
+          success: false,
+          transactionHash: null,
+          error: "Invalid token type format"
+        };
+      }
+      
       // Explicitly cast the token type to the expected format for type safety
       // Using explicit type assertion to satisfy TypeScript's strict type checking
       const formattedTokenType = tokenType as `${string}::${string}::${string}`;
