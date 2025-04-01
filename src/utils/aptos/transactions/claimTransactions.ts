@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET } from "../constants";
-import { Aptos, AptosConfig, Network, AccountAddress, TransactionPayload, EntryFunction } from "@aptos-labs/ts-sdk";
+import { Aptos, AccountAddress, TransactionPayload, TransactionArgument } from "@aptos-labs/ts-sdk";
 import { aptosClient } from "../client";
 
 /**
@@ -27,20 +27,15 @@ export const submitClaimTransaction = async (
       ? aptosClient('testnet')
       : aptosClient('mainnet');
     
-    // Create the transaction payload using the SDK
     // For testnet, we use a different module address
     const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
     
-    // Create the entry function
-    const entryFunction = new EntryFunction(
-      `${moduleAddress}::nft_rewards`, // module address::module name
-      "claim", // function name
-      [], // type arguments
-      [client.serializer.serializeArg(nftIds)] // function arguments - serialized
-    );
-    
-    // Create the transaction payload
-    const payload = new TransactionPayload(entryFunction);
+    // Create the transaction payload using the SDK's builder pattern
+    const payload = {
+      function: `${moduleAddress}::nft_rewards::claim`,
+      type_arguments: [],
+      arguments: [nftIds]
+    };
     
     console.log("Transaction payload:", payload);
     

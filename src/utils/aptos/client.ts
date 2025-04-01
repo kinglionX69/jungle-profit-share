@@ -1,3 +1,4 @@
+
 import { Aptos, AptosConfig, Network, AccountAddress } from "@aptos-labs/ts-sdk";
 import { IS_TESTNET } from "./constants";
 
@@ -69,7 +70,7 @@ export const getCoinBalance = async (
   try {
     const client = aptosClient(network);
     
-    // Properly cast the tokenType to the required format
+    // Properly cast the tokenType to the required format for type safety
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
@@ -107,7 +108,7 @@ export const hasCoinRegistered = async (
   try {
     const client = aptosClient(network);
     
-    // Properly cast the tokenType to the required format
+    // Properly cast the tokenType to the required format for type safety
     const formattedTokenType = tokenType as `${string}::${string}::${string}`;
     
     // Construct the resource type for the coin store
