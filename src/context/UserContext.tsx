@@ -14,6 +14,7 @@ import {
   calculateClaimableAmount,
   submitClaim
 } from "@/api/nftApi";
+import { getUserNfts } from "@/api/nft/fetchNFTs";
 
 interface UserContextType {
   email: string | null;
@@ -93,7 +94,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // Set a timeout to show loading state for at least 1 second
       setTimeout(async () => {
         try {
-          const userNfts = await fetchNFTs(address);
+          const userNfts = await getUserNfts(address);
           setNfts(userNfts);
           
           const claimable = await calculateClaimableAmount(userNfts);
