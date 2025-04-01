@@ -23,9 +23,9 @@ export const checkCoinStoreExists = async (
     const coinStoreType = `0x1::coin::CoinStore<${formattedCoinType}>`;
     
     // Get all the resources for the account
-    const accountResources = await testnetClient.getAccountResources({
-      accountAddress: walletAddress,
-    });
+    const accountResources = await testnetClient.getAccountResources(
+      walletAddress
+    );
     
     console.log(`Found ${accountResources.length} resources for account ${walletAddress}`);
     

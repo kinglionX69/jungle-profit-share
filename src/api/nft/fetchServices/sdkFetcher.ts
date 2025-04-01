@@ -3,8 +3,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { testnetClient } from "@/utils/aptos/client";
 import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
-import { AccountAddressInput } from "@aptos-labs/ts-sdk";
 import { NFT } from "../../types/nft.types";
+import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 
 /**
  * Fetches NFTs using the Aptos SDK
@@ -12,7 +12,7 @@ import { NFT } from "../../types/nft.types";
  * @returns Array of NFTs in application format
  */
 export const fetchNFTsWithSDK = async (
-  walletAddress: AccountAddressInput
+  walletAddress: string
 ): Promise<NFT[]> => {
   try {
     if (!walletAddress) {
@@ -22,7 +22,12 @@ export const fetchNFTsWithSDK = async (
     
     console.log(`Getting user NFTs for wallet: ${walletAddress}`);
     
-    const _nfts = await testnetClient.getAccountOwnedTokens({
+    // Create a new Aptos SDK instance with the appropriate configuration
+    const config = new AptosConfig({ network: Network.TESTNET });
+    const aptos = new Aptos(config);
+    
+    // Use the SDK to fetch tokens
+    const _nfts = await aptos.getAccountOwnedTokens({
       accountAddress: walletAddress,
     });
     
@@ -64,7 +69,7 @@ export const fetchNFTsWithSDK = async (
     console.log(`Converted ${nfts.length} NFTs from SDK format:`, nfts);
     
     // Check for locked NFTs in the database
-    return await checkForLockedNFTs(nfts, walletAddress as string);
+    return await checkForLockedNFTs(nfts, walletAddress);
   } catch (error) {
     console.error("Error fetching NFTs with SDK:", error);
     toast.error("Failed to load NFTs from your wallet");

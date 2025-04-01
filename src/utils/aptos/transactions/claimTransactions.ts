@@ -2,8 +2,19 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET } from "../constants";
-import { Aptos, AccountAddress, TransactionPayload } from "@aptos-labs/ts-sdk";
-import { aptosClient } from "../client";
+import { AptosClient } from "aptos";
+
+/**
+ * Get an Aptos client instance for the specified network
+ * @param network Network to use ('mainnet' or 'testnet')
+ * @returns AptosClient instance for the specified network
+ */
+export const aptosClient = (network: 'mainnet' | 'testnet'): AptosClient => {
+  const nodeUrl = network === 'mainnet' 
+    ? "https://fullnode.mainnet.aptoslabs.com"
+    : "https://testnet.aptoslabs.com";
+  return new AptosClient(nodeUrl);
+};
 
 /**
  * Submit a transaction to the blockchain to claim rewards using the Aptos SDK
@@ -23,9 +34,7 @@ export const submitClaimTransaction = async (
     console.log(`NFT IDs to claim: ${nftIds.join(', ')}`);
     
     // Select the appropriate Aptos client based on network
-    const client = IS_TESTNET 
-      ? aptosClient('testnet')
-      : aptosClient('mainnet');
+    const client = aptosClient(IS_TESTNET ? 'testnet' : 'mainnet');
     
     // For testnet, we use a different module address
     const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules

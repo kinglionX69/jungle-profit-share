@@ -1,7 +1,7 @@
 
 import { toStructTag } from "./helpers";
 // Note: We need to add a dependency for aptos
-import { AptosClient, AptosAccount, FaucetClient } from "aptos";
+import { AptosClient, AptosAccount, FaucetClient, Types } from "aptos";
 
 // const NODE_URL = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com";
 const NODE_URL = process.env.APTOS_NODE_URL || "https://testnet.aptoslabs.com";
@@ -61,9 +61,9 @@ export const getCoinBalance = async (
       ? new AptosClient("https://fullnode.mainnet.aptoslabs.com") 
       : testnetClient;
       
-    const resources = await client.getAccountResources({
-      accountAddress: address,
-    });
+    const resources = await client.getAccountResources(
+      address
+    );
     
     const coinTypeStr = toStructTag(coinType);
     const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
@@ -95,9 +95,9 @@ export const registerTokenStore = async (
     console.log(`Registering token store for ${walletAddress}`);
     
     // Check if token store is already registered
-    const accountResources = await aptosClient.getAccountResources({
-      accountAddress: walletAddress,
-    });
+    const accountResources = await aptosClient.getAccountResources(
+      walletAddress
+    );
     
     const tokenStoreResource = accountResources.find(
       (r) => r.type === "0x3::token::TokenStore"
@@ -143,9 +143,9 @@ export const registerCoinStore = async (
     console.log(`Registering coin store for ${walletAddress} with coin type ${coinType}`);
     
     // Check if coin store is already registered
-    const accountResources = await aptosClient.getAccountResources({
-      accountAddress: walletAddress,
-    });
+    const accountResources = await aptosClient.getAccountResources(
+      walletAddress
+    );
     
     const coinTypeStr = toStructTag(coinType);
     
