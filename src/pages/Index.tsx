@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -10,19 +9,18 @@ import { useWallet } from '@/context/WalletContext';
 import WalletSelector from '@/components/Auth/WalletSelector';
 import { toast } from 'sonner';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
-
 const Index = () => {
   const navigate = useNavigate();
-  const { 
-    connected, 
-    connect, 
-    connectWallet, 
+  const {
+    connected,
+    connect,
+    connectWallet,
     connecting,
     showWalletSelector,
     setShowWalletSelector,
     walletType
   } = useWallet();
-  
+
   // Check for Petra wallet on page load
   useEffect(() => {
     if (!window.aptos) {
@@ -31,41 +29,32 @@ const Index = () => {
       console.log("Petra wallet detected");
     }
   }, []);
-
   const handleConnectPetra = async () => {
     if (!window.aptos) {
       toast.error("Please install Petra Wallet to continue");
       window.open("https://petra.app", "_blank");
       return;
     }
-    
     try {
       await connectWallet('petra');
     } catch (error) {
       console.error("Failed to connect Petra wallet:", error);
     }
   };
-  
-  const features = [
-    {
-      icon: <Award className="h-10 w-10" />,
-      title: 'Exclusive Rewards',
-      description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos.`,
-    },
-    {
-      icon: <Clock className="h-10 w-10" />,
-      title: '30-Day Claim Cycle',
-      description: 'Each NFT can be used to claim rewards once every 30 days.',
-    },
-    {
-      icon: <Shield className="h-10 w-10" />,
-      title: 'Secure Escrow System',
-      description: 'All rewards are held in a secure escrow wallet until claimed.',
-    },
-  ];
-  
-  return (
-    <>
+  const features = [{
+    icon: <Award className="h-10 w-10" />,
+    title: 'Exclusive Rewards',
+    description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos.`
+  }, {
+    icon: <Clock className="h-10 w-10" />,
+    title: '30-Day Claim Cycle',
+    description: 'Each NFT can be used to claim rewards once every 30 days.'
+  }, {
+    icon: <Shield className="h-10 w-10" />,
+    title: 'Secure Escrow System',
+    description: 'All rewards are held in a secure escrow wallet until claimed.'
+  }];
+  return <>
       <Header />
       <main className="min-h-[calc(100vh-64px)]">
         {/* Hero Section */}
@@ -88,36 +77,17 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 slide-up [animation-delay:600ms]">
-                {connected ? (
-                  <Button 
-                    size="lg" 
-                    onClick={() => navigate('/dashboard')}
-                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow"
-                  >
+                {connected ? <Button size="lg" onClick={() => navigate('/dashboard')} className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow">
                     View Dashboard
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    size="lg" 
-                    onClick={handleConnectPetra}
-                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow"
-                    disabled={connecting}
-                  >
-                    {connecting ? 'Connecting...' : (
-                      <>
+                  </Button> : <Button size="lg" onClick={handleConnectPetra} className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow" disabled={connecting}>
+                    {connecting ? 'Connecting...' : <>
                         <Wallet className="mr-2 h-5 w-5" />
                         Connect Petra Wallet
-                      </>
-                    )}
-                  </Button>
-                )}
+                      </>}
+                  </Button>}
                 
-                <WalletSelector 
-                  open={showWalletSelector}
-                  onOpenChange={setShowWalletSelector}
-                  onSelectWallet={connectWallet}
-                />
+                <WalletSelector open={showWalletSelector} onOpenChange={setShowWalletSelector} onSelectWallet={connectWallet} />
               </div>
             </div>
           </PageContainer>
@@ -142,58 +112,21 @@ const Index = () => {
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <div 
-                  key={index} 
-                  className="p-6 border border-jungle-700/20 glass rounded-lg scale-in hover-lift [animation-delay:var(--delay)] shadow-md"
-                  style={{ '--delay': `${800 + index * 200}ms` } as React.CSSProperties}
-                >
+              {features.map((feature, index) => <div key={index} className="p-6 border border-jungle-700/20 glass rounded-lg scale-in hover-lift [animation-delay:var(--delay)] shadow-md" style={{
+              '--delay': `${800 + index * 200}ms`
+            } as React.CSSProperties}>
                   <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg inline-block mb-4">
                     <div>{feature.icon}</div>
                   </div>
                   <h3 className="text-xl font-semibold mb-2 font-poppins">{feature.title}</h3>
                   <p className="text-muted-foreground font-nunito">{feature.description}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
             
-            <div className="mt-20 text-center">
-              <h2 className="text-3xl font-bold mb-6 font-poppins">
-                Connect your Petra Wallet to get started
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mb-8 font-nunito">
-                Connect your wallet to view your {NFT_COLLECTION_NAME} NFTs and start claiming your rewards.
-              </p>
-              
-              {!window.aptos ? (
-                <div className="max-w-md mx-auto p-8 border border-jungle-700/20 rounded-xl glass">
-                  <div className="bg-amber-500/20 p-3 rounded-full mb-4">
-                    <Wallet className="h-10 w-10 text-amber-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3 font-poppins">Petra Wallet Required</h3>
-                  <p className="text-muted-foreground mb-6 font-nunito">
-                    Please install Petra Wallet to connect to the Aptos blockchain and view your NFTs.
-                  </p>
-                  <Button
-                    size="lg"
-                    onClick={() => window.open("https://petra.app", "_blank")}
-                    className="bg-amber-500 hover:bg-amber-600 text-black font-medium"
-                  >
-                    Install Petra Wallet
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="max-w-md mx-auto p-8 border border-jungle-700/20 rounded-xl glass">
-                  <WalletConnect />
-                </div>
-              )}
-            </div>
+            
           </PageContainer>
         </section>
       </main>
-    </>
-  );
+    </>;
 };
-
 export default Index;
