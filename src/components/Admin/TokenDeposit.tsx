@@ -37,16 +37,35 @@ const TokenDeposit: React.FC = () => {
   };
   
   const updateTokenPayout = async (walletAddress: string, tokenName: string, payoutPerNft: number): Promise<boolean> => {
+    console.log("Attempting to update token payout:", { walletAddress, tokenName, payoutPerNft });
+    
     try {
       // First try using the edge function
+      console.log("Calling update-token-payouts edge function");
       const response = await supabase.functions.invoke('update-token-payouts', {
         body: { walletAddress, tokenName, payoutPerNft }
       });
       
       if (response.error) {
         console.error("Edge function error:", response.error);
-        // Fall back to direct database insertion
-        const { error } = await supabase
+        console.log("Edge function full response:", response);
+        
+        // If the edge function fails, try direct insertion with admin check as fallback
+        console.log("Attempting fallback: direct database insertion with admin check");
+        
+        // First verify the wallet is admin
+        const { data: isAdmin, error: adminCheckError } = await supabase.rpc(
+          'is_admin',
+          { wallet_address: walletAddress }
+        );
+        
+        if (adminCheckError || !isAdmin) {
+          console.error("Admin check error or not admin:", { adminCheckError, isAdmin });
+          throw new Error("Only admins can update token payouts");
+        }
+        
+        // Then try direct insertion
+        const { error: insertError } = await supabase
           .from('token_payouts')
           .insert({
             token_name: tokenName.toUpperCase(),
@@ -54,18 +73,19 @@ const TokenDeposit: React.FC = () => {
             created_by: walletAddress
           });
           
-        if (error) {
-          console.error("Error updating token payout:", error);
-          toast.error("Failed to update payout configuration: " + error.message);
-          return false;
+        if (insertError) {
+          console.error("Error inserting token payout:", insertError);
+          throw new Error(`Database error: ${insertError.message}`);
         }
+      } else {
+        console.log("Edge function successful response:", response);
       }
       
       toast.success(`Payout configuration updated to ${payoutPerNft} ${tokenName.toUpperCase()} per NFT`);
       return true;
     } catch (error) {
       console.error("Error updating token payout:", error);
-      toast.error("Failed to update payout configuration");
+      toast.error(`Failed to update payout configuration: ${error.message || "Unknown error"}`);
       return false;
     }
   };
@@ -116,6 +136,8 @@ const TokenDeposit: React.FC = () => {
         throw new Error("Wallet signing function not available");
       }
       
+      toast.loading("Processing blockchain transaction...");
+      
       const txResult = await depositTokensTransaction(
         address,
         tokenType,
@@ -124,21 +146,39 @@ const TokenDeposit: React.FC = () => {
         signTransaction
       );
       
+      toast.dismiss();
+      
       if (txResult.success) {
+        console.log("Transaction succeeded, updating database");
         toast.success(`Tokens deposited successfully!${txResult.transactionHash ? ` Transaction: ${txResult.transactionHash}` : ''}`);
         
         // After successful blockchain transaction, update the payout in the database
-        console.log("Updating token payout in database");
+        toast.loading("Updating token payout in database...");
+        
+        console.log("Calling updateTokenPayout with:", { 
+          address, 
+          selectedToken: selectedToken.toUpperCase(), 
+          payoutValue 
+        });
+        
         const dbResult = await updateTokenPayout(
           address,
           selectedToken.toUpperCase(),
           payoutValue
         );
         
+        toast.dismiss();
+        
         if (dbResult) {
+          console.log("Database update successful");
           setAmount('');
+          toast.success("Deposit process completed successfully!");
+        } else {
+          console.error("Database update failed");
+          toast.error("Token deposit successful, but failed to update payout configuration");
         }
       } else {
+        console.error("Transaction failed:", txResult.error);
         toast.error(txResult.error || "Transaction failed");
       }
     } catch (error) {
