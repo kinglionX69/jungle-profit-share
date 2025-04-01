@@ -20,11 +20,21 @@ import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 
 const TokenDeposit: React.FC = () => {
+  // Force selectedToken to be 'apt' on testnet - no other options
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
   const [payoutAmount, setPayoutAmount] = useState('2');
   const [processing, setProcessing] = useState(false);
   const { address, signTransaction } = useWallet();
+  
+  // Testnet only supports APT
+  const handleTokenChange = (value: string) => {
+    if (IS_TESTNET && value !== 'apt') {
+      toast.error("Only APT tokens are supported on testnet");
+      return;
+    }
+    setSelectedToken(value);
+  };
   
   const handleDeposit = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
@@ -42,6 +52,12 @@ const TokenDeposit: React.FC = () => {
       return;
     }
     
+    // Testnet validation
+    if (IS_TESTNET && selectedToken !== 'apt') {
+      toast.error("Only APT tokens are supported on testnet");
+      return;
+    }
+    
     setProcessing(true);
     
     try {
@@ -52,7 +68,7 @@ const TokenDeposit: React.FC = () => {
       
       console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with payout ${payoutValue} per NFT`);
       
-      // Display the escrow wallet address being used (for debugging)
+      // Display the escrow wallet address being used
       const escrowWallet = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
       console.log(`Using escrow wallet: ${escrowWallet}`);
       
@@ -116,6 +132,7 @@ const TokenDeposit: React.FC = () => {
         </CardTitle>
         <CardDescription>
           Add tokens to the escrow wallet for NFT holder rewards
+          {IS_TESTNET && <span className="text-amber-500 ml-1">(Testnet mode: only APT supported)</span>}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -132,24 +149,27 @@ const TokenDeposit: React.FC = () => {
               step="0.01"
               className="flex-1"
             />
-            <RadioGroup 
-              defaultValue="apt" 
-              value={selectedToken}
-              onValueChange={setSelectedToken}
-              className="flex gap-2"
-            >
-              <div className="flex items-center space-x-1">
-                <RadioGroupItem value="apt" id="apt" />
-                <Label htmlFor="apt" className="cursor-pointer">APT</Label>
+            {/* On testnet, only show APT option - on mainnet, show both options */}
+            {IS_TESTNET ? (
+              <div className="flex items-center px-3 py-2 bg-muted rounded-md font-medium">
+                APT
               </div>
-              {/* Only show EMOJICOIN on mainnet */}
-              {!IS_TESTNET && (
+            ) : (
+              <RadioGroup 
+                value={selectedToken}
+                onValueChange={handleTokenChange}
+                className="flex gap-2"
+              >
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="apt" id="apt" />
+                  <Label htmlFor="apt" className="cursor-pointer">APT</Label>
+                </div>
                 <div className="flex items-center space-x-1">
                   <RadioGroupItem value="emojicoin" id="emojicoin" />
                   <Label htmlFor="emojicoin" className="cursor-pointer">EMOJICOIN</Label>
                 </div>
-              )}
-            </RadioGroup>
+              </RadioGroup>
+            )}
           </div>
         </div>
         
@@ -167,7 +187,7 @@ const TokenDeposit: React.FC = () => {
               className="flex-1"
             />
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {selectedToken.toUpperCase()} per NFT
+              {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()} per NFT
             </span>
           </div>
         </div>
@@ -175,11 +195,11 @@ const TokenDeposit: React.FC = () => {
         <div className="bg-muted rounded-md p-4 text-sm space-y-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Deposit amount:</span>
-            <span className="font-medium">{amount || '0'} {selectedToken.toUpperCase()}</span>
+            <span className="font-medium">{amount || '0'} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Payout per NFT:</span>
-            <span className="font-medium">{payoutAmount || '0'} {selectedToken.toUpperCase()}</span>
+            <span className="font-medium">{payoutAmount || '0'} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
             <span className="text-muted-foreground">Expected claims:</span>

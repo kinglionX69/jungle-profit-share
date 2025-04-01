@@ -1,7 +1,6 @@
-
 import { toast } from "sonner";
 import { TransactionResult } from "./types";
-import { IS_TESTNET, SUPPORTED_TOKENS } from "./constants";
+import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "./constants";
 
 /**
  * Submit a transaction to the blockchain to claim rewards
@@ -71,10 +70,19 @@ export const registerCoinStoreIfNeeded = async (
       return { success: true, transactionHash: null };
     }
     
+    // Testnet only supports APT
+    if (IS_TESTNET && tokenType !== SUPPORTED_TOKENS.APT) {
+      console.error("Only APT tokens are supported on testnet");
+      return { 
+        success: false, 
+        transactionHash: null,
+        error: "Only APT tokens are supported on testnet"
+      };
+    }
+    
     console.log(`Registering CoinStore for ${tokenType}`);
 
     // Create the transaction payload for registration
-    // In Aptos, proper way to register a coin is through the coin module's register function
     const payload = {
       type: "entry_function_payload",
       function: "0x1::coin::register",
@@ -136,24 +144,24 @@ export const depositTokensTransaction = async (
     if (IS_TESTNET) {
       // On testnet, only APT is supported
       if (tokenType !== SUPPORTED_TOKENS.APT) {
-        toast.error("Only APT tokens are supported on testnet");
-        return { success: false, transactionHash: null, error: "Unsupported token on testnet" };
+        const error = "Only APT tokens are supported on testnet";
+        console.error(error);
+        return { success: false, error };
       }
     } else {
       // On mainnet, only APT and EMOJICOIN are supported
       if (tokenType !== SUPPORTED_TOKENS.APT && tokenType !== SUPPORTED_TOKENS.EMOJICOIN) {
-        toast.error("Only APT and EMOJICOIN tokens are supported");
-        return { success: false, transactionHash: null, error: "Unsupported token" };
+        const error = "Only APT and EMOJICOIN tokens are supported";
+        console.error(error);
+        return { success: false, error };
       }
     }
     
-    // Get the escrow wallet address from the admin_config table
-    // For testnet, we'll use a fixed address for now, but this should be fetched from DB in production
-    const escrowWalletAddress = IS_TESTNET 
-      ? "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234" // Replace with actual testnet escrow address
-      : "0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876"; // Replace with actual mainnet escrow address
+    // Get the correct escrow wallet address based on network
+    const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
+    console.log(`Using escrow wallet: ${escrowWalletAddress}`);
     
-    // First, check and register the CoinStore for non-APT tokens on both the admin and escrow wallets
+    // First, check and register the CoinStore for non-APT tokens
     if (tokenType !== SUPPORTED_TOKENS.APT) {
       toast.loading("Registering token store...");
       
@@ -170,10 +178,6 @@ export const depositTokensTransaction = async (
         toast.error("Failed to register token store for your wallet");
         return adminRegistrationResult;
       }
-      
-      // Also register for escrow wallet if needed
-      // This should be done by a separate admin function since the escrow wallet
-      // will need to call register() itself, but we'll skip this for now
       
       toast.dismiss();
     }
@@ -201,9 +205,17 @@ export const depositTokensTransaction = async (
     toast.dismiss();
     console.log("Deposit transaction result:", result);
     
+    if (!result.hash) {
+      return {
+        success: false,
+        transactionHash: null,
+        error: "Transaction failed with no hash returned"
+      };
+    }
+    
     return {
-      success: !!result.hash,
-      transactionHash: result.hash || null
+      success: true,
+      transactionHash: result.hash
     };
   } catch (error) {
     console.error("Error depositing tokens:", error);
@@ -217,10 +229,16 @@ export const depositTokensTransaction = async (
         errorMessage = "Token registration required. Please try again.";
       } else if (error.message.includes("insufficient balance")) {
         errorMessage = "Insufficient balance to complete the transaction";
+      } else if (error.message.includes("rejected")) {
+        errorMessage = "Transaction rejected by wallet";
+      } else {
+        errorMessage = error.message;
       }
     }
     
-    toast.error(errorMessage);
-    throw error;
+    return {
+      success: false,
+      error: errorMessage
+    };
   }
 };
