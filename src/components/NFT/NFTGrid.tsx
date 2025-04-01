@@ -5,6 +5,7 @@ import NFTCard from './components/NFTCard';
 import NFTGridSkeleton from './components/NFTGridSkeleton';
 import NFTEmptyState from './components/NFTEmptyState';
 import { Loader } from 'lucide-react';
+import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
 interface NFTGridProps {
   filterEligible?: boolean;
