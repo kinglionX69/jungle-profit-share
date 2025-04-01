@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useUser } from '@/context/UserContext';
-import NFTCard from './components/NFTCard';
+import NFTTableView from './components/NFTTableView';
 import NFTGridSkeleton from './components/NFTGridSkeleton';
 import NFTEmptyState from './components/NFTEmptyState';
 import { Loader } from 'lucide-react';
@@ -35,13 +35,7 @@ const NFTGrid: React.FC<NFTGridProps> = ({ filterEligible = false }) => {
     return <NFTEmptyState filterEligible={filterEligible} />;
   }
   
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {filteredNfts.map((nft) => (
-        <NFTCard key={nft.tokenId} nft={nft} />
-      ))}
-    </div>
-  );
+  return <NFTTableView nfts={filteredNfts} />;
 };
 
 export default NFTGrid;
