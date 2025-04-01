@@ -38,6 +38,27 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
       console.log("Sample NFT:", allNfts[0]);
     }
     
+    // Process NFTs to ensure they have image URLs
+    allNfts.forEach(nft => {
+      if (!nft.imageUrl) {
+        console.log(`NFT ${nft.tokenId} is missing an image URL`);
+        
+        // Check for other image sources
+        if (nft.uri) {
+          console.log(`Using uri for image: ${nft.uri}`);
+          nft.imageUrl = nft.uri;
+        } else if (nft.token_uri) {
+          console.log(`Using token_uri for image: ${nft.token_uri}`);
+          nft.imageUrl = nft.token_uri;
+        } else {
+          // Construct an image URL from the token ID
+          const tokenId = nft.tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || nft.tokenId;
+          nft.imageUrl = `${NFT_IMAGE_BASE_URL}${tokenId}`;
+          console.log(`Constructed image URL: ${nft.imageUrl}`);
+        }
+      }
+    });
+    
     // Filter the NFTs to match our collection ID OR name AND creator address
     // More relaxed filtering to catch all variations of "Proud Lions Club"
     const filteredNfts = allNfts.filter(nft => {
@@ -64,7 +85,7 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
       );
       
       // Log each NFT to see which filtering condition it matches
-      console.log(`NFT ${nft.name} filtering:`, {
+      console.log(`NFT ${nft.name || nft.tokenId} filtering:`, {
         nameMatches,
         idMatches,
         creatorMatches,
@@ -72,18 +93,9 @@ export const getNFTsInWallet = async (walletAddress: string, collectionName: str
         collectionName: nft.collectionName,
         collectionId: nft.collectionId,
         creator: nft.creator,
-        tokenId: nft.tokenId
+        tokenId: nft.tokenId,
+        imageUrl: nft.imageUrl
       });
-      
-      // If image URL is missing but we have a token ID, construct it
-      if (!nft.imageUrl && nft.tokenId) {
-        // Extract the token ID from the string if possible
-        const idMatch = nft.tokenId.match(/0x[a-fA-F0-9]+/);
-        if (idMatch) {
-          nft.imageUrl = `${NFT_IMAGE_BASE_URL}${idMatch[0]}`;
-          console.log(`Constructed image URL for ${nft.name}: ${nft.imageUrl}`);
-        }
-      }
       
       // Match if any of these conditions are true
       return (nameMatches || idMatches || propertiesMatch || creatorMatches);

@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Clock, CheckCircle, XCircle, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, CheckCircle, XCircle, Info, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { NFT } from '@/api/types/nft.types';
@@ -72,6 +72,7 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
 const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   
   // Generate a fallback image URL based on the token ID for consistency
   const getFallbackImageUrl = () => {
@@ -82,34 +83,61 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
     return `https://picsum.photos/seed/${hash}/300/300`;
   };
   
+  useEffect(() => {
+    // Reset states when NFT changes
+    setImageError(false);
+    setImageLoaded(false);
+    
+    // Check if we have an image URL
+    if (nft.imageUrl) {
+      console.log(`NFT Card using image URL: ${nft.imageUrl}`);
+      setImageUrl(nft.imageUrl);
+    } else {
+      console.log(`No image URL for NFT ${nft.tokenId}, using fallback`);
+      setImageUrl(getFallbackImageUrl());
+    }
+  }, [nft]);
+  
+  const handleImageError = () => {
+    console.log(`Image failed to load: ${imageUrl}`);
+    setImageError(true);
+    setImageLoaded(true);
+    setImageUrl(getFallbackImageUrl());
+  };
+  
   return (
     <div className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
-      <div className="relative">
+      <div className="relative w-full h-48">
         {!imageLoaded && !imageError && (
           <div className="w-full h-48 flex items-center justify-center bg-jungle-700/10">
             <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
         
-        <img 
-          src={imageError ? getFallbackImageUrl() : nft.imageUrl} 
-          alt={nft.name} 
-          className={`w-full h-48 object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-          loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            console.log(`Image failed to load: ${nft.imageUrl}`);
-            setImageError(true);
-            setImageLoaded(true);
-          }}
-        />
+        {imageError && (
+          <div className="w-full h-48 flex flex-col items-center justify-center bg-jungle-700/10 gap-2">
+            <ImageOff className="w-10 h-10 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">Image unavailable</p>
+          </div>
+        )}
+        
+        {imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt={nft.name || `NFT ${nft.tokenId}`} 
+            className={`w-full h-48 object-cover transition-opacity duration-300 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={handleImageError}
+          />
+        )}
         
         <NFTCardOverlay nft={nft} />
       </div>
       
       <div className="p-4 font-nunito">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium truncate mr-2 text-left font-poppins">{nft.name}</h3>
+          <h3 className="font-medium truncate mr-2 text-left font-poppins">{nft.name || `NFT ${nft.tokenId.substring(0, 8)}...`}</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

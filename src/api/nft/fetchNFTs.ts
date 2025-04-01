@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getNFTsInWallet } from "@/utils/aptos";
@@ -43,9 +44,29 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       
       console.log(`Found ${blockchainNfts.length} NFTs from blockchain`, blockchainNfts);
       
+      // Log the current state of images
+      blockchainNfts.forEach((nft, index) => {
+        console.log(`NFT ${index} before image resolution:`, {
+          tokenId: nft.tokenId,
+          name: nft.name,
+          imageUrl: nft.imageUrl,
+          uri: nft.uri,
+          token_uri: nft.token_uri
+        });
+      });
+      
       // Resolve image URLs for all NFTs before proceeding
       const nftsWithResolvedImages = await resolveNFTImages(blockchainNfts);
       console.log("NFTs after image resolution:", nftsWithResolvedImages);
+      
+      // Log the resolved images
+      nftsWithResolvedImages.forEach((nft, index) => {
+        console.log(`NFT ${index} after image resolution:`, {
+          tokenId: nft.tokenId,
+          name: nft.name,
+          imageUrl: nft.imageUrl
+        });
+      });
       
       if (nftsWithResolvedImages.length === 0 && !USE_DEMO_MODE) {
         console.log("No NFTs found for this wallet");
@@ -56,7 +77,7 @@ export const fetchNFTs = async (walletAddress: string): Promise<NFT[]> => {
       // Convert blockchain NFTs to our application format
       const nfts: NFT[] = nftsWithResolvedImages.map(nft => ({
         tokenId: nft.tokenId,
-        name: nft.name,
+        name: nft.name || `NFT ${nft.tokenId.substring(0, 8)}...`,
         imageUrl: nft.imageUrl || `https://picsum.photos/seed/${nft.tokenId}/300/300`, // Use resolved image or fallback
         isEligible: true, // Default to eligible, we'll check locks below
         isLocked: false,
@@ -137,29 +158,48 @@ export const getUserNfts = async (
       return [];
     }
     
+    console.log(`Getting user NFTs for wallet: ${walletAddress}`);
+    
     const _nfts = await testnetClient.getAccountOwnedTokens({
       accountAddress: walletAddress,
     });
+    
+    console.log(`Found ${_nfts.length} tokens via SDK`, _nfts);
 
     const nfts = _nfts
-      .filter(
-        (nft) =>
-          nft.current_token_data.current_collection.collection_name ==
-          NFT_COLLECTION_NAME
-      )
-      .map((nft) => ({
-        tokenId: nft.token_data_id,
-        name: nft.current_token_data.current_collection.collection_name,
-        imageUrl:
-          nft.current_token_data.token_uri ||
-          "https://picsum.photos/seed/lion1/300/300", // Fallback image
-        isEligible: true, // Default to eligible, we'll check locks below
-        isLocked: false,
-        standard: nft.current_token_data.current_collection.token_standard,
-        creator: nft.current_token_data.current_collection.creator_address,
-        properties: nft.current_token_data.current_collection.token_standard,
-      }));
+      .filter((nft) => {
+        const collectionNameMatches = nft.current_token_data?.current_collection?.collection_name === NFT_COLLECTION_NAME;
+        console.log(`NFT collection name check: ${nft.current_token_data?.current_collection?.collection_name} === ${NFT_COLLECTION_NAME}: ${collectionNameMatches}`);
+        return collectionNameMatches;
+      })
+      .map((nft) => {
+        // Extract token ID from the token_data_id
+        const tokenId = nft.token_data_id || nft.token.token_data_id || '';
+        
+        // Extract image URL from token URI if available
+        const tokenUri = nft.current_token_data?.token_uri || '';
+        console.log(`Token URI for ${tokenId}: ${tokenUri}`);
+        
+        // Try to get collection info
+        const collectionName = nft.current_token_data?.current_collection?.collection_name || NFT_COLLECTION_NAME;
+        const creatorAddress = nft.current_token_data?.current_collection?.creator_address || '';
+        const tokenStandard = nft.current_token_data?.current_collection?.token_standard || '';
+        
+        // Create the NFT object
+        return {
+          tokenId,
+          name: `${collectionName} #${tokenId.substring(tokenId.length - 8)}`,
+          imageUrl: tokenUri || `https://picsum.photos/seed/${tokenId}/300/300`,
+          isEligible: true,
+          isLocked: false,
+          standard: tokenStandard,
+          creator: creatorAddress,
+          properties: JSON.stringify(nft.current_token_data || {}),
+        };
+      });
 
+    console.log(`Converted ${nfts.length} NFTs from SDK format:`, nfts);
+    
     console.log("Checking for locked NFTs in database");
       const { data: nftClaimsData, error: nftClaimsError } = await supabase
         .from("nft_claims")
@@ -187,9 +227,10 @@ export const getUserNfts = async (
         });
       }
 
-    return nfts
+    return nfts;
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching NFTs with SDK:", error);
+    toast.error("Failed to load NFTs from your wallet");
     return [];
   }
 };
