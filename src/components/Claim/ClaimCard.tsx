@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
@@ -73,6 +74,9 @@ const ClaimCard: React.FC = () => {
   
   const nextUnlock = getNextUnlockDate();
   
+  // Format the claimable amount to always show 2 decimal places
+  const formattedClaimableAmount = claimableAmount.toFixed(2);
+  
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       <div className="bg-muted p-6">
@@ -91,7 +95,7 @@ const ClaimCard: React.FC = () => {
         
         <div className="mt-4 flex items-center justify-between">
           <div>
-            <div className="text-4xl font-bold">{claimableAmount.toFixed(2)} {payoutToken}</div>
+            <div className="text-4xl font-bold">{formattedClaimableAmount} {payoutToken}</div>
             <div className="text-sm text-muted-foreground mt-1">
               From {eligibleCount} eligible NFT{eligibleCount !== 1 ? 's' : ''}
             </div>
@@ -149,7 +153,7 @@ const ClaimCard: React.FC = () => {
           
           <div className="flex justify-between items-center">
             <span className="font-medium">Total claimable:</span>
-            <span className="font-bold">{claimableAmount.toFixed(2)} {payoutToken}</span>
+            <span className="font-bold">{formattedClaimableAmount} {payoutToken}</span>
           </div>
           
           <Button 

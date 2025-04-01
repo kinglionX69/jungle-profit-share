@@ -107,9 +107,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           setNfts(userNfts);
           
           const claimable = await calculateClaimableAmount(userNfts);
-          setClaimableAmount(claimable);
+          // Ensure claimable amount is fixed to 2 decimal places
+          setClaimableAmount(parseFloat(claimable.toFixed(2)));
           
-          console.log(`Fetched ${userNfts.length} NFTs with ${claimable} claimable amount`);
+          console.log(`Fetched ${userNfts.length} NFTs with ${claimable.toFixed(2)} claimable amount`);
         } catch (error) {
           console.error("Error fetching NFTs:", error);
           toast.error("Failed to fetch NFTs");

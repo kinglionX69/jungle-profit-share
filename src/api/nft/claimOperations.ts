@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { submitClaimTransaction } from "@/utils/aptos";
@@ -100,7 +101,7 @@ export const submitClaim = async (
         .insert({
           wallet_address: walletAddress,
           token_id: nft.tokenId,
-          amount: FIXED_PAYOUT_PER_NFT.toFixed(2),
+          amount: Number(FIXED_PAYOUT_PER_NFT.toFixed(2)), // Convert to number explicitly
           transaction_hash: transactionHash,
           claim_date: currentDate.toISOString()
         });
@@ -130,7 +131,7 @@ export const submitClaim = async (
       return false;
     }
     
-    toast.success(`Successfully claimed ${totalAmount} ${tokenName}!`);
+    toast.success(`Successfully claimed ${totalAmount.toFixed(2)} ${tokenName}!`);
     return true;
   } catch (error) {
     console.error("Error submitting claim:", error);
