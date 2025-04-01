@@ -7,6 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fixed payout amount per NFT
+const FIXED_PAYOUT_PER_NFT = 0.1;
+
 serve(async (req) => {
   console.log("update-token-payouts function called");
   
@@ -17,12 +20,12 @@ serve(async (req) => {
 
   try {
     // Get request body
-    const { walletAddress, tokenName, payoutPerNft } = await req.json();
+    const { walletAddress, tokenName } = await req.json();
     
-    console.log("Request parameters:", { walletAddress, tokenName, payoutPerNft });
+    console.log("Request parameters:", { walletAddress, tokenName });
     
-    if (!walletAddress || !tokenName || payoutPerNft === undefined) {
-      console.error("Missing required parameters:", { walletAddress, tokenName, payoutPerNft });
+    if (!walletAddress || !tokenName) {
+      console.error("Missing required parameters:", { walletAddress, tokenName });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -74,7 +77,7 @@ serve(async (req) => {
     // Insert the token payout record using the service role (bypasses RLS)
     console.log("Inserting token payout record:", { 
       token_name: tokenName.toUpperCase(), 
-      payout_per_nft: payoutPerNft,
+      payout_per_nft: FIXED_PAYOUT_PER_NFT,
       created_by: walletAddress 
     });
     
@@ -82,7 +85,7 @@ serve(async (req) => {
       .from('token_payouts')
       .insert({
         token_name: tokenName.toUpperCase(),
-        payout_per_nft: payoutPerNft,
+        payout_per_nft: FIXED_PAYOUT_PER_NFT,
         created_by: walletAddress
       });
     

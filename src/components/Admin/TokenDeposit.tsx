@@ -19,11 +19,13 @@ import { useWallet } from '@/context/WalletContext';
 import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 
+// Fixed payout amount per NFT
+const FIXED_PAYOUT_PER_NFT = 0.1;
+
 const TokenDeposit: React.FC = () => {
   // Force selectedToken to be 'apt' on testnet - no other options
   const [amount, setAmount] = useState('');
   const [selectedToken, setSelectedToken] = useState('apt');
-  const [payoutAmount, setPayoutAmount] = useState('2');
   const [processing, setProcessing] = useState(false);
   const { address, signTransaction, isAdmin } = useWallet();
   
@@ -36,14 +38,18 @@ const TokenDeposit: React.FC = () => {
     setSelectedToken(value);
   };
   
-  const updateTokenPayout = async (walletAddress: string, tokenName: string, payoutPerNft: number): Promise<boolean> => {
-    console.log("Attempting to update token payout:", { walletAddress, tokenName, payoutPerNft });
+  const updateTokenPayout = async (walletAddress: string, tokenName: string): Promise<boolean> => {
+    console.log("Attempting to update token payout:", { walletAddress, tokenName, payoutPerNft: FIXED_PAYOUT_PER_NFT });
     
     try {
       // First try using the edge function
       console.log("Calling update-token-payouts edge function");
       const response = await supabase.functions.invoke('update-token-payouts', {
-        body: { walletAddress, tokenName, payoutPerNft }
+        body: { 
+          walletAddress, 
+          tokenName, 
+          payoutPerNft: FIXED_PAYOUT_PER_NFT 
+        }
       });
       
       if (response.error) {
@@ -69,7 +75,7 @@ const TokenDeposit: React.FC = () => {
           .from('token_payouts')
           .insert({
             token_name: tokenName.toUpperCase(),
-            payout_per_nft: payoutPerNft,
+            payout_per_nft: FIXED_PAYOUT_PER_NFT,
             created_by: walletAddress
           });
           
@@ -81,7 +87,7 @@ const TokenDeposit: React.FC = () => {
         console.log("Edge function successful response:", response);
       }
       
-      toast.success(`Payout configuration updated to ${payoutPerNft} ${tokenName.toUpperCase()} per NFT`);
+      toast.success(`Payout configuration updated to ${FIXED_PAYOUT_PER_NFT} ${tokenName.toUpperCase()} per NFT`);
       return true;
     } catch (error) {
       console.error("Error updating token payout:", error);
@@ -93,11 +99,6 @@ const TokenDeposit: React.FC = () => {
   const handleDeposit = async () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       toast.error("Please enter a valid amount");
-      return;
-    }
-    
-    if (!payoutAmount || isNaN(Number(payoutAmount)) || Number(payoutAmount) <= 0) {
-      toast.error("Please enter a valid payout amount per NFT");
       return;
     }
     
@@ -123,9 +124,8 @@ const TokenDeposit: React.FC = () => {
       // Get the correct token type
       const tokenType = selectedToken === 'apt' ? SUPPORTED_TOKENS.APT : SUPPORTED_TOKENS.EMOJICOIN;
       const amountValue = Number(amount);
-      const payoutValue = Number(payoutAmount);
       
-      console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with payout ${payoutValue} per NFT`);
+      console.log(`Depositing ${amountValue} ${selectedToken.toUpperCase()} with fixed payout ${FIXED_PAYOUT_PER_NFT} per NFT`);
       
       // Display the escrow wallet address being used
       const escrowWallet = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
@@ -142,7 +142,7 @@ const TokenDeposit: React.FC = () => {
         address,
         tokenType,
         amountValue,
-        payoutValue,
+        FIXED_PAYOUT_PER_NFT,
         signTransaction
       );
       
@@ -157,14 +157,12 @@ const TokenDeposit: React.FC = () => {
         
         console.log("Calling updateTokenPayout with:", { 
           address, 
-          selectedToken: selectedToken.toUpperCase(), 
-          payoutValue 
+          selectedToken: selectedToken.toUpperCase()
         });
         
         const dbResult = await updateTokenPayout(
           address,
-          selectedToken.toUpperCase(),
-          payoutValue
+          selectedToken.toUpperCase()
         );
         
         toast.dismiss();
@@ -254,25 +252,6 @@ const TokenDeposit: React.FC = () => {
           </div>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="payout-amount">Payout per NFT</Label>
-          <div className="flex gap-2 items-center">
-            <Input
-              id="payout-amount"
-              type="number"
-              value={payoutAmount}
-              onChange={(e) => setPayoutAmount(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="flex-1"
-            />
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()} per NFT
-            </span>
-          </div>
-        </div>
-        
         <div className="bg-muted rounded-md p-4 text-sm space-y-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Deposit amount:</span>
@@ -280,13 +259,13 @@ const TokenDeposit: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Payout per NFT:</span>
-            <span className="font-medium">{payoutAmount || '0'} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
+            <span className="font-medium">{FIXED_PAYOUT_PER_NFT} {IS_TESTNET ? 'APT' : selectedToken.toUpperCase()}</span>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
             <span className="text-muted-foreground">Expected claims:</span>
             <span className="font-medium">
-              {amount && payoutAmount && Number(payoutAmount) > 0
-                ? Math.floor(Number(amount) / Number(payoutAmount))
+              {amount && Number(amount) > 0
+                ? Math.floor(Number(amount) / FIXED_PAYOUT_PER_NFT)
                 : '0'} NFTs
             </span>
           </div>
@@ -296,7 +275,7 @@ const TokenDeposit: React.FC = () => {
         <Button 
           onClick={handleDeposit} 
           className="w-full"
-          disabled={!amount || !payoutAmount || processing || !address || !isAdmin}
+          disabled={!amount || processing || !address || !isAdmin}
         >
           {processing ? (
             <>

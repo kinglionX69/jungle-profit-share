@@ -5,40 +5,33 @@ import { submitClaimTransaction } from "@/utils/aptos";
 import { NFT } from "../types/nft.types";
 import { NFT_COLLECTION_NAME } from "@/utils/aptos/constants";
 
+// Fixed payout amount per NFT
+const FIXED_PAYOUT_PER_NFT = 0.1;
+
 /**
  * Calculates the claimable amount based on eligible NFTs
  * @param nfts The NFTs to calculate claims for
  */
 export const calculateClaimableAmount = async (nfts: NFT[]): Promise<number> => {
   try {
-    // Get the token payout amount from the database
+    // Get the token type from the database (we still need this for the token type)
     const { data, error } = await supabase
       .from('token_payouts')
-      .select('payout_per_nft')
+      .select('token_name')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     
     if (error) {
-      console.error("Error fetching token payout:", error);
-      // Default to 0 APT per NFT if we can't get the payout amount
-      return 0;
+      console.error("Error fetching token type:", error);
     }
     
-    // If no payout configuration exists, return 0
-    if (!data) {
-      console.log("No payout configuration found, defaulting to 0");
-      return 0;
-    }
-    
-    const payoutPerNft = data?.payout_per_nft || 0;
-    console.log(`Using payout of ${payoutPerNft} per NFT`);
-    
+    // Count eligible NFTs and multiply by fixed payout
     const eligibleCount = nfts.filter(nft => nft.isEligible).length;
-    return eligibleCount * Number(payoutPerNft);
+    return eligibleCount * FIXED_PAYOUT_PER_NFT;
   } catch (error) {
     console.error("Error calculating claimable amount:", error);
-    // Default to 0 APT per NFT if we encounter an error
+    // Default to 0 if we encounter an error
     return 0;
   }
 };
@@ -60,34 +53,28 @@ export const submitClaim = async (
       return false;
     }
     
-    // Get payout amount per NFT
+    // Get token type from the database
     const { data: payoutData, error: payoutError } = await supabase
       .from('token_payouts')
-      .select('payout_per_nft, token_name')
+      .select('token_name')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     
     if (payoutError) {
-      console.error("Error fetching token payout:", payoutError);
-      toast.error("Could not retrieve payout configuration");
+      console.error("Error fetching token info:", payoutError);
+      toast.error("Could not retrieve token information");
       return false;
     }
     
-    // If no payout configuration exists, show error
+    // If no token configuration exists, show error
     if (!payoutData) {
-      toast.error("No payout configuration found");
-      return false;
-    }
-    
-    const payoutPerNft = payoutData?.payout_per_nft || 0;
-    if (payoutPerNft <= 0) {
-      toast.error("Invalid payout amount configured");
+      toast.error("No token configuration found");
       return false;
     }
     
     const tokenName = payoutData?.token_name || "APT";
-    const totalAmount = eligibleNfts.length * Number(payoutPerNft);
+    const totalAmount = eligibleNfts.length * FIXED_PAYOUT_PER_NFT;
     
     // Explain to user that we're simulating the claim transaction
     toast.info("Processing claim transaction...");
@@ -114,7 +101,7 @@ export const submitClaim = async (
         .insert({
           wallet_address: walletAddress,
           token_id: nft.tokenId,
-          amount: payoutPerNft,
+          amount: FIXED_PAYOUT_PER_NFT,
           transaction_hash: transactionHash,
           claim_date: currentDate.toISOString()
         });
