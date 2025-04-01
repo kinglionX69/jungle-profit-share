@@ -140,17 +140,8 @@ export const getUserNfts = async (
     const _nfts = await testnetClient.getAccountOwnedTokens({
       accountAddress: walletAddress,
     });
-    //  // Resolve image URLs for all NFTs before proceeding
-    //  const nftsWithResolvedImages = await resolveNFTImages(_nfts);
-    //  console.log("NFTs after image resolution:", nftsWithResolvedImages);
-     
-    //  if (nftsWithResolvedImages.length === 0 && !USE_DEMO_MODE) {
-    //    console.log("No NFTs found for this wallet");
-    //    toast.info("No NFTs found in your wallet");
-    //    return [];
-    //  }
 
-    const nfts = _nfts
+    return nfts
       .filter(
         (nft) =>
           nft.current_token_data.current_collection.collection_name ==
@@ -168,37 +159,6 @@ export const getUserNfts = async (
         creator: nft.current_token_data.current_collection.creator_address,
         properties: nft.current_token_data.current_collection.token_standard,
       }));
-
-
-    console.log("Checking for locked NFTs in database");
-      const { data: nftClaimsData, error: nftClaimsError } = await supabase
-        .from("nft_claims")
-        .select("*")
-        .eq("wallet_address", walletAddress as string);
-
-      if (nftClaimsError) {
-        console.error("Error fetching NFT claims:", nftClaimsError);
-      } else if (nftClaimsData && nftClaimsData.length > 0) {
-        console.log(`Found ${nftClaimsData.length} locked NFTs in database`);
-
-        // Update the NFTs to reflect locked status
-        nftClaimsData.forEach((claim) => {
-          const nftIndex = nfts.findIndex(
-            (nft) => nft.tokenId === claim.token_id
-          );
-          if (nftIndex !== -1) {
-            nfts[nftIndex].isLocked = true;
-            nfts[nftIndex].isEligible = false;
-            nfts[nftIndex].unlockDate = new Date(claim.unlock_date);
-            console.log(
-              `Marked NFT ${nfts[nftIndex].name} as locked until ${nfts[nftIndex].unlockDate}`
-            );
-          }
-        });
-      }
-
-
-    return nfts
   } catch (error) {
     console.error(error);
     return [];
