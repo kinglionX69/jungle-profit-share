@@ -14,12 +14,6 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
     console.log(`Resolving image URL: ${uri}`);
     
     // Handle the specific format for Proud Lions Club NFTs
-    if (uri.includes(NFT_IMAGE_BASE_URL)) {
-      console.log(`Using existing NFT_IMAGE_BASE_URL: ${uri}`);
-      return uri; // Already in correct format
-    }
-    
-    // Check if URI is already an image URL
     if (uri.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)) {
       console.log(`Using direct image URL: ${uri}`);
       return uri;
@@ -32,7 +26,41 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
       return ipfsUrl;
     }
     
-    // If URI is HTTP/HTTPS and looks like JSON, try to fetch metadata
+    // If URI is a token ID, construct the metadata URL
+    if (uri.startsWith('0x') || !uri.startsWith('http')) {
+      // Extract token ID from the string
+      const tokenId = uri.match(/0x[a-fA-F0-9]+/)?.[0] || uri;
+      const metadataUrl = `${NFT_IMAGE_BASE_URL}${tokenId}`;
+      console.log(`Constructed metadata URL: ${metadataUrl}`);
+      
+      try {
+        const response = await fetch(metadataUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metadata: ${response.status}`);
+        }
+        
+        // Parse the JSON response text
+        const responseText = await response.text();
+        console.log(`Metadata raw response: ${responseText.substring(0, 200)}...`);
+        
+        try {
+          const metadata = JSON.parse(responseText);
+          console.log('Parsed metadata:', metadata);
+          
+          if (metadata && metadata.image) {
+            console.log(`Found image in metadata: ${metadata.image}`);
+            return metadata.image;
+          }
+        } catch (jsonError) {
+          console.error("Error parsing JSON metadata:", jsonError);
+          console.log("Raw response was not valid JSON:", responseText.substring(0, 100));
+        }
+      } catch (error) {
+        console.error(`Error fetching metadata from ${metadataUrl}:`, error);
+      }
+    }
+    
+    // If URI is HTTP/HTTPS (but not an image), try to fetch metadata
     if (uri.startsWith('http')) {
       try {
         console.log(`Attempting to fetch metadata from: ${uri}`);
@@ -41,76 +69,34 @@ export const resolveImageUrl = async (uri: string): Promise<string> => {
           throw new Error(`Failed to fetch metadata: ${response.status}`);
         }
         
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const metadata = await response.json();
-          console.log('Metadata fetched:', metadata);
+        // Try to parse as JSON
+        const responseText = await response.text();
+        console.log(`HTTP metadata raw response: ${responseText.substring(0, 200)}...`);
+        
+        try {
+          const metadata = JSON.parse(responseText);
+          console.log('Parsed HTTP metadata:', metadata);
           
           // Extract image URL from metadata
           if (metadata.image) {
-            console.log(`Found image in metadata: ${metadata.image}`);
-            // Return the image URL directly without recursive resolution
+            console.log(`Found image in HTTP metadata: ${metadata.image}`);
             return metadata.image;
-          } else if (metadata.uri) {
-            console.log(`Found uri in metadata: ${metadata.uri}`);
-            return resolveImageUrl(metadata.uri);
-          } else if (metadata.imageUrl) {
-            console.log(`Found imageUrl in metadata: ${metadata.imageUrl}`);
-            return metadata.imageUrl;
-          } else if (metadata.image_url) {
-            console.log(`Found image_url in metadata: ${metadata.image_url}`);
-            return metadata.image_url;
           }
-        } else {
-          // If not JSON but an image, return the URI
+        } catch (jsonError) {
+          console.error("Error parsing JSON from HTTP:", jsonError);
+          // If not JSON, check if it's an image response
+          const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('image/')) {
             console.log(`URI points directly to an image: ${uri}`);
             return uri;
           }
         }
       } catch (error) {
-        console.error("Error fetching metadata:", error);
-        // Continue to fallback
+        console.error("Error fetching HTTP metadata:", error);
       }
     }
     
-    // If the URI is actually a token ID itself
-    if (uri.startsWith('0x')) {
-      const constructedUrl = `${NFT_IMAGE_BASE_URL}${uri}`;
-      console.log(`Constructed URL from 0x token ID: ${constructedUrl}`);
-      return constructedUrl;
-    }
-    
-    // If URI contains a token ID, try to construct the image URL
-    const tokenIdMatch = uri.match(/0x[a-fA-F0-9]+/);
-    if (tokenIdMatch) {
-      const constructedUrl = `${NFT_IMAGE_BASE_URL}${tokenIdMatch[0]}`;
-      console.log(`Constructed URL from token ID: ${constructedUrl}`);
-      return constructedUrl;
-    }
-    
-    // Handle numeric token IDs
-    if (!isNaN(Number(uri))) {
-      const constructedUrl = `${NFT_IMAGE_BASE_URL}${uri}.json`;
-      console.log(`Constructed URL from numeric token ID: ${constructedUrl}`);
-      
-      // Try to fetch the metadata from the constructed URL
-      try {
-        const response = await fetch(constructedUrl);
-        if (response.ok) {
-          const metadata = await response.json();
-          if (metadata.image) {
-            console.log(`Found image in token metadata: ${metadata.image}`);
-            return metadata.image;
-          }
-        }
-      } catch (error) {
-        console.error(`Error fetching metadata from constructed URL: ${constructedUrl}`, error);
-      }
-    }
-    
-    // Generate a consistent random image based on the URI
+    // Generate a consistent fallback image based on the URI
     const hash = uri.split('').reduce((acc, char) => {
       return acc + char.charCodeAt(0);
     }, 0);
@@ -143,17 +129,10 @@ export async function resolveNFTImages(nfts: BlockchainNFT[]): Promise<Blockchai
       } else if (nft.token_uri) {
         nft.imageUrl = nft.token_uri;
       } else {
-        // Extract token ID from the tokenId string if it's not already an image URL
-        let tokenId = nft.tokenId;
-        
         // Try to extract a token ID from the string
-        const match = nft.tokenId.match(/0x[a-fA-F0-9]+/);
-        if (match) {
-          tokenId = match[0];
-        }
-        
-        console.log(`Constructing image URL for token ${tokenId}`);
-        nft.imageUrl = `${NFT_IMAGE_BASE_URL}${tokenId}.json`;
+        const tokenId = nft.tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || nft.tokenId;
+        console.log(`Using token ID for metadata lookup: ${tokenId}`);
+        nft.imageUrl = tokenId;
       }
     }
     

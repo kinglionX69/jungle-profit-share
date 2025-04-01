@@ -49,6 +49,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Generate a fallback image URL based on the token ID for consistency
   const getFallbackImageUrl = () => {
@@ -63,19 +64,82 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
     // Reset states when NFT changes
     setImageError(false);
     setImageLoaded(false);
+    setRetryCount(0);
     
     // Check if we have an image URL
     if (nft.imageUrl) {
       console.log(`NFT Card using image URL: ${nft.imageUrl}`);
-      setImageUrl(nft.imageUrl);
+      // Check if the URL is already valid, otherwise try to use it as a token ID
+      if (nft.imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || 
+          nft.imageUrl.startsWith('http') && !nft.imageUrl.includes('api.proudlionsclub.com')) {
+        setImageUrl(nft.imageUrl);
+      } else if (nft.imageUrl.includes('proudlionsclub.mypinata.cloud')) {
+        // Direct IPFS URL from Pinata, use it directly
+        setImageUrl(nft.imageUrl);
+      } else {
+        console.log(`NFT image URL doesn't look like an image URL, might be token ID: ${nft.imageUrl}`);
+        // It might be metadata that needs to be fetched
+        fetchMetadataImage(nft.tokenId);
+      }
     } else {
-      console.log(`No image URL for NFT ${nft.tokenId}, using fallback`);
-      setImageUrl(getFallbackImageUrl());
+      console.log(`No image URL for NFT ${nft.tokenId}, fetching metadata`);
+      fetchMetadataImage(nft.tokenId);
     }
   }, [nft]);
   
+  const fetchMetadataImage = async (tokenId: string) => {
+    try {
+      // Extract token ID if needed
+      const extractedId = tokenId.match(/0x[a-fA-F0-9]+/)?.[0] || tokenId;
+      const metadataUrl = `https://api.proudlionsclub.com/tokenids/${extractedId}`;
+      
+      console.log(`Fetching metadata from ${metadataUrl}`);
+      const response = await fetch(metadataUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch metadata: ${response.status}`);
+      }
+      
+      const responseText = await response.text();
+      console.log(`Metadata response: ${responseText.substring(0, 200)}...`);
+      
+      try {
+        const metadata = JSON.parse(responseText);
+        console.log('Parsed metadata:', metadata);
+        
+        if (metadata && metadata.image) {
+          console.log(`Found image in metadata: ${metadata.image}`);
+          setImageUrl(metadata.image);
+        } else {
+          console.log('No image found in metadata, using fallback');
+          setImageUrl(getFallbackImageUrl());
+        }
+      } catch (jsonError) {
+        console.error("Error parsing metadata JSON:", jsonError);
+        setImageUrl(getFallbackImageUrl());
+      }
+    } catch (error) {
+      console.error(`Error fetching metadata for ${tokenId}:`, error);
+      setImageUrl(getFallbackImageUrl());
+    }
+  };
+  
   const handleImageError = () => {
     console.log(`Image failed to load: ${imageUrl}`);
+    
+    // If we have retries left and it's a metadata URL, try to fetch the metadata again
+    if (retryCount < 2 && imageUrl && !imageUrl.includes('picsum.photos')) {
+      console.log(`Retrying image load (${retryCount + 1}/2)`);
+      setRetryCount(prev => prev + 1);
+      
+      // If it's not already a fallback, try the token ID again
+      if (!imageUrl.includes('picsum.photos')) {
+        fetchMetadataImage(nft.tokenId);
+        return;
+      }
+    }
+    
+    // If we've exhausted retries or it's already a fallback, show error state
     setImageError(true);
     setImageLoaded(true);
     setImageUrl(getFallbackImageUrl());
@@ -100,7 +164,7 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         {imageUrl && (
           <img 
             src={imageUrl} 
-            alt={NFT_COLLECTION_NAME}
+            alt={`${NFT_COLLECTION_NAME} #${nft.tokenId.substring(nft.tokenId.length - 6)}`}
             className={`w-full h-48 object-cover transition-opacity duration-300 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
