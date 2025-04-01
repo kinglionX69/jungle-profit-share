@@ -15,8 +15,8 @@ import { Download, Loader } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useWallet } from '@/context/WalletContext';
-import { withdrawFromEscrowWallet } from '@/utils/aptos/transactionUtils';
 import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
+import { supabase } from '@/integrations/supabase/client';
 
 const TokenWithdrawal: React.FC = () => {
   const [amount, setAmount] = useState('');
@@ -70,19 +70,28 @@ const TokenWithdrawal: React.FC = () => {
       
       console.log(`Withdrawing ${amountValue} ${selectedToken.toUpperCase()} to ${recipient}`);
       
-      // Execute the blockchain transaction using the escrow private key
-      const txResult = await withdrawFromEscrowWallet(
-        tokenType,
-        amountValue,
-        recipient
-      );
+      // Call the edge function directly
+      const { data, error } = await supabase.functions.invoke('withdraw-from-escrow', {
+        body: {
+          tokenType,
+          amount: amountValue,
+          recipientAddress: recipient,
+          network: IS_TESTNET ? 'testnet' : 'mainnet',
+          adminWalletAddress: address
+        }
+      });
       
-      if (txResult.success) {
-        toast.success(`Tokens withdrawn successfully!${txResult.transactionHash ? ` Transaction: ${txResult.transactionHash}` : ''}`);
+      if (error) {
+        console.error("Error calling withdraw-from-escrow function:", error);
+        throw new Error(error.message || "Failed to execute withdrawal");
+      }
+      
+      if (data.success) {
+        toast.success(`Tokens withdrawn successfully!${data.transactionHash ? ` Transaction: ${data.transactionHash}` : ''}`);
         setAmount('');
         setRecipientAddress('');
       } else {
-        toast.error(txResult.error || "Transaction failed");
+        toast.error(data.error || "Transaction failed");
       }
     } catch (error) {
       console.error("Error withdrawing tokens:", error);

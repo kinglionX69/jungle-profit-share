@@ -46,66 +46,39 @@ export const withdrawFromEscrowWallet = async (
     const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
     console.log(`Using escrow wallet: ${escrowWalletAddress}`);
     
-    // Fetch private key from environment
-    const privateKeyHex = Deno?.env?.get ? Deno.env.get("ESCROW_PRIVATE_KEY") : null;
+    // For browser environment, we need to call the Edge Function instead of using Deno directly
+    const escrowNetwork = IS_TESTNET ? 'testnet' : 'mainnet';
+    const adminWalletAddress = "admin"; // This is just for logging purposes
     
-    if (!privateKeyHex) {
-      const error = "Escrow private key not found in environment";
-      console.error(error);
-      return { success: false, error };
+    const response = await fetch('/api/withdraw-from-escrow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tokenType,
+        amount,
+        recipientAddress,
+        network: escrowNetwork,
+        adminWalletAddress
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error from escrow endpoint:", errorData);
+      return {
+        success: false,
+        error: errorData.error || `Failed with status: ${response.status}`
+      };
     }
     
-    // Convert hex private key to Uint8Array and create account
-    const privateKeyBytes = hexToUint8Array(privateKeyHex);
-    const escrowAccount = new AptosAccount(privateKeyBytes);
-    
-    // Verify the account address matches the expected escrow wallet
-    if (escrowAccount.address().toString() !== escrowWalletAddress) {
-      const error = "Escrow private key does not match configured escrow wallet address";
-      console.error(error);
-      return { success: false, error };
-    }
-    
-    // Calculate the amount in smallest units (APT uses 8 decimal places)
-    const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT
-    
-    // Prepare the tokenType in the format expected by the TypeScript SDK
-    const formattedTokenType = toStructTag(tokenType);
-    
-    // Create the transaction payload
-    const payload = {
-      function: "0x1::coin::transfer",
-      type_arguments: [formattedTokenType],
-      arguments: [
-        recipientAddress, // Recipient address
-        amountInSmallestUnits.toString(), // Amount in smallest units
-      ]
-    };
-    
-    console.log("Withdrawal payload:", payload);
-    
-    // Create and sign the transaction
-    toast.loading("Processing withdrawal transaction...");
-    
-    const txnRequest = await aptosClient.generateTransaction(
-      escrowAccount.address(),
-      payload
-    );
-    
-    const signedTxn = await aptosClient.signTransaction(
-      escrowAccount,
-      txnRequest
-    );
-    
-    const result = await aptosClient.submitTransaction(signedTxn);
-    await aptosClient.waitForTransaction(result.hash);
-    
-    toast.dismiss();
+    const result = await response.json();
     console.log("Withdrawal transaction result:", result);
     
     return {
       success: true,
-      transactionHash: result.hash
+      transactionHash: result.transactionHash
     };
   } catch (error) {
     console.error("Error withdrawing tokens from escrow:", error);
