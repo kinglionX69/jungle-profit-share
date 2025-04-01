@@ -109,8 +109,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     }
   };
 
-  const connect = () => {
+  // Fix: Update connect function to return a Promise<void> to match the type definition
+  const connect = async (): Promise<void> => {
     setShowWalletSelector(true);
+    // Return a resolved promise to match the Promise<void> return type
+    return Promise.resolve();
   };
 
   const disconnectWallet = async () => {
