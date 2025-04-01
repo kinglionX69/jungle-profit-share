@@ -9,45 +9,11 @@ import {
 } from '@/components/ui/card';
 import { WalletBalance as WalletBalanceType } from '@/api/adminApi';
 import { toast } from 'sonner';
-import { IS_TESTNET } from '@/utils/aptos/constants';
+import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
-
-// Fetch token balance from Aptos blockchain
-const fetchTokenBalance = async (
-  walletAddress: string,
-  tokenType: string = "0x1::aptos_coin::AptosCoin"
-): Promise<number> => {
-  try {
-    const nodeUrl = IS_TESTNET 
-      ? "https://fullnode.testnet.aptoslabs.com/v1"
-      : "https://fullnode.mainnet.aptoslabs.com/v1";
-    
-    console.log(`Fetching ${tokenType} balance for ${walletAddress}`);
-    
-    // Construct the resource type based on the token type
-    const resourceType = `0x1::coin::CoinStore<${tokenType}>`;
-    
-    // Fetch resource from the blockchain
-    const response = await fetch(`${nodeUrl}/accounts/${walletAddress}/resource/${resourceType}`);
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch balance: ${response.status} ${response.statusText}`);
-      return 0;
-    }
-    
-    const data = await response.json();
-    console.log("Token balance data:", data);
-    
-    // Extract the coin value from the response
-    const balance = data?.data?.coin?.value || 0;
-    
-    // Convert from smallest units (e.g., octas for APT)
-    return parseInt(balance) / 100000000; // 8 decimal places
-  } catch (error) {
-    console.error("Error fetching token balance:", error);
-    return 0;
-  }
-};
+import { getCoinBalance, aptosClient } from '@/utils/aptos/client';
+import { Refresh } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Get current USD value of APT
 const getAptosPrice = async (): Promise<number> => {
@@ -65,68 +31,78 @@ const getAptosPrice = async (): Promise<number> => {
 const WalletBalance: React.FC = () => {
   const [balances, setBalances] = useState<WalletBalanceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { address } = useWallet();
   
-  // Escrow wallet address - should be fetched from the database in production
-  const escrowWalletAddress = "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234";
+  // Get the correct escrow wallet address based on the network
+  const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
   
-  useEffect(() => {
-    const fetchBalances = async () => {
-      if (!escrowWalletAddress) {
-        toast.error("Escrow wallet address not configured");
-        setIsLoading(false);
-        return;
+  const fetchBalances = async () => {
+    if (!escrowWalletAddress) {
+      toast.error("Escrow wallet address not configured");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsRefreshing(true);
+      
+      // Get APT price in USD
+      const aptPrice = await getAptosPrice();
+      console.log(`Current APT price: $${aptPrice}`);
+      
+      // Fetch APT balance using the SDK
+      const aptBalance = await getCoinBalance(
+        escrowWalletAddress,
+        SUPPORTED_TOKENS.APT,
+        IS_TESTNET ? 'testnet' : 'mainnet'
+      );
+      console.log(`APT balance: ${aptBalance}`);
+      
+      // Build the balances array
+      const balancesData: WalletBalanceType[] = [
+        {
+          token: 'Aptos',
+          symbol: 'APT',
+          amount: aptBalance,
+          value: aptBalance * aptPrice,
+        }
+      ];
+      
+      // If on mainnet, try to fetch EMOJICOIN too
+      if (!IS_TESTNET) {
+        try {
+          const emojiCoinBalance = await getCoinBalance(
+            escrowWalletAddress,
+            SUPPORTED_TOKENS.EMOJICOIN,
+            'mainnet'
+          );
+          
+          if (emojiCoinBalance > 0) {
+            balancesData.push({
+              token: 'EmojiCoin',
+              symbol: 'EMOJI',
+              amount: emojiCoinBalance,
+              value: emojiCoinBalance, // Assume 1:1 with USD for simplicity
+            });
+          }
+        } catch (emojiError) {
+          console.log("EMOJICOIN not available or not registered");
+        }
       }
       
-      try {
-        setIsLoading(true);
-        
-        // Get APT price in USD
-        const aptPrice = await getAptosPrice();
-        console.log(`Current APT price: $${aptPrice}`);
-        
-        // Fetch APT balance
-        const aptBalance = await fetchTokenBalance(escrowWalletAddress);
-        console.log(`APT balance: ${aptBalance}`);
-        
-        // Try to fetch USDC balance too
-        const usdcTokenType = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
-        const usdcBalance = await fetchTokenBalance(escrowWalletAddress, usdcTokenType);
-        console.log(`USDC balance: ${usdcBalance}`);
-        
-        // Calculate USD values
-        const aptValue = aptBalance * aptPrice;
-        const usdcValue = usdcBalance; // USDC is pegged to USD
-        
-        // Prepare balances data
-        const balancesData: WalletBalanceType[] = [
-          {
-            token: 'Aptos',
-            symbol: 'APT',
-            amount: aptBalance,
-            value: aptValue,
-          }
-        ];
-        
-        // Add USDC if available
-        if (usdcBalance > 0) {
-          balancesData.push({
-            token: 'USD Coin',
-            symbol: 'USDC',
-            amount: usdcBalance,
-            value: usdcValue,
-          });
-        }
-        
-        setBalances(balancesData);
-      } catch (error) {
-        console.error("Error fetching balances:", error);
-        toast.error("Failed to fetch wallet balances");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
+      setBalances(balancesData);
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+      toast.error("Failed to fetch wallet balances");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
+  // Fetch balances on initial load
+  useEffect(() => {
     fetchBalances();
   }, [escrowWalletAddress]);
   
@@ -134,9 +110,19 @@ const WalletBalance: React.FC = () => {
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Escrow Wallet Balance</CardTitle>
-        <CardDescription>Current token balances available for payouts</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div>
+          <CardTitle>Escrow Wallet Balance</CardTitle>
+          <CardDescription>Current token balances available for payouts</CardDescription>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchBalances}
+          disabled={isRefreshing}
+        >
+          <Refresh className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -178,6 +164,9 @@ const WalletBalance: React.FC = () => {
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Total Value</span>
             <span className="text-xl font-bold">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Escrow Address: {escrowWalletAddress?.slice(0, 6)}...{escrowWalletAddress?.slice(-4)}
           </div>
         </div>
       </CardContent>

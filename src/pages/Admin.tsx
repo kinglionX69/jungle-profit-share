@@ -5,10 +5,12 @@ import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import { useWallet } from '@/context/WalletContext';
 import TokenDeposit from '@/components/Admin/TokenDeposit';
+import TokenWithdrawal from '@/components/Admin/TokenWithdrawal';
 import ClaimStatistics from '@/components/Admin/ClaimStatistics';
 import WalletBalance from '@/components/Admin/WalletBalance';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Admin = () => {
   const { connected, isAdmin } = useWallet();
@@ -52,7 +54,20 @@ const Admin = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <TokenDeposit />
+          <div className="space-y-6">
+            <Tabs defaultValue="deposit" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="deposit">Deposit</TabsTrigger>
+                <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
+              </TabsList>
+              <TabsContent value="deposit">
+                <TokenDeposit />
+              </TabsContent>
+              <TabsContent value="withdraw">
+                <TokenWithdrawal />
+              </TabsContent>
+            </Tabs>
+          </div>
           <WalletBalance />
         </div>
         

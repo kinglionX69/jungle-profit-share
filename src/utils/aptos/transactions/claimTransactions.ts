@@ -2,9 +2,11 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET } from "../constants";
+import { Aptos, AptosConfig, Network, AccountAddress, EntryFunctionPayload } from "@aptos-labs/ts-sdk";
+import { aptosClient } from "../client";
 
 /**
- * Submit a transaction to the blockchain to claim rewards
+ * Submit a transaction to the blockchain to claim rewards using the Aptos SDK
  * @param walletAddress The wallet address submitting the transaction
  * @param nftIds The NFT IDs to claim rewards for
  * @param signTransaction Function to sign and submit the transaction
@@ -20,24 +22,26 @@ export const submitClaimTransaction = async (
     console.log(`Wallet address: ${walletAddress}`);
     console.log(`NFT IDs to claim: ${nftIds.join(', ')}`);
     
-    // Create the transaction payload
+    // Select the appropriate Aptos client based on network
+    const client = IS_TESTNET 
+      ? aptosClient('testnet')
+      : aptosClient('mainnet');
+    
+    // Create the transaction payload using the SDK
     // For testnet, we use a different module address
-    // Changed from token::claim_rewards to nft_rewards::claim (more likely to exist)
     const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
     
-    const payload = {
-      type: "entry_function_payload",
+    // Create the transaction payload using the SDK
+    const payload: EntryFunctionPayload = {
       function: `${moduleAddress}::nft_rewards::claim`,
-      type_arguments: [],
-      arguments: [
-        nftIds,  // The NFT token IDs being claimed
-      ]
+      typeArguments: [],
+      functionArguments: [nftIds], // The NFT token IDs being claimed
     };
     
-    console.log("Transaction payload:", JSON.stringify(payload, null, 2));
+    console.log("Transaction payload:", payload);
     
-    // Sign and submit the transaction
-    console.log("Signing and submitting transaction...");
+    // Build the raw transaction for signing
+    // Note: Using the wallet's signAndSubmitTransaction because some wallets don't expose direct signing
     const result = await signTransaction(payload);
     console.log("Transaction result:", result);
     

@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
 import { registerCoinStoreIfNeeded } from "./coinStoreRegistration";
+import { EntryFunctionPayload } from "@aptos-labs/ts-sdk";
+import { aptosClient } from "../client";
 
 /**
  * Deposit tokens to the escrow wallet (admin only)
@@ -72,18 +74,17 @@ export const depositTokensTransaction = async (
     // Calculate the amount in smallest units (APT uses 8 decimal places)
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT, ensure integer
     
-    // Create the transaction payload for depositing tokens
-    const payload = {
-      type: "entry_function_payload",
+    // Create the transaction payload for depositing tokens using the SDK
+    const payload: EntryFunctionPayload = {
       function: "0x1::coin::transfer",
-      type_arguments: [tokenType],
-      arguments: [
-        escrowWalletAddress,  // Recipient address
-        amountInSmallestUnits.toString(),  // Amount in smallest units
-      ]
+      typeArguments: [tokenType],
+      functionArguments: [
+        escrowWalletAddress, // Recipient address
+        amountInSmallestUnits.toString(), // Amount in smallest units
+      ],
     };
     
-    console.log("Deposit payload:", JSON.stringify(payload, null, 2));
+    console.log("Deposit payload:", payload);
     
     // Sign and submit the transaction
     console.log("Signing and submitting deposit transaction...");
@@ -121,6 +122,100 @@ export const depositTokensTransaction = async (
       } else {
         errorMessage = error.message;
       }
+    }
+    
+    return {
+      success: false,
+      error: errorMessage
+    };
+  }
+};
+
+/**
+ * Withdraw tokens from the escrow wallet (admin only)
+ * @param adminWalletAddress The admin wallet address with withdrawal privileges
+ * @param tokenType The token type to withdraw
+ * @param amount The amount to withdraw
+ * @param recipientAddress The address to send tokens to (defaults to admin wallet)
+ * @param signTransaction Function to sign and submit the transaction
+ * @returns Transaction result with success status and hash
+ */
+export const withdrawTokensTransaction = async (
+  adminWalletAddress: string,
+  tokenType: string,
+  amount: number,
+  recipientAddress: string = adminWalletAddress,
+  signTransaction: (txn: any) => Promise<any>
+): Promise<TransactionResult> => {
+  try {
+    console.log(`Withdrawing tokens on ${IS_TESTNET ? 'testnet' : 'mainnet'}`);
+    console.log(`Admin wallet address: ${adminWalletAddress}`);
+    console.log(`Token type: ${tokenType}`);
+    console.log(`Amount: ${amount}`);
+    console.log(`Recipient address: ${recipientAddress}`);
+    
+    // Validate token type based on network
+    if (IS_TESTNET) {
+      // On testnet, only APT is supported
+      if (tokenType !== SUPPORTED_TOKENS.APT) {
+        const error = "Only APT tokens are supported on testnet";
+        console.error(error);
+        return { success: false, error };
+      }
+    } else {
+      // On mainnet, only APT and EMOJICOIN are supported
+      if (tokenType !== SUPPORTED_TOKENS.APT && tokenType !== SUPPORTED_TOKENS.EMOJICOIN) {
+        const error = "Only APT and EMOJICOIN tokens are supported";
+        console.error(error);
+        return { success: false, error };
+      }
+    }
+    
+    // Calculate the amount in smallest units (APT uses 8 decimal places)
+    const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT
+    
+    // Create the withdrawal transaction
+    // Note: In a real implementation, this would use a custom module that:
+    // 1. Verifies the caller is an admin
+    // 2. Transfers tokens from the escrow to the recipient
+    // For demo purposes, we'll use a simplified approach (would not work in production)
+    const payload: EntryFunctionPayload = {
+      function: "0x1::managed_coin::transfer",
+      typeArguments: [tokenType],
+      functionArguments: [
+        recipientAddress, // Recipient address  
+        amountInSmallestUnits.toString(), // Amount in smallest units
+      ],
+    };
+    
+    console.log("Withdrawal payload:", payload);
+    
+    // Sign and submit the transaction
+    console.log("Signing and submitting withdrawal transaction...");
+    toast.loading("Processing withdrawal transaction...");
+    const result = await signTransaction(payload);
+    toast.dismiss();
+    console.log("Withdrawal transaction result:", result);
+    
+    if (!result.hash) {
+      return {
+        success: false,
+        transactionHash: null,
+        error: "Transaction failed with no hash returned"
+      };
+    }
+    
+    return {
+      success: true,
+      transactionHash: result.hash
+    };
+  } catch (error) {
+    console.error("Error withdrawing tokens:", error);
+    toast.dismiss();
+    
+    let errorMessage = "Failed to withdraw tokens";
+    if (error instanceof Error) {
+      errorMessage = error.message;
     }
     
     return {

@@ -2,6 +2,8 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS } from "../constants";
+import { EntryFunctionPayload } from "@aptos-labs/ts-sdk";
+import { aptosClient } from "../client";
 
 /**
  * Check if a CoinStore is registered for the given token type and register it if not
@@ -33,26 +35,46 @@ export const registerCoinStoreIfNeeded = async (
     }
     
     console.log(`Registering CoinStore for ${tokenType}`);
-
-    // Create the transaction payload for registration
-    const payload = {
-      type: "entry_function_payload",
-      function: "0x1::coin::register",
-      type_arguments: [tokenType],
-      arguments: []
-    };
     
-    console.log("Registration payload:", JSON.stringify(payload, null, 2));
-    
-    // Sign and submit the transaction
-    console.log("Signing and submitting registration transaction...");
-    const result = await signTransaction(payload);
-    console.log("Registration result:", result);
-    
-    return {
-      success: !!result.hash,
-      transactionHash: result.hash || null
-    };
+    // Use the SDK to check if the coin store is already registered
+    try {
+      const client = IS_TESTNET ? aptosClient('testnet') : aptosClient('mainnet');
+      
+      // Construct the resource type for the coin store
+      const resourceType = `0x1::coin::CoinStore<${tokenType}>`;
+      
+      // Check if the resource exists
+      const resource = await client.getAccountResource({
+        accountAddress: walletAddress,
+        resourceType: resourceType,
+      });
+      
+      // If we reach here, the resource exists
+      console.log("CoinStore already registered:", resource);
+      return { success: true, transactionHash: null };
+    } catch (resourceError) {
+      // Resource not found, need to register
+      console.log("CoinStore not found, registering...");
+      
+      // Create the transaction payload for registration using the SDK
+      const payload: EntryFunctionPayload = {
+        function: "0x1::coin::register",
+        typeArguments: [tokenType],
+        functionArguments: [],
+      };
+      
+      console.log("Registration payload:", payload);
+      
+      // Sign and submit the transaction
+      console.log("Signing and submitting registration transaction...");
+      const result = await signTransaction(payload);
+      console.log("Registration result:", result);
+      
+      return {
+        success: !!result.hash,
+        transactionHash: result.hash || null
+      };
+    }
   } catch (error) {
     console.error("Error registering CoinStore:", error);
     // If we get a specific error saying the store is already registered,
