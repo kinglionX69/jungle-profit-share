@@ -22,11 +22,12 @@ export const submitClaimTransaction = async (
     
     // Create the transaction payload
     // For testnet, we use a different module address
+    // Changed from token::claim_rewards to nft_rewards::claim (more likely to exist)
     const moduleAddress = IS_TESTNET ? "0x3" : "0x3"; // Same for now, but can be changed if testnet uses different modules
     
     const payload = {
       type: "entry_function_payload",
-      function: `${moduleAddress}::token::claim_rewards`,
+      function: `${moduleAddress}::nft_rewards::claim`,
       type_arguments: [],
       arguments: [
         nftIds,  // The NFT token IDs being claimed
