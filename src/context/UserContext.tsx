@@ -4,7 +4,8 @@ import { useWallet } from "./WalletContext";
 import { toast } from "sonner";
 import { 
   updateUserEmail,
-  getUserData 
+  getUserData,
+  upsertUser
 } from "@/api/userApi";
 import {
   NFT,
@@ -60,7 +61,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   useEffect(() => {
     if (connected && address) {
       console.log(`Wallet connected (${walletType}), fetching user data...`);
-      fetchUserData();
+      // Ensure the user record exists first
+      upsertUser(address).then(() => {
+        fetchUserData();
+      });
     } else {
       // Reset user data when disconnected
       setEmail(null);
@@ -76,17 +80,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       return;
     }
     
-    setLoadingNfts(true);
-    setLoadingClaimHistory(true);
-    
     try {
       // Fetch user data
       const userData = await getUserData(address);
       
       if (userData) {
+        console.log("Setting user data from fetch:", userData);
         setEmail(userData.email);
         setIsVerified(userData.email_verified);
+      } else {
+        console.log("No user data found, creating initial record");
+        await upsertUser(address);
       }
+      
+      // Fetch NFTs and claim history
+      setLoadingNfts(true);
+      setLoadingClaimHistory(true);
       
       // Fetch NFTs and calculate claimable amount
       console.log("Fetching NFTs for address:", address);

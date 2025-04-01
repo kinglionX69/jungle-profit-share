@@ -9,14 +9,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
-import { updateUserEmail, getUserData } from '@/api/userApi';
+import { getUserData, updateUserEmail } from '@/api/userApi';
 
 const emailSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
 });
 
 const EmailVerification = () => {
-  const { email, isVerified, setEmail, setIsVerified } = useUser();
+  const { email, isVerified, setEmail, setIsVerified, fetchUserData } = useUser();
   const { address } = useWallet();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,14 +37,17 @@ const EmailVerification = () => {
           const userData = await getUserData(address);
           console.log("Fetched user data:", userData);
           
-          if (userData && userData.email) {
-            setEmail(userData.email);
+          if (userData) {
+            // Update both local state and context
+            if (userData.email) {
+              setEmail(userData.email);
+              emailForm.setValue('email', userData.email);
+            }
             
             // If email exists and is marked as verified, update verification status
             if (userData.email_verified) {
               console.log("Email is verified:", userData.email);
               setIsVerified(true);
-              emailForm.reset({ email: userData.email });
             }
           }
         } catch (error) {
@@ -61,7 +64,7 @@ const EmailVerification = () => {
   // Update form when email changes externally
   useEffect(() => {
     if (email) {
-      emailForm.reset({ email });
+      emailForm.setValue('email', email);
     }
   }, [email]);
   
@@ -74,6 +77,7 @@ const EmailVerification = () => {
     setSubmitting(true);
     
     try {
+      // First update the local state
       setEmail(values.email);
       
       console.log(`Saving email ${values.email} for wallet ${address}`);
@@ -84,6 +88,9 @@ const EmailVerification = () => {
       if (success) {
         setIsVerified(true);
         toast.success('Email saved successfully');
+        
+        // Refresh user data after the update
+        await fetchUserData();
       } else {
         toast.error('Failed to save email. Please try again.');
       }
@@ -104,7 +111,7 @@ const EmailVerification = () => {
     );
   }
   
-  if (isVerified) {
+  if (isVerified && email) {
     return (
       <div className="flex items-center p-4 text-sm rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
         <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>

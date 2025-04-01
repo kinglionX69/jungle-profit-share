@@ -14,6 +14,8 @@ export const upsertUser = async (
   emailVerified?: boolean
 ) => {
   try {
+    console.log(`Upserting user: ${walletAddress}, email: ${email}, verified: ${emailVerified}`);
+    
     // First check if the user exists
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
@@ -32,6 +34,8 @@ export const upsertUser = async (
       updated_at: new Date().toISOString()
     };
     
+    console.log("Upserting user data:", userData);
+    
     // Use upsert operation which is more reliable
     const { error } = await supabase
       .from('users')
@@ -48,6 +52,7 @@ export const upsertUser = async (
       return false;
     }
     
+    console.log("User upserted successfully");
     return true;
   } catch (error) {
     console.error("Failed to upsert user:", error);
@@ -61,6 +66,8 @@ export const upsertUser = async (
  */
 export const getUserData = async (walletAddress: string) => {
   try {
+    console.log(`Getting user data for wallet: ${walletAddress}`);
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -72,6 +79,7 @@ export const getUserData = async (walletAddress: string) => {
       throw error;
     }
     
+    console.log("User data retrieved:", data);
     return data;
   } catch (error) {
     console.error("Failed to get user data:", error);
@@ -105,6 +113,7 @@ export const updateUserEmail = async (
       return false;
     }
     
+    console.log("Email updated successfully");
     return true;
   } catch (error: any) {
     console.error("Error updating email:", error);
