@@ -17,12 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createTokenPayout } from '@/api/adminApi';
 import { useWallet } from '@/context/WalletContext';
 import { depositTokensTransaction } from '@/utils/aptos/transactionUtils';
-
-// Token types
-const TOKEN_TYPES = {
-  apt: "0x1::aptos_coin::AptosCoin",
-  usdc: "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC"
-};
+import { IS_TESTNET, SUPPORTED_TOKENS } from '@/utils/aptos/constants';
 
 const TokenDeposit: React.FC = () => {
   const [amount, setAmount] = useState('');
@@ -50,8 +45,8 @@ const TokenDeposit: React.FC = () => {
     setProcessing(true);
     
     try {
-      // First, execute the blockchain transaction
-      const tokenType = TOKEN_TYPES[selectedToken as keyof typeof TOKEN_TYPES];
+      // Get the correct token type
+      const tokenType = selectedToken === 'apt' ? SUPPORTED_TOKENS.APT : SUPPORTED_TOKENS.EMOJICOIN;
       const amountValue = Number(amount);
       const payoutValue = Number(payoutAmount);
       
@@ -139,10 +134,13 @@ const TokenDeposit: React.FC = () => {
                 <RadioGroupItem value="apt" id="apt" />
                 <Label htmlFor="apt" className="cursor-pointer">APT</Label>
               </div>
-              <div className="flex items-center space-x-1">
-                <RadioGroupItem value="usdc" id="usdc" />
-                <Label htmlFor="usdc" className="cursor-pointer">USDC</Label>
-              </div>
+              {/* Only show EMOJICOIN on mainnet */}
+              {!IS_TESTNET && (
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem value="emojicoin" id="emojicoin" />
+                  <Label htmlFor="emojicoin" className="cursor-pointer">EMOJICOIN</Label>
+                </div>
+              )}
             </RadioGroup>
           </div>
         </div>

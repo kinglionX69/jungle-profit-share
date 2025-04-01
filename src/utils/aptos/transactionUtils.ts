@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { TransactionResult } from "./types";
-import { IS_TESTNET } from "./constants";
+import { IS_TESTNET, SUPPORTED_TOKENS } from "./constants";
 
 /**
  * Submit a transaction to the blockchain to claim rewards
@@ -66,7 +66,7 @@ export const registerCoinStoreIfNeeded = async (
 ): Promise<TransactionResult> => {
   try {
     // First check if the token is APT, which is always registered by default
-    if (tokenType === "0x1::aptos_coin::AptosCoin") {
+    if (tokenType === SUPPORTED_TOKENS.APT) {
       console.log("APT is already registered for all accounts by default");
       return { success: true, transactionHash: null };
     }
@@ -130,23 +130,33 @@ export const depositTokensTransaction = async (
     console.log(`Amount: ${amount}`);
     console.log(`Payout per NFT: ${payoutPerNFT}`);
     
+    // Validate token type based on network
+    if (IS_TESTNET) {
+      // On testnet, only APT is supported
+      if (tokenType !== SUPPORTED_TOKENS.APT) {
+        toast.error("Only APT tokens are supported on testnet");
+        return { success: false, transactionHash: null, error: "Unsupported token on testnet" };
+      }
+    } else {
+      // On mainnet, only APT and EMOJICOIN are supported
+      if (tokenType !== SUPPORTED_TOKENS.APT && tokenType !== SUPPORTED_TOKENS.EMOJICOIN) {
+        toast.error("Only APT and EMOJICOIN tokens are supported");
+        return { success: false, transactionHash: null, error: "Unsupported token" };
+      }
+    }
+    
     // Get the escrow wallet address from the admin_config table
     // For testnet, we'll use a fixed address for now, but this should be fetched from DB in production
     const escrowWalletAddress = IS_TESTNET 
       ? "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234" // Replace with actual testnet escrow address
       : "0x987654321fedcba987654321fedcba987654321fedcba987654321fedcba9876"; // Replace with actual mainnet escrow address
     
-    // Use the appropriate token type for testnet
-    const actualTokenType = IS_TESTNET 
-      ? "0x1::aptos_coin::AptosCoin" // This is the same on testnet
-      : tokenType;
-    
     // First, check and register the CoinStore if needed
-    if (actualTokenType !== "0x1::aptos_coin::AptosCoin") {
+    if (tokenType !== SUPPORTED_TOKENS.APT) {
       toast.loading("Registering token store...");
       const registrationResult = await registerCoinStoreIfNeeded(
         adminWalletAddress,
-        actualTokenType,
+        tokenType,
         signTransaction
       );
       
@@ -165,7 +175,7 @@ export const depositTokensTransaction = async (
     const payload = {
       type: "entry_function_payload",
       function: "0x1::coin::transfer",
-      type_arguments: [actualTokenType],
+      type_arguments: [tokenType],
       arguments: [
         escrowWalletAddress,  // Actual escrow wallet address
         amountInSmallestUnits.toString(),  // Amount in smallest units

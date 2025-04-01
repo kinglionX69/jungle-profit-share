@@ -1,3 +1,4 @@
+
 /**
  * Constants for Aptos API interactions
  */
@@ -19,6 +20,15 @@ export const CREATOR_ADDRESS = "0x4be579ff825b21ef1620a50ed856f711f37bc4b7f1433b
 // Testnet specific constants
 export const TOKEN_STORE_ADDRESS = "0x3::token::TokenStore"; // Used for resource lookup
 export const APTOS_TOKEN_ADDRESS = "0x1::aptos_coin::AptosCoin"; // Used for token transfers
+
+// Mainnet specific constants
+export const EMOJICOIN_TOKEN_ADDRESS = "0x173fcd3fda2c89d4702e3d307d4dcc8358b03d9f36189179d2bddd9585e96e27::coin_factory::Emojicoin";
+
+// Supported token types
+export const SUPPORTED_TOKENS = {
+  APT: "0x1::aptos_coin::AptosCoin",
+  EMOJICOIN: "0x173fcd3fda2c89d4702e3d307d4dcc8358b03d9f36189179d2bddd9585e96e27::coin_factory::Emojicoin"
+};
 
 // Demo mode - set to false for production
 export const USE_DEMO_MODE = false;
