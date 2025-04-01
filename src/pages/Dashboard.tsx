@@ -9,7 +9,6 @@ import EmailVerification from '@/components/Auth/EmailVerification';
 import NFTGrid from '@/components/NFT/NFTGrid';
 import ClaimCard from '@/components/Claim/ClaimCard';
 import ClaimHistory from '@/components/Claim/ClaimHistory';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/context/UserContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -55,7 +54,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              View your NFTs and claim your rewards
+              View your eligible NFTs and claim your rewards
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleRefreshNFTs} disabled={loadingNfts}>
@@ -82,20 +81,8 @@ const Dashboard = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           <div className="lg:col-span-2">
-            <Tabs defaultValue="eligible" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="eligible">Eligible NFTs</TabsTrigger>
-                <TabsTrigger value="all">All NFTs</TabsTrigger>
-              </TabsList>
-              <TabsContent value="eligible" className="space-y-6">
-                <h2 className="text-xl font-medium">Eligible for Claim</h2>
-                <NFTGrid filterEligible={true} />
-              </TabsContent>
-              <TabsContent value="all" className="space-y-6">
-                <h2 className="text-xl font-medium">All Your NFTs</h2>
-                <NFTGrid filterEligible={false} />
-              </TabsContent>
-            </Tabs>
+            <h2 className="text-xl font-medium mb-4">Eligible NFTs for Claim</h2>
+            <NFTGrid filterEligible={true} />
           </div>
           
           <div>

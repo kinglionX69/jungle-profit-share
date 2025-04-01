@@ -37,7 +37,8 @@ export const handleSuccessfulConnection = async (walletAddress: string, walletNa
     // Check if the wallet is an admin
     const adminStatus = await checkIsAdmin(walletAddress);
     
-    toast.success(`${walletName} wallet connected!`);
+    // No toast here, we'll handle it in the parent component
+    console.log(`${walletName} wallet connected successfully`);
     
     return { adminStatus };
   } catch (error) {

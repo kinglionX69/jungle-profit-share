@@ -9,10 +9,16 @@ export const useWalletConnection = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [walletType, setWalletType] = useState<string | null>(null);
+  const [connectionAttempted, setConnectionAttempted] = useState(false);
   
   // Check if wallet is already connected
   useEffect(() => {
     const checkConnection = async () => {
+      // If we already tried to connect or are already connected, don't try again
+      if (connectionAttempted || connected || connecting) return;
+      
+      setConnectionAttempted(true);
+      
       try {
         // Check for Petra wallet (new API)
         if (window.petra) {
@@ -115,7 +121,7 @@ export const useWalletConnection = () => {
     };
     
     checkConnection();
-  }, []);
+  }, [connected, connecting, connectionAttempted]);
   
   // When address changes, update Supabase headers
   useEffect(() => {

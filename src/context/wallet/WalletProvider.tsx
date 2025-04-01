@@ -41,6 +41,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   // Connect to a specific wallet
   const connectWallet = async (walletName: string) => {
+    // If already connecting, don't try again
+    if (connecting) return;
+    
     setConnecting(true);
     
     try {
@@ -114,13 +117,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   // Main connect function to show wallet selector
   const connect = async () => {
+    // If already connecting or connected, don't try again
+    if (connecting || connected) return;
+    
     // Check if Petra wallet is installed (either legacy or new API)
     if (window.petra || window.aptos) {
       // For this app, prioritize Petra wallet
       try {
-        toast.loading("Connecting to Petra wallet...");
+        const toastId = toast.loading("Connecting to Petra wallet...");
         await connectWallet('petra');
-        toast.dismiss();
+        toast.dismiss(toastId);
       } catch (error) {
         console.error("Petra auto-connect error:", error);
         toast.dismiss();
