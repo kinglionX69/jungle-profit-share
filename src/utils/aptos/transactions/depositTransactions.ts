@@ -1,9 +1,9 @@
 import { toast } from "sonner";
+import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
 import { TransactionResult } from "../types";
-import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
-import { registerCoinStoreIfNeeded } from "./coinStoreRegistration";
-import { aptosClient } from "../client";
 import { toStructTag } from "../helpers";
+import { getAptosClient } from "../client";
+import { AccountAddress } from "@aptos-labs/ts-sdk";
 
 /**
  * Deposit tokens to the escrow wallet (admin only)

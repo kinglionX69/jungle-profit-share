@@ -1,9 +1,7 @@
-
-import { AptosAccount } from "aptos";
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from "../constants";
-import { aptosClient } from "../client";
+import { getAptosClient } from "../client";
 import { toStructTag } from "../helpers";
 
 /**

@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -13,7 +12,7 @@ import { IS_TESTNET } from "@/utils/aptos/constants";
 import { upsertUser } from "@/api/userApi";
 import { checkIsAdmin } from "@/api/adminApi";
 import { useWalletConnection } from "./useWalletConnection";
-import { Aptos, AptosConfig, Network as AptosNetwork, TransactionOptions } from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, Network as AptosNetwork } from "@aptos-labs/ts-sdk";
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -52,7 +51,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
   );
   const [disconnecting, setDisconnecting] = useState<boolean>(false);
   
-  // Create Aptos client instance for the appropriate network
   const [aptosClient] = useState(() => {
     const config = new AptosConfig({ 
       network: IS_TESTNET ? AptosNetwork.TESTNET : AptosNetwork.MAINNET
@@ -104,7 +102,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         console.log("Creating user record for newly connected wallet");
         await upsertUser(account.address);
         
-        // Check admin status and log the result
         console.log("Checking if wallet is admin:", account.address);
         const adminStatus = await checkIsAdmin(account.address);
         console.log("Admin status result:", adminStatus);
@@ -120,10 +117,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     }
   };
 
-  // Fix: Update connect function to return a Promise<void> to match the type definition
   const connect = async (): Promise<void> => {
     setShowWalletSelector(true);
-    // Return a resolved promise to match the Promise<void> return type
     return Promise.resolve();
   };
 

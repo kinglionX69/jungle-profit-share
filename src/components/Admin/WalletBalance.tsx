@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -10,7 +11,7 @@ import { WalletBalance as WalletBalanceType } from '@/api/adminApi';
 import { toast } from 'sonner';
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
-import { getCoinBalance, aptosClient } from '@/utils/aptos/client';
+import { getCoinBalance, getAptosClient } from '@/utils/aptos/client';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';

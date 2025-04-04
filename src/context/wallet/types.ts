@@ -19,5 +19,5 @@ export interface WalletContextType {
   connectWallet: (walletName: WalletName) => Promise<void>;
   signTransaction: (payload: any) => Promise<any>;
   isAdmin: boolean;
-  aptosClient: Aptos; // New aptosClient instance property
+  aptosClient: Aptos;
 }

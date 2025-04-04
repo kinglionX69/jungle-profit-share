@@ -1,5 +1,5 @@
 
-import { Aptos, AptosConfig, Network, AccountAddress, CoinClient } from '@aptos-labs/ts-sdk';
+import { Aptos, AptosConfig, Network, AccountAddress } from '@aptos-labs/ts-sdk';
 import { toStructTag } from "./helpers";
 
 // Network configuration
@@ -13,12 +13,6 @@ export const getAptosConfig = (network: 'mainnet' | 'testnet' = 'testnet'): Apto
 export const getAptosClient = (network: 'mainnet' | 'testnet' = 'testnet'): Aptos => {
   const config = getAptosConfig(network);
   return new Aptos(config);
-};
-
-// Coin client for easier coin operations
-export const getCoinClient = (network: 'mainnet' | 'testnet' = 'testnet'): CoinClient => {
-  const config = getAptosConfig(network);
-  return new CoinClient(config);
 };
 
 /**
@@ -35,15 +29,17 @@ export const getCoinBalance = async (
 ): Promise<number> => {
   try {
     const aptos = getAptosClient(network);
-    const coinClient = getCoinClient(network);
+    const formattedCoinType = toStructTag(coinType);
+    const accountAddress = AccountAddress.fromString(address);
     
-    const balance = await coinClient.checkBalance({
-      accountAddress: AccountAddress.fromString(address),
-      coinType: toStructTag(coinType)
+    // Get coin balance using the Aptos SDK directly instead of CoinClient
+    const response = await aptos.getAccountCoinAmount({
+      accountAddress,
+      coinType: formattedCoinType
     });
     
     // Convert from smallest units (octas) to APT
-    return Number(balance) / 100000000;
+    return Number(response) / 100000000;
   } catch (error) {
     console.error(`Error fetching ${coinType} balance:`, error);
     return 0;
