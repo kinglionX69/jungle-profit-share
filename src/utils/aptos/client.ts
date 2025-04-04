@@ -1,48 +1,25 @@
 
+import { Aptos, AptosConfig, Network, AccountAddress, CoinClient } from '@aptos-labs/ts-sdk';
 import { toStructTag } from "./helpers";
-// Note: We need to add a dependency for aptos
-import { AptosClient, AptosAccount, FaucetClient, Types } from "aptos";
 
-// Replace process.env usage with direct URLs
-const NODE_URL = "https://testnet.aptoslabs.com";
-const FAUCET_URL = "https://faucet.testnet.aptoslabs.com";
-
-export const aptosClient = new AptosClient(NODE_URL);
-export const faucetClient = new FaucetClient(NODE_URL, FAUCET_URL);
-
-/**
- * Creates a new Aptos account and funds it using the FaucetClient.
- * @returns The AptosAccount object representing the created account.
- */
-export const createFundedAccount = async (): Promise<AptosAccount> => {
-  const account = new AptosAccount();
-  await faucetClient.fundAccount(account.address(), 100_000_000);
-  return account;
+// Network configuration
+export const getAptosConfig = (network: 'mainnet' | 'testnet' = 'testnet'): AptosConfig => {
+  return new AptosConfig({ 
+    network: network === 'mainnet' ? Network.MAINNET : Network.TESTNET 
+  });
 };
 
-/**
- * Converts a string to a Uint8Array.
- * @param str The string to convert.
- * @returns The Uint8Array representation of the string.
- */
-export const stringToUint8Array = (str: string): Uint8Array => {
-  const encoder = new TextEncoder();
-  return encoder.encode(str);
+// Main Aptos client instance for the app
+export const getAptosClient = (network: 'mainnet' | 'testnet' = 'testnet'): Aptos => {
+  const config = getAptosConfig(network);
+  return new Aptos(config);
 };
 
-/**
- * Converts a Uint8Array to a string.
- * @param arr The Uint8Array to convert.
- * @returns The string representation of the Uint8Array.
- */
-export const uint8ArrayToString = (arr: Uint8Array): string => {
-  const decoder = new TextDecoder();
-  return decoder.decode(arr);
+// Coin client for easier coin operations
+export const getCoinClient = (network: 'mainnet' | 'testnet' = 'testnet'): CoinClient => {
+  const config = getAptosConfig(network);
+  return new CoinClient(config);
 };
-
-export const testnetClient = new AptosClient(
-  "https://testnet.aptoslabs.com"
-);
 
 /**
  * Get coin balance for a wallet address
@@ -57,27 +34,16 @@ export const getCoinBalance = async (
   network: 'mainnet' | 'testnet' = 'testnet'
 ): Promise<number> => {
   try {
-    const client = network === 'mainnet' 
-      ? new AptosClient("https://fullnode.mainnet.aptoslabs.com") 
-      : testnetClient;
-      
-    const resources = await client.getAccountResources(
-      address
-    );
+    const aptos = getAptosClient(network);
+    const coinClient = getCoinClient(network);
     
-    const coinTypeStr = toStructTag(coinType);
-    const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
+    const balance = await coinClient.checkBalance({
+      accountAddress: AccountAddress.fromString(address),
+      coinType: toStructTag(coinType)
+    });
     
-    const resource = resources.find((r) => r.type === coinStoreType);
-    
-    if (!resource) {
-      console.log(`No ${coinType} found for ${address}`);
-      return 0;
-    }
-    
-    // @ts-ignore - The structure is expected to have a coin.value field
-    const balance = resource.data.coin?.value || "0";
-    return parseInt(balance) / 100000000; // Convert from octas to APT
+    // Convert from smallest units (octas) to APT
+    return Number(balance) / 100000000;
   } catch (error) {
     console.error(`Error fetching ${coinType} balance:`, error);
     return 0;
@@ -94,10 +60,13 @@ export const registerTokenStore = async (
   try {
     console.log(`Registering token store for ${walletAddress}`);
     
+    // Get client
+    const aptos = getAptosClient();
+    
     // Check if token store is already registered
-    const accountResources = await aptosClient.getAccountResources(
-      walletAddress
-    );
+    const accountResources = await aptos.getAccountResources({
+      accountAddress: walletAddress
+    });
     
     const tokenStoreResource = accountResources.find(
       (r) => r.type === "0x3::token::TokenStore"
@@ -142,10 +111,13 @@ export const registerCoinStore = async (
   try {
     console.log(`Registering coin store for ${walletAddress} with coin type ${coinType}`);
     
+    // Get client
+    const aptos = getAptosClient();
+    
     // Check if coin store is already registered
-    const accountResources = await aptosClient.getAccountResources(
-      walletAddress
-    );
+    const accountResources = await aptos.getAccountResources({
+      accountAddress: walletAddress
+    });
     
     const coinTypeStr = toStructTag(coinType);
     

@@ -13,6 +13,7 @@ import { IS_TESTNET } from "@/utils/aptos/constants";
 import { upsertUser } from "@/api/userApi";
 import { checkIsAdmin } from "@/api/adminApi";
 import { useWalletConnection } from "./useWalletConnection";
+import { Aptos, AptosConfig, Network as AptosNetwork, TransactionOptions } from "@aptos-labs/ts-sdk";
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -50,6 +51,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     IS_TESTNET ? "Testnet" : "Mainnet"
   );
   const [disconnecting, setDisconnecting] = useState<boolean>(false);
+  
+  // Create Aptos client instance for the appropriate network
+  const [aptosClient] = useState(() => {
+    const config = new AptosConfig({ 
+      network: IS_TESTNET ? AptosNetwork.TESTNET : AptosNetwork.MAINNET
+    });
+    return new Aptos(config);
+  });
 
   const connectWallet = async (walletName: WalletName) => {
     setConnecting(true);
@@ -200,6 +209,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         connectWallet,
         signTransaction,
         isAdmin,
+        aptosClient
       }}
     >
       {children}

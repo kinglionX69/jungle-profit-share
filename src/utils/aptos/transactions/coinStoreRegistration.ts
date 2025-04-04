@@ -1,9 +1,10 @@
 
 import { toast } from "sonner";
-import { testnetClient } from "../client";
-import { APTOS_TOKEN_ADDRESS } from "../constants";
 import { TransactionResult } from "../types";
 import { toStructTag } from "../helpers";
+import { getAptosClient } from "../client";
+import { APTOS_TOKEN_ADDRESS } from "../constants";
+import { AccountAddress } from "@aptos-labs/ts-sdk";
 
 /**
  * Check if a coin store exists for a given wallet
@@ -22,10 +23,14 @@ export const checkCoinStoreExists = async (
     const formattedCoinType = toStructTag(coinType);
     const coinStoreType = `0x1::coin::CoinStore<${formattedCoinType}>`;
     
+    // Get Aptos client
+    const aptos = getAptosClient();
+    
     // Get all the resources for the account
-    const accountResources = await testnetClient.getAccountResources(
-      walletAddress
-    );
+    const accountAddress = AccountAddress.fromString(walletAddress);
+    const accountResources = await aptos.getAccountResources({
+      accountAddress
+    });
     
     console.log(`Found ${accountResources.length} resources for account ${walletAddress}`);
     
@@ -65,7 +70,7 @@ export const registerCoinStoreIfNeeded = async (
     
     console.log(`Registering coin store for ${coinType}`);
     
-    // Create the transaction payload
+    // Create the transaction payload using the simpler object format
     const registerPayload = {
       function: "0x1::managed_coin::register",
       type_arguments: [toStructTag(coinType)],

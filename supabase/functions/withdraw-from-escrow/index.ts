@@ -1,6 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { AptosClient, AptosAccount, Types } from "npm:aptos@1.20.0";
+import { 
+  AptosAccount, 
+  Aptos, 
+  AptosConfig, 
+  Network, 
+  AccountAddress, 
+  Ed25519PrivateKey 
+} from "npm:@aptos-labs/ts-sdk@1.3.0";
 
 // CORS headers for the function
 const corsHeaders = {
@@ -9,29 +16,8 @@ const corsHeaders = {
 };
 
 // Constants
-const TESTNET_NODE_URL = "https://testnet.aptoslabs.com";
-const MAINNET_NODE_URL = "https://fullnode.mainnet.aptoslabs.com";
 const TESTNET_ESCROW_WALLET = "0x5af503b5c379bd69f32dac9bcbae33f5a8941a4bb98d6f7341bb6fbdcb496d69";
 const MAINNET_ESCROW_WALLET = "0x9a5d795152a50243398329387026ef55886ee6c10f3bfa7c454e8487fe62c5e2";
-
-// Helper function to convert hex string to Uint8Array
-function hexToUint8Array(hexString: string): Uint8Array {
-  if (hexString.startsWith('0x')) {
-    hexString = hexString.slice(2);
-  }
-  
-  if (hexString.length % 2 !== 0) {
-    hexString = '0' + hexString;
-  }
-  
-  const bytes = new Uint8Array(hexString.length / 2);
-  
-  for (let i = 0; i < hexString.length; i += 2) {
-    bytes[i/2] = parseInt(hexString.substring(i, i + 2), 16);
-  }
-  
-  return bytes;
-}
 
 interface WithdrawalRequest {
   tokenType: string;
@@ -54,9 +40,11 @@ serve(async (req: Request) => {
     console.log(`Processing withdrawal request from admin ${adminWalletAddress}`);
     console.log(`Withdrawing ${amount} of ${tokenType} to ${recipientAddress} on ${network}`);
     
-    // Select the right node URL based on network
-    const nodeUrl = network === 'testnet' ? TESTNET_NODE_URL : MAINNET_NODE_URL;
-    const client = new AptosClient(nodeUrl);
+    // Select the right network based on the request
+    const aptosConfig = new AptosConfig({ 
+      network: network === 'testnet' ? Network.TESTNET : Network.MAINNET 
+    });
+    const aptos = new Aptos(aptosConfig);
     
     // Get the escrow wallet address based on network
     const escrowWalletAddress = network === 'testnet' ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
@@ -68,11 +56,16 @@ serve(async (req: Request) => {
     }
     
     // Create escrow account from private key
-    const privateKeyBytes = hexToUint8Array(privateKeyHex);
-    const escrowAccount = new AptosAccount(privateKeyBytes);
+    // Remove 0x prefix if present
+    const cleanPrivateKeyHex = privateKeyHex.startsWith("0x") ? privateKeyHex.slice(2) : privateKeyHex;
+    
+    // Convert to bytes and create private key
+    const privateKeyBytes = new Uint8Array(cleanPrivateKeyHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+    const privateKey = new Ed25519PrivateKey(privateKeyBytes);
+    const escrowAccount = new AptosAccount(privateKey);
     
     // Verify the account address matches the expected escrow wallet
-    const escrowAddress = escrowAccount.address().toString();
+    const escrowAddress = escrowAccount.accountAddress.toString();
     if (escrowAddress !== escrowWalletAddress) {
       console.error(`Escrow address mismatch: ${escrowAddress} vs ${escrowWalletAddress}`);
       throw new Error("Escrow private key does not match configured escrow wallet address");
@@ -83,32 +76,42 @@ serve(async (req: Request) => {
     
     console.log(`Converting ${amount} APT to ${amountInSmallestUnits} octas (smallest units)`);
     
-    // Create the transaction payload
-    const payload: Types.TransactionPayload = {
-      type: "entry_function_payload",
-      function: "0x1::coin::transfer",
-      type_arguments: [tokenType],
-      arguments: [
-        recipientAddress,
-        amountInSmallestUnits.toString()
-      ]
-    };
+    // Create the transaction payload using the SDK
+    const recipientAccountAddress = AccountAddress.fromString(recipientAddress);
     
-    console.log("Creating withdrawal transaction with payload:", JSON.stringify(payload));
+    console.log("Creating withdrawal transaction");
     
-    // Generate, sign, and submit the transaction
-    const rawTxn = await client.generateTransaction(escrowAccount.address(), payload);
-    console.log("Raw transaction generated");
+    // Build the transaction
+    const transaction = await aptos.transaction.build.simple({
+      sender: escrowAccount.accountAddress,
+      data: {
+        function: "0x1::coin::transfer",
+        typeArguments: [tokenType],
+        functionArguments: [
+          recipientAccountAddress,
+          amountInSmallestUnits.toString()
+        ]
+      }
+    });
     
-    const signedTxn = await client.signTransaction(escrowAccount, rawTxn);
-    console.log("Transaction signed");
+    console.log("Signing transaction");
+    const signedTransaction = await aptos.transaction.sign({
+      signer: escrowAccount,
+      transaction
+    });
     
-    const pendingTxn = await client.submitTransaction(signedTxn);
-    console.log("Transaction submitted with hash:", pendingTxn.hash);
+    console.log("Submitting transaction");
+    const submittedTxn = await aptos.transaction.submit.signedTransaction({
+      signedTransaction
+    });
+    
+    console.log("Transaction submitted with hash:", submittedTxn);
     
     // Wait for transaction to complete
     console.log("Waiting for transaction confirmation...");
-    const txnResult = await client.waitForTransaction(pendingTxn.hash);
+    const txnResult = await aptos.transaction.waitForTransaction({
+      transactionHash: submittedTxn
+    });
     
     console.log("Withdrawal transaction completed:", txnResult.hash);
     console.log("Transaction success:", txnResult.success);

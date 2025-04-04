@@ -2,19 +2,8 @@
 import { toast } from "sonner";
 import { TransactionResult } from "../types";
 import { IS_TESTNET, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET, SUPPORTED_TOKENS } from "../constants";
-import { AptosClient, Types } from "aptos";
-
-/**
- * Get an Aptos client instance for the specified network
- * @param network Network to use ('mainnet' or 'testnet')
- * @returns AptosClient instance for the specified network
- */
-export const aptosClient = (network: 'mainnet' | 'testnet'): AptosClient => {
-  const nodeUrl = network === 'mainnet' 
-    ? "https://fullnode.mainnet.aptoslabs.com"
-    : "https://testnet.aptoslabs.com";
-  return new AptosClient(nodeUrl);
-};
+import { Aptos, AptosConfig, Network, AccountAddress } from "@aptos-labs/ts-sdk";
+import { getAptosClient } from "../client";
 
 /**
  * Submit a transaction to the blockchain to claim rewards using the Aptos SDK
