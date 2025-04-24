@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { 
   ArrowForward as ArrowForwardIcon,
-  TokenOutlined as TokenIcon,
+  Token as TokenIcon,
   Landscape as LandscapeIcon,
   Security as SecurityIcon
 } from '@mui/icons-material';
@@ -37,7 +37,7 @@ const Index = () => {
       <Container maxWidth="lg">
         {/* Hero Section */}
         <Grid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Box sx={{ mb: 4 }}>
               <Typography 
                 component="h1" 
@@ -46,7 +46,6 @@ const Index = () => {
                   mb: 2, 
                   background: 'linear-gradient(90deg, #4CAF50 0%, #FFC107 100%)',
                   backgroundClip: 'text',
-                  textFillColor: 'transparent',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' }
@@ -84,7 +83,7 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Paper 
               elevation={6} 
               sx={{ 
@@ -111,7 +110,6 @@ const Index = () => {
               mb: 6,
               background: 'linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%)',
               backgroundClip: 'text',
-              textFillColor: 'transparent',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}
@@ -137,7 +135,7 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <Grid item xs={12} md={4} key={index}>
+              <Grid xs={12} md={4} key={index}>
                 <Card 
                   sx={{ 
                     height: '100%',

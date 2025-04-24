@@ -1,7 +1,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider, SnackbarProvider } from '@mui/material';
+import { ThemeProvider } from '@mui/material';
+import { SnackbarProvider } from 'notistack';
 import { WalletProvider } from "./context/wallet";
 import { UserProvider } from "./context/UserContext";
 import theme from './theme/theme';
