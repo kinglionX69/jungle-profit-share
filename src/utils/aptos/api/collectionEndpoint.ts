@@ -3,7 +3,8 @@ import { BlockchainNFT } from "../types";
 import { 
   NFT_COLLECTION_NAME, 
   CREATOR_ADDRESS, 
-  NFT_IMAGE_BASE_URL 
+  NFT_IMAGE_BASE_URL,
+  NFT_COLLECTION_ID
 } from "../constants";
 import { fetchV2Tokens } from "./fetchers/v2TokenFetcher";
 import { fetchNFTsWithGraphQL } from "./fetchers/graphqlFetcher";
