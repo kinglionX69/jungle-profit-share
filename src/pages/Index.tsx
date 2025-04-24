@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { 
@@ -9,9 +8,9 @@ import {
   Container,
   Card,
   CardContent,
-  CardActions
+  CardActions,
+  Grid
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
 import { 
   ArrowForward as ArrowForwardIcon,
   Token as TokenIcon,
@@ -37,7 +36,7 @@ const Index = () => {
       <Container maxWidth="lg">
         {/* Hero Section */}
         <Grid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
-          <Grid xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Box sx={{ mb: 4 }}>
               <Typography 
                 component="h1" 
@@ -83,7 +82,7 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Box display="flex" justifyContent="center" width="100%">
               <Paper 
                 elevation={6} 
@@ -137,7 +136,7 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <Grid xs={12} md={4} key={index}>
+              <Grid item xs={12} md={4} key={index}>
                 <Card 
                   sx={{ 
                     height: '100%',
