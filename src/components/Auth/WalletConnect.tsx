@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button, Box, Typography, Paper, CircularProgress, Avatar } from '@mui/material';
 import { AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
-import { useWallet } from '@/context/WalletContext';
+import { useWallet } from '@/context/wallet';
 import WalletSelector from './WalletSelector';
 
 interface WalletConnectProps {

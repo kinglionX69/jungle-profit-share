@@ -5,13 +5,13 @@ import {
   Box, 
   Typography, 
   Button, 
-  Grid as MuiGrid,
   Paper, 
   Container,
   Card,
   CardContent,
   CardActions
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { 
   ArrowForward as ArrowForwardIcon,
   Token as TokenIcon,
@@ -21,9 +21,6 @@ import {
 import Header from '@/components/Layout/Header';
 import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
-
-// Create a Grid component that properly handles the MUI v7 Grid props
-const Grid = MuiGrid;
 
 const Index = () => {
   const { connected } = useWallet();
@@ -86,21 +83,23 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Paper 
-              elevation={6} 
-              sx={{ 
-                p: 4,
-                borderRadius: 4,
-                maxWidth: 400,
-                width: '100%',
-                backgroundColor: 'rgba(22, 32, 25, 0.8)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-              }}
-            >
-              <WalletConnect />
-            </Paper>
+          <Grid item xs={12} md={6}>
+            <Box display="flex" justifyContent="center">
+              <Paper 
+                elevation={6} 
+                sx={{ 
+                  p: 4,
+                  borderRadius: 4,
+                  maxWidth: 400,
+                  width: '100%',
+                  backgroundColor: 'rgba(22, 32, 25, 0.8)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                <WalletConnect />
+              </Paper>
+            </Box>
           </Grid>
         </Grid>
         
