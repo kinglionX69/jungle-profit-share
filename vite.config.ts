@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ['react', 'react-dom']
+    dedupe: ['react', 'react-dom', 'react-router-dom']
   },
   optimizeDeps: {
     include: [
@@ -29,7 +29,9 @@ export default defineConfig(({ mode }) => ({
       '@mui/material', 
       '@mui/icons-material',
       '@emotion/react',
-      '@emotion/styled'
+      '@emotion/styled',
+      '@mui/system',
+      'prop-types'
     ],
     esbuildOptions: {
       target: 'es2020'
@@ -42,10 +44,11 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled']
+          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'prop-types'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/system']
         }
       }
-    }
+    },
+    target: 'es2020'
   }
 }));

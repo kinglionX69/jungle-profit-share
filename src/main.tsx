@@ -9,9 +9,10 @@ const rootElement = document.getElementById("root");
 
 // Make sure rootElement exists before rendering
 if (rootElement) {
+  // Create a root
   const root = createRoot(rootElement);
   
-  // Render the app
+  // Render the app with explicit React import
   root.render(
     <React.StrictMode>
       <CssBaseline />
