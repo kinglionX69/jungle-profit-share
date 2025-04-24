@@ -37,7 +37,8 @@ export default defineConfig(({ mode }) => ({
       '@emotion/styled',
       '@mui/system',
       'prop-types',
-      'notistack'
+      'notistack',
+      '@tanstack/react-query'
     ],
     esbuildOptions: {
       target: 'es2020'
@@ -50,20 +51,19 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': [
-            'react',
-            'react-dom',
-            'scheduler',
-            'prop-types'
-          ],
-          'mui-vendor': [
+          'react': ['react'],
+          'react-dom': ['react-dom'],
+          'scheduler': ['scheduler'], 
+          'prop-types': ['prop-types'],
+          'mui': [
             '@mui/material',
             '@mui/icons-material',
             '@emotion/react',
             '@emotion/styled',
             '@mui/system'
           ],
-          'notistack-vendor': ['notistack']
+          'notistack': ['notistack'],
+          'react-query': ['@tanstack/react-query']
         }
       }
     },
