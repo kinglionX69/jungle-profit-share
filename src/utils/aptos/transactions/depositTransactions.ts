@@ -50,11 +50,12 @@ export const depositTokensTransaction = async (
     const escrowWalletAddress = IS_TESTNET ? TESTNET_ESCROW_WALLET : MAINNET_ESCROW_WALLET;
     console.log(`Using escrow wallet: ${escrowWalletAddress}`);
     
-    // First, check and register the CoinStore for non-APT tokens
-    if (tokenType !== SUPPORTED_TOKENS.APT) {
-      toast.loading("Registering token store...");
-      
-      // Register for admin wallet
+    // Always register the coin store for the token type, even for APT
+    // This ensures the user has the coin store registered
+    toast.loading("Checking coin registration...");
+    
+    try {
+      // Register coin store for admin wallet
       console.log(`Registering token ${tokenType} for admin wallet ${adminWalletAddress}...`);
       const adminRegistrationResult = await registerCoinStoreIfNeeded(
         adminWalletAddress,
@@ -67,9 +68,17 @@ export const depositTokensTransaction = async (
         toast.error("Failed to register token store for your wallet");
         return adminRegistrationResult;
       }
-      
+    } catch (error) {
+      console.error("Error during coin registration:", error);
       toast.dismiss();
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Unknown error during coin registration" 
+      };
     }
+    
+    toast.dismiss();
+    toast.loading("Processing deposit...");
     
     // Calculate the amount in smallest units (APT uses 8 decimal places)
     const amountInSmallestUnits = Math.floor(amount * 100000000); // 8 decimal places for APT, ensure integer
@@ -91,7 +100,6 @@ export const depositTokensTransaction = async (
     
     // Sign and submit the transaction
     console.log("Signing and submitting deposit transaction...");
-    toast.loading("Processing deposit transaction...");
     const result = await signTransaction(payload);
     toast.dismiss();
     console.log("Deposit transaction result:", result);

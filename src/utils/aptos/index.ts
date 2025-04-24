@@ -1,18 +1,22 @@
 
-/**
- * Main export file for Aptos utilities
- */
-
 // Export constants
-export { APTOS_MAINNET_API, APTOS_INDEXER_API } from './constants';
+export * from './constants';
 
-// Export types
-export type { BlockchainNFT, TransactionResult } from './types';
+// Export client
+export * from './client';
 
-// Export NFT utilities
-export { getNFTsInWallet, checkNFTLockStatus } from './nftUtils';
-export { isMockNFTData } from './mockNFTUtils';
-export { resolveImageUrl } from './nftImageResolver';
+// Export helper functions
+export * from './helpers';
 
 // Export transaction utilities
-export { submitClaimTransaction, depositTokensTransaction } from './transactionUtils';
+export * from './transactionUtils';
+
+// Export NFT utilities
+export * from './nftUtils';
+export * from './nftImageResolver';
+export * from './lockUtils';
+
+// Export fetcher utilities
+export * from './nftFetcher';
+export * from './enhancedNFTFetcher';
+export * from './aptosSdkFetcher';
