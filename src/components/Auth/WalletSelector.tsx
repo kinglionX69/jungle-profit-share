@@ -1,8 +1,18 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Download, ExternalLink } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  List, 
+  ListItem, 
+  ListItemIcon, 
+  ListItemText, 
+  Button, 
+  Box, 
+  Typography 
+} from '@mui/material';
+import { Download } from '@mui/icons-material';
 
 export interface WalletOption {
   name: string;
@@ -51,55 +61,102 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({
     isInstalled: checkWalletInstalled(wallet.name)
   }));
 
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass sm:max-w-md border-jungle-700/20">
-        <DialogHeader>
-          <DialogTitle className="font-poppins">Connect Your Wallet</DialogTitle>
-        </DialogHeader>
-        
-        <div className="flex flex-col gap-3 py-4">
+    <Dialog 
+      open={open} 
+      onClose={handleClose}
+      PaperProps={{
+        sx: {
+          backgroundColor: 'background.paper',
+          backgroundImage: 'none',
+          borderRadius: 3,
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(10px)',
+          width: '100%',
+          maxWidth: 'sm'
+        }
+      }}
+    >
+      <DialogTitle sx={{ fontFamily: "'Bungee', cursive" }}>Connect Your Wallet</DialogTitle>
+      <DialogContent>
+        <List sx={{ py: 2 }}>
           {walletOptions.map((wallet) => (
-            <div 
+            <ListItem 
               key={wallet.name} 
-              className="flex items-center justify-between p-3 border border-jungle-700/20 rounded-lg hover:bg-white/5 transition-colors"
+              sx={{ 
+                mb: 1.5, 
+                border: '1px solid rgba(255, 255, 255, 0.1)', 
+                borderRadius: 2, 
+                p: 2,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                }
+              }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center rounded bg-black/20 overflow-hidden">
+              <ListItemIcon>
+                <Box 
+                  sx={{ 
+                    width: 40, 
+                    height: 40, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    borderRadius: 1, 
+                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                    overflow: 'hidden'
+                  }}
+                >
                   <img 
                     src={wallet.icon} 
                     alt={`${wallet.name} wallet`} 
-                    className="w-6 h-6 object-cover"
+                    style={{ width: 30, height: 30, objectFit: 'cover' }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.svg';
                     }}
                   />
-                </div>
-                <span className="font-medium font-nunito">{wallet.name}</span>
-              </div>
+                </Box>
+              </ListItemIcon>
+              <ListItemText 
+                primary={wallet.name} 
+                primaryTypographyProps={{ 
+                  fontWeight: 'medium',
+                  fontFamily: "'Nunito', sans-serif"
+                }}
+              />
               
               {wallet.isInstalled ? (
                 <Button 
-                  size="sm"
+                  size="small"
+                  variant="contained" 
+                  color="secondary"
                   onClick={() => onSelectWallet(wallet.name.toLowerCase())}
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-medium"
+                  sx={{ 
+                    fontWeight: 'medium', 
+                    color: 'text.primary',
+                    minWidth: 100
+                  }}
                 >
                   Connect
                 </Button>
               ) : (
                 <Button 
-                  size="sm" 
-                  variant="outline"
+                  size="small" 
+                  variant="outlined"
+                  color="secondary"
                   onClick={() => window.open(wallet.downloadUrl, '_blank')}
-                  className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  startIcon={<Download />}
+                  sx={{ minWidth: 120 }}
                 >
-                  <Download className="mr-2 h-4 w-4" />
                   Download
                 </Button>
               )}
-            </div>
+            </ListItem>
           ))}
-        </div>
+        </List>
       </DialogContent>
     </Dialog>
   );

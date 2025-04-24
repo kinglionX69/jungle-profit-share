@@ -1,164 +1,191 @@
-import React, { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Award, Clock, Shield, Leaf, Palmtree, Wallet } from 'lucide-react';
+
+import React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Grid, 
+  Paper, 
+  Container,
+  Card,
+  CardContent,
+  CardActions
+} from '@mui/material';
+import { 
+  ArrowForward as ArrowForwardIcon,
+  TokenOutlined as TokenIcon,
+  Landscape as LandscapeIcon,
+  Security as SecurityIcon
+} from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
-import PageContainer from '@/components/Layout/PageContainer';
+import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
-import WalletSelector from '@/components/Auth/WalletSelector';
-import { toast } from 'sonner';
-import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
 const Index = () => {
-  const navigate = useNavigate();
-  const {
-    connected,
-    connect,
-    connectWallet,
-    connecting,
-    showWalletSelector,
-    setShowWalletSelector,
-    walletType,
-    isAdmin,
-    address
-  } = useWallet();
+  const { connected } = useWallet();
 
-  useEffect(() => {
-    console.log("Petra wallet detected:", !!window.petra || !!window.aptos);
-    console.log("Martian wallet detected:", !!window.martian);
-    console.log("Pontem wallet detected:", !!window.pontem);
-    console.log("Rise wallet detected:", !!window.rise);
-    
-    console.log("Wallet connection state:", {
-      connected,
-      walletType,
-      address,
-      isAdmin
-    });
-  }, [connected, walletType, address, isAdmin]);
-
-  const handleConnectPetra = async () => {
-    if (!window.petra && !window.aptos) {
-      toast.error("Please install Petra Wallet to continue");
-      window.open("https://petra.app", "_blank");
-      return;
-    }
-    try {
-      console.log("Attempting to connect Petra wallet");
-      await connectWallet('petra');
-    } catch (error) {
-      console.error("Failed to connect Petra wallet:", error);
-    }
-  };
-
-  const features = [{
-    icon: <Award className="h-10 w-10" />,
-    title: 'Exclusive Rewards',
-    description: `Earn rewards for holding your ${NFT_COLLECTION_NAME} NFTs on Aptos. The only project on Aptos that has a registered company and is sharing profits with its NFT holders. 20% profits back to the community!`
-  }, {
-    icon: <Clock className="h-10 w-10" />,
-    title: '30-Day Claim Cycle',
-    description: 'Each NFT can be used to claim rewards once every 30 days.'
-  }, {
-    icon: <Shield className="h-10 w-10" />,
-    title: 'Secure Escrow System',
-    description: 'All rewards are held in a secure escrow wallet until claimed.'
-  }];
-
-  return <>
+  return (
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, rgba(15, 26, 18, 1) 0%, rgba(22, 38, 27, 1) 100%)'
+      }}
+    >
       <Header />
-      <main className="min-h-[calc(100vh-64px)]">
-        <section className="relative overflow-hidden py-20 md:py-32 bg-jungle-pattern">
-          <div className="absolute inset-0 bg-gradient-to-b from-jungle-700/30 to-jungle-900/50 z-0"></div>
-          <PageContainer className="relative z-10">
-            <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-              <div className="inline-block animate-float">
-                <div className="bg-amber-500/20 text-amber-400 px-4 py-1.5 rounded-full text-sm font-medium mb-8 font-nunito">
-                  {NFT_COLLECTION_NAME} NFT Rewards on Aptos Testnet
-                </div>
-              </div>
+      
+      <Container maxWidth="lg">
+        {/* Hero Section */}
+        <Grid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ mb: 4 }}>
+              <Typography 
+                component="h1" 
+                variant="h2"
+                sx={{ 
+                  mb: 2, 
+                  background: 'linear-gradient(90deg, #4CAF50 0%, #FFC107 100%)',
+                  backgroundClip: 'text',
+                  textFillColor: 'transparent',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' }
+                }}
+              >
+                JUNGLE NFT REWARDS
+              </Typography>
               
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 slide-up [animation-delay:200ms] font-poppins">
-                Share in the <span className="text-amber-400">Jungle's Profits</span>
-              </h1>
+              <Typography variant="h5" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
+                Connect your wallet to claim rewards with your Jungle NFTs
+              </Typography>
               
-              <p className="text-xl text-muted-foreground mb-8 slide-up [animation-delay:400ms] max-w-2xl font-nunito">
-                Connect your Petra wallet on Aptos Testnet to view your {NFT_COLLECTION_NAME} NFTs and start earning rewards today.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 slide-up [animation-delay:600ms]">
-                {connected ? (
-                  <Button 
-                    size="lg" 
-                    onClick={() => navigate('/dashboard')} 
-                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow"
-                  >
-                    View Dashboard
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    size="lg" 
-                    onClick={handleConnectPetra} 
-                    className="min-w-[200px] bg-amber-500 hover:bg-amber-600 text-black font-medium shadow-glow hover:shadow-glow" 
-                    disabled={connecting}
-                  >
-                    {connecting ? 'Connecting...' : (
-                      <>
-                        <Wallet className="mr-2 h-5 w-5" />
-                        Connect Petra Wallet
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                <WalletSelector 
-                  open={showWalletSelector} 
-                  onOpenChange={setShowWalletSelector} 
-                  onSelectWallet={connectWallet} 
-                />
-              </div>
-            </div>
-          </PageContainer>
-          
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 text-jungle-700/20 animate-leaf-sway">
-            <Leaf className="w-full h-full" />
-          </div>
-          <div className="absolute -top-10 -right-10 w-40 h-40 text-jungle-700/20 animate-leaf-sway [animation-delay:1s]">
-            <Palmtree className="w-full h-full" />
-          </div>
-        </section>
-        
-        <section className="py-20 lion-texture">
-          <PageContainer>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold mb-4 font-poppins">How It Works</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto font-nunito">
-                Our profit-sharing system makes it simple to earn rewards from your NFT holdings.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <div 
-                  key={index} 
-                  className="p-6 border border-jungle-700/20 glass rounded-lg scale-in hover-lift [animation-delay:var(--delay)] shadow-md" 
-                  style={{
-                    '--delay': `${800 + index * 200}ms`
-                  } as React.CSSProperties}
+              {connected ? (
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  size="large" 
+                  endIcon={<ArrowForwardIcon />}
+                  component={RouterLink}
+                  to="/dashboard"
+                  sx={{ 
+                    py: 1.5, 
+                    px: 4,
+                    borderRadius: 3,
+                    fontSize: '1.1rem'
+                  }}
                 >
-                  <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg inline-block mb-4">
-                    <div>{feature.icon}</div>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 font-poppins">{feature.title}</h3>
-                  <p className="text-muted-foreground font-nunito">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </PageContainer>
-        </section>
-      </main>
-    </>;
+                  View Dashboard
+                </Button>
+              ) : (
+                <Typography variant="body1" color="text.secondary">
+                  Connect your wallet to get started with Jungle NFT Rewards
+                </Typography>
+              )}
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Paper 
+              elevation={6} 
+              sx={{ 
+                p: 4,
+                borderRadius: 4,
+                maxWidth: 400,
+                width: '100%',
+                backgroundColor: 'rgba(22, 32, 25, 0.8)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <WalletConnect />
+            </Paper>
+          </Grid>
+        </Grid>
+        
+        {/* Features Section */}
+        <Box sx={{ py: 8 }}>
+          <Typography 
+            variant="h3" 
+            align="center"
+            sx={{ 
+              mb: 6,
+              background: 'linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%)',
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
+            How It Works
+          </Typography>
+          
+          <Grid container spacing={4}>
+            {[
+              {
+                icon: <LandscapeIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
+                title: 'Own Jungle NFTs',
+                description: 'Purchase Jungle NFTs from our collection to become eligible for rewards'
+              },
+              {
+                icon: <TokenIcon sx={{ fontSize: 48, color: 'secondary.main' }} />,
+                title: 'Claim Rewards',
+                description: 'Connect your wallet and claim tokens based on your NFT holdings'
+              },
+              {
+                icon: <SecurityIcon sx={{ fontSize: 48, color: 'success.main' }} />,
+                title: 'Secure Earnings',
+                description: 'Your rewards are securely stored and easily accessible anytime'
+              }
+            ].map((feature, index) => (
+              <Grid item xs={12} md={4} key={index}>
+                <Card 
+                  sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-8px)'
+                    }
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+                    <Box sx={{ mb: 2 }}>{feature.icon}</Box>
+                    <Typography variant="h5" component="h3" sx={{ mb: 1 }}>
+                      {feature.title}
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                      {feature.description}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
+                    <Button size="small" color="primary" endIcon={<ArrowForwardIcon />}>
+                      Learn More
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Container>
+      
+      {/* Footer */}
+      <Box 
+        component="footer" 
+        sx={{ 
+          py: 4, 
+          textAlign: 'center',
+          borderTop: 1,
+          borderColor: 'rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Jungle NFT Rewards. All rights reserved.
+        </Typography>
+      </Box>
+    </Box>
+  );
 };
 
 export default Index;

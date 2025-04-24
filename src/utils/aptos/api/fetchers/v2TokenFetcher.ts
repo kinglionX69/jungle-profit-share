@@ -1,85 +1,74 @@
 
+import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
 import { BlockchainNFT } from "../../types";
-import { APTOS_API, NFT_COLLECTION_NAME, NFT_COLLECTION_ID, CREATOR_ADDRESS } from "../../constants";
 import { TokenV2Data } from "../types/collectionTypes";
+import { 
+  NFT_COLLECTION_NAME, 
+  CREATOR_ADDRESS, 
+  NFT_IMAGE_BASE_URL,
+  NFT_COLLECTION_ID,
+  IS_TESTNET
+} from "../../constants";
 
+/**
+ * Initialize Aptos client with the appropriate network
+ */
+const getAptosClient = () => {
+  const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
+  const aptosConfig = new AptosConfig({ network });
+  return new Aptos(aptosConfig);
+};
+
+/**
+ * Fetch tokens using the Aptos TS SDK V2 endpoints
+ */
 export const fetchV2Tokens = async (walletAddress: string): Promise<BlockchainNFT[]> => {
   try {
-    const v2Endpoint = `${APTOS_API}/accounts/${walletAddress}/current_token_ownerships_v2?limit=100`;
-    console.log(`Trying Token V2 endpoint: ${v2Endpoint}`);
+    console.log(`Fetching V2 tokens for wallet: ${walletAddress}`);
     
-    const v2Response = await fetch(v2Endpoint);
+    // Create Aptos client
+    const aptos = getAptosClient();
     
-    if (!v2Response.ok) return [];
+    // Fetch token data for the wallet
+    const response = await aptos.getAccountOwnedTokens({
+      accountAddress: walletAddress,
+      minimumLedgerVersion: undefined,
+      options: {
+        // Collections filter is optional, but can be used if needed
+        // tokenStandard: "v2",
+      }
+    });
     
-    const v2Data = await v2Response.json();
-    console.log(`V2 endpoint returned ${v2Data.length} tokens`);
+    console.log(`Found ${response.length} V2 tokens for wallet`);
     
-    if (v2Data.length > 0) {
-      console.log(`Sample token from v2 endpoint:`, v2Data[0]);
-    }
+    // Filter for tokens from our collection
+    const collectionTokens = response.filter(token => {
+      const currentCollection = token.current_token_data?.current_collection_data;
+      return (
+        currentCollection?.collection_name === NFT_COLLECTION_NAME || 
+        currentCollection?.collection_id === NFT_COLLECTION_ID
+      );
+    });
     
-    const v2Tokens = v2Data
-      .filter((token: TokenV2Data) => {
-        const hasCollectionName = 
-          (token.current_token_data?.collection_name && 
-           (token.current_token_data.collection_name.includes("Lion") || 
-            token.current_token_data.collection_name.includes("lion") || 
-            token.current_token_data.collection_name.includes("Proud")));
-        
-        const hasCollectionId = 
-          (token.current_token_data?.collection_id === NFT_COLLECTION_ID) ||
-          (token.current_collection_data?.collection_id === NFT_COLLECTION_ID);
-        
-        const hasCreator = token.current_token_data?.creator_address === CREATOR_ADDRESS;
-        
-        const possibleMatch = hasCollectionName || hasCollectionId || hasCreator;
-        
-        if (possibleMatch) {
-          console.log("Possible match found in v2 endpoint:", {
-            collection_name: token.current_token_data?.collection_name,
-            collection_id: token.current_token_data?.collection_id || 
-                         token.current_collection_data?.collection_id,
-            creator: token.current_token_data?.creator_address,
-            name: token.current_token_data?.name || token.current_token_data?.description,
-            token_id: token.token_data_id
-          });
-        }
-        
-        return possibleMatch;
-      })
-      .map((token: TokenV2Data) => {
-        const collectionName = token.current_token_data?.collection_name || NFT_COLLECTION_NAME;
-        const tokenId = token.token_data_id_hash ? 
-          `${token.token_data_id_hash}${token.property_version ? `/${token.property_version}` : '/0'}` : 
-          token.token_data_id || token.token_id || '';
-          
-        let imageUrl = token.current_token_data?.uri || "";
-        
-        if (!imageUrl && token.token_properties_mutated_v1) {
-          const props = token.token_properties_mutated_v1 as Record<string, unknown>;
-          imageUrl = String(props.uri || props.image_uri || props.image || "");
-        }
-        
-        return {
-          tokenId: tokenId,
-          name: token.current_token_data?.name || 
-                token.current_token_data?.description || 
-                `${collectionName} #${(tokenId || "").substring(0, 6)}`,
-          imageUrl: imageUrl,
-          creator: token.current_token_data?.creator_address || CREATOR_ADDRESS,
-          standard: "v2",
-          properties: token.property_version ? JSON.stringify({property_version: token.property_version}) : "{}",
-          collectionName: collectionName,
-          collectionId: token.current_token_data?.collection_id || 
-                       token.current_collection_data?.collection_id || 
-                       NFT_COLLECTION_ID
-        };
-      });
+    console.log(`Found ${collectionTokens.length} tokens from our collection`);
+    
+    // Map tokens to our format
+    return collectionTokens.map((token: TokenV2Data): BlockchainNFT => {
+      const tokenData = token.current_token_data || {};
       
-    return v2Tokens;
-  } catch (err) {
-    console.error("Error with Token V2 endpoint:", err);
+      return {
+        tokenId: token.token_data_id_hash || token.token_data_id || "",
+        name: tokenData.name || `NFT #${token.token_data_id_hash?.substring(0, 6) || ""}`,
+        imageUrl: tokenData.uri || `${NFT_IMAGE_BASE_URL}/token-${token.token_data_id_hash?.substring(0, 8)}`,
+        creator: tokenData.creator_address || CREATOR_ADDRESS,
+        standard: "v2",
+        properties: JSON.stringify(token),
+        collectionName: tokenData.collection_name || NFT_COLLECTION_NAME,
+        collectionId: tokenData.collection_id || NFT_COLLECTION_ID
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching V2 tokens:", error);
     return [];
   }
 };

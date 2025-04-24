@@ -1,19 +1,30 @@
 
-import React, { ReactNode } from 'react';
+import React from 'react';
+import { Container, Box } from '@mui/material';
 
 interface PageContainerProps {
-  children: ReactNode;
   className?: string;
+  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
+  children: React.ReactNode;
 }
 
 const PageContainer: React.FC<PageContainerProps> = ({ 
-  children, 
-  className = "" 
+  className = '', 
+  maxWidth = 'lg',
+  children 
 }) => {
   return (
-    <div className={`mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-8 ${className}`}>
-      {children}
-    </div>
+    <Container maxWidth={maxWidth}>
+      <Box 
+        sx={{
+          py: 4,
+          px: { xs: 2, sm: 3 }
+        }}
+        className={className}
+      >
+        {children}
+      </Box>
+    </Container>
   );
 };
 

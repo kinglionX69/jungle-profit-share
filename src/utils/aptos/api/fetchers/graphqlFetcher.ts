@@ -1,4 +1,5 @@
 
+import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
 import { BlockchainNFT } from "../../types";
 import { 
   CREATOR_ADDRESS, 
@@ -6,6 +7,15 @@ import {
   NFT_COLLECTION_ID, 
   IS_TESTNET 
 } from "../../constants";
+
+/**
+ * Initialize Aptos client with the appropriate network
+ */
+const getAptosClient = () => {
+  const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
+  const aptosConfig = new AptosConfig({ network });
+  return new Aptos(aptosConfig);
+};
 
 export const fetchNFTsWithGraphQL = async (
   walletAddress: string,
@@ -26,48 +36,41 @@ export const fetchNFTsWithGraphQL = async (
       }));
     }
     
-    const APTOS_INDEXER_API = IS_TESTNET
-      ? "https://indexer-testnet.staging.aptoslabs.com/v1/graphql"
-      : "https://indexer.mainnet.aptoslabs.com/v1/graphql";
+    // Create Aptos client
+    const aptos = getAptosClient();
     
-    const query = {
-      query: `
-        query GetTokens($owner_address: String, $collection_name: String) {
-          current_token_ownerships(
-            where: {
-              owner_address: {_eq: $owner_address},
-              collection_name: {_eq: $collection_name},
-              amount: {_gt: "0"}
-            }
-          ) {
-            token_data_id_hash
-            name
-            collection_name
-            collection_id
-            property_version
-            token_properties
-            metadata_uri: token_uri
-            creator_address
+    // Use TS SDK's GraphQL interface to fetch tokens
+    const graphqlQuery = `
+      query GetTokens($owner_address: String, $collection_name: String) {
+        current_token_ownerships(
+          where: {
+            owner_address: {_eq: $owner_address},
+            collection_name: {_eq: $collection_name},
+            amount: {_gt: "0"}
           }
+        ) {
+          token_data_id_hash
+          name
+          collection_name
+          collection_id
+          property_version
+          token_properties
+          metadata_uri: token_uri
+          creator_address
         }
-      `,
-      variables: {
-        owner_address: walletAddress,
-        collection_name: NFT_COLLECTION_NAME
       }
+    `;
+    
+    const variables = {
+      owner_address: walletAddress,
+      collection_name: NFT_COLLECTION_NAME
     };
     
-    const response = await fetch(APTOS_INDEXER_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(query)
+    // Use the indexer client from the TS SDK
+    const result = await aptos.indexer.query({
+      query: graphqlQuery,
+      variables: variables
     });
-    
-    if (!response.ok) {
-      throw new Error(`GraphQL query failed: ${response.status}`);
-    }
-    
-    const result = await response.json();
     
     if (result.errors) {
       throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
