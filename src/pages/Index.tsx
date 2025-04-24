@@ -38,7 +38,7 @@ const Index = () => {
         {/* Hero Section */}
         <Box sx={{ py: 8 }}>
           <Grid container spacing={6} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
               <Box sx={{ mb: 4 }}>
                 <Typography 
                   component="h1" 
@@ -84,7 +84,7 @@ const Index = () => {
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
               <Box display="flex" justifyContent="center" width="100%">
                 <Paper 
                   elevation={6} 
@@ -139,7 +139,10 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid 
+                key={index} 
+                sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 4" } }}
+              >
                 <Card 
                   sx={{ 
                     height: '100%',
