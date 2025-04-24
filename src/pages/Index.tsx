@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { 
@@ -9,7 +10,7 @@ import {
   Card,
   CardContent,
   CardActions,
-  Grid
+  Grid as MuiGrid
 } from '@mui/material';
 import { 
   ArrowForward as ArrowForwardIcon,
@@ -35,8 +36,8 @@ const Index = () => {
       
       <Container maxWidth="lg">
         {/* Hero Section */}
-        <Grid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
-          <Grid item xs={12} md={6}>
+        <MuiGrid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
+          <MuiGrid xs={12} md={6}>
             <Box sx={{ mb: 4 }}>
               <Typography 
                 component="h1" 
@@ -80,9 +81,9 @@ const Index = () => {
                 </Typography>
               )}
             </Box>
-          </Grid>
+          </MuiGrid>
           
-          <Grid item xs={12} md={6}>
+          <MuiGrid xs={12} md={6}>
             <Box display="flex" justifyContent="center" width="100%">
               <Paper 
                 elevation={6} 
@@ -99,8 +100,8 @@ const Index = () => {
                 <WalletConnect />
               </Paper>
             </Box>
-          </Grid>
-        </Grid>
+          </MuiGrid>
+        </MuiGrid>
         
         {/* Features Section */}
         <Box sx={{ py: 8 }}>
@@ -118,7 +119,7 @@ const Index = () => {
             How It Works
           </Typography>
           
-          <Grid container spacing={4}>
+          <MuiGrid container spacing={4}>
             {[
               {
                 icon: <LandscapeIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
@@ -136,7 +137,7 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <Grid item xs={12} md={4} key={index}>
+              <MuiGrid xs={12} md={4} key={index}>
                 <Card 
                   sx={{ 
                     height: '100%',
@@ -163,9 +164,9 @@ const Index = () => {
                     </Button>
                   </CardActions>
                 </Card>
-              </Grid>
+              </MuiGrid>
             ))}
-          </Grid>
+          </MuiGrid>
         </Box>
       </Container>
       
