@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { 
   APTOS_API, 
@@ -11,7 +10,7 @@ import { fetchMockNFTs } from "./mockNFTUtils";
 import { fetchFromResourcesAPI } from "./api/resourceFetcher";
 import { BlockchainNFT } from "./types";
 import { resolveNFTImages } from "./nftImageResolver";
-import { fetchWithAptosSdk } from "./aptosSdkFetcher";
+import { NFT } from "@/api/types/nft.types";
 
 /**
  * Enhanced NFT fetcher that tries multiple approaches to find NFTs
@@ -116,5 +115,129 @@ export const enhancedNFTFetch = async (
     }
     
     return [];
+  }
+};
+
+/**
+ * Fetch with Aptos SDK implementation
+ * @param walletAddress The wallet address
+ * @returns Array of NFTs
+ */
+export const fetchWithAptosSdk = async (
+  walletAddress: string
+): Promise<BlockchainNFT[]> => {
+  try {
+    console.log(`Fetching NFTs with Aptos SDK for wallet: ${walletAddress}`);
+    
+    // Create simplified implementation for now that will be expanded
+    const { getNFTsWithNativeClient } = await import("./api/collectionEndpoint");
+    return await getNFTsWithNativeClient(walletAddress, USE_DEMO_MODE);
+  } catch (error) {
+    console.error("Error fetching with Aptos SDK:", error);
+    return [];
+  }
+};
+
+/**
+ * Enhance NFTs with claim status information from database
+ * @param walletAddress The wallet address
+ * @param nfts Array of NFTs to enhance
+ * @param previousNfts Optional previous NFTs for caching
+ * @returns Enhanced NFTs with claim status
+ */
+export const enhanceNFTsWithClaimStatus = async (
+  walletAddress: string,
+  nfts: BlockchainNFT[],
+  previousNfts: NFT[] | null = null
+): Promise<NFT[]> => {
+  try {
+    console.log(`Enhancing ${nfts.length} NFTs with claim status`);
+    
+    if (nfts.length === 0) {
+      return [];
+    }
+    
+    // If we have previous NFTs with claim status, use that data
+    if (previousNfts && previousNfts.length > 0) {
+      console.log("Using cached NFT claim status");
+      
+      return nfts.map(blockchainNft => {
+        // Try to find matching NFT in previous data
+        const previous = previousNfts.find(p => p.tokenId === blockchainNft.tokenId);
+        
+        if (previous) {
+          return {
+            ...previous,
+            name: blockchainNft.name || previous.name,
+            imageUrl: blockchainNft.imageUrl || previous.imageUrl
+          };
+        }
+        
+        // If no match, create new NFT with default eligibility
+        return {
+          tokenId: blockchainNft.tokenId,
+          name: blockchainNft.name,
+          imageUrl: blockchainNft.imageUrl,
+          isEligible: true,
+          isLocked: false,
+          standard: blockchainNft.standard,
+          creator: blockchainNft.creator,
+          properties: blockchainNft.properties
+        };
+      });
+    }
+    
+    // Otherwise, check for locked NFTs in the database
+    const { supabase } = await import("@/integrations/supabase/client");
+    
+    const { data: nftClaimsData, error: nftClaimsError } = await supabase
+      .from("nft_claims")
+      .select("*")
+      .eq("wallet_address", walletAddress);
+    
+    if (nftClaimsError) {
+      console.error("Error fetching NFT claims:", nftClaimsError);
+      toast.error("Error checking NFT claim status");
+    }
+    
+    // Convert blockchain NFTs to application format with eligibility info
+    return nfts.map(blockchainNft => {
+      // Check if this NFT is in the claims data (locked)
+      const claim = nftClaimsData?.find(
+        (c) => c.token_id === blockchainNft.tokenId
+      );
+      
+      const isLocked = !!claim;
+      const unlockDate = claim ? new Date(claim.unlock_date) : undefined;
+      
+      // NFT is eligible if it's not locked
+      const isEligible = !isLocked;
+      
+      return {
+        tokenId: blockchainNft.tokenId,
+        name: blockchainNft.name,
+        imageUrl: blockchainNft.imageUrl,
+        isEligible,
+        isLocked,
+        unlockDate,
+        standard: blockchainNft.standard,
+        creator: blockchainNft.creator,
+        properties: blockchainNft.properties
+      };
+    });
+  } catch (error) {
+    console.error("Error enhancing NFTs with claim status:", error);
+    
+    // Return NFTs without claim status in case of error
+    return nfts.map(blockchainNft => ({
+      tokenId: blockchainNft.tokenId,
+      name: blockchainNft.name,
+      imageUrl: blockchainNft.imageUrl,
+      isEligible: true,
+      isLocked: false,
+      standard: blockchainNft.standard,
+      creator: blockchainNft.creator,
+      properties: blockchainNft.properties
+    }));
   }
 };

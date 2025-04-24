@@ -1,12 +1,10 @@
+
 import { AptosClient } from "aptos";
-import {
-  getNFTsWithNativeClient,
-  getNFTsWithIndexerGraphQL,
-} from "./api/collectionEndpoint";
 import { NFT } from "@/api/types/nft.types";
-import { enhanceNFTsWithClaimStatus } from "./enhancedNFTFetcher";
 import { IS_TESTNET } from "./constants/network";
 import { NFT_COLLECTION_ID, NFT_COLLECTION_NAME } from "./constants/collection";
+import { getNFTsWithNativeClient, getNFTsWithIndexerGraphQL } from "./api/collectionEndpoint";
+import { enhanceNFTsWithClaimStatus } from "./enhancedNFTFetcher";
 
 // Re-export modules for easier access
 export { getNFTsWithNativeClient, getNFTsWithIndexerGraphQL };
