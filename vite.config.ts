@@ -24,6 +24,19 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     // Force include React to prevent chunk issues
-    include: ['react', 'react-dom', 'react-router-dom']
+    include: ['react', 'react-dom', 'react-router-dom', '@mui/material', '@mui/icons-material']
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material']
+        }
+      }
+    }
   }
 }));
