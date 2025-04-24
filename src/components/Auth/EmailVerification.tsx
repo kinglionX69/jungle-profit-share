@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,34 @@ const EmailVerification = () => {
     
     checkVerificationStatus();
   }, [address]);
+  
+  // Add the missing onEmailSubmit function
+  const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
+    if (!address) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
+    try {
+      setSubmitting(true);
+      console.log(`Submitting email: ${values.email} for address ${address}`);
+      
+      const success = await updateUserEmail(address, values.email);
+      
+      if (success) {
+        setEmail(values.email);
+        setIsVerified(true);
+        toast.success("Email verified successfully");
+      } else {
+        toast.error("Failed to verify email");
+      }
+    } catch (error) {
+      console.error("Error during email verification:", error);
+      toast.error("An error occurred during verification");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   
   // Don't show the form if user is already verified
   if (loading) {
