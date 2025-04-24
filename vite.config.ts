@@ -11,9 +11,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react({
-      // Use valid options for react-swc plugin
-    }),
+    react(),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -21,10 +19,21 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom']
   },
   optimizeDeps: {
-    // Force include React to prevent chunk issues
-    include: ['react', 'react-dom', 'react-router-dom', '@mui/material', '@mui/icons-material']
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom', 
+      '@mui/material', 
+      '@mui/icons-material',
+      '@emotion/react',
+      '@emotion/styled'
+    ],
+    esbuildOptions: {
+      target: 'es2020'
+    }
   },
   build: {
     commonjsOptions: {
@@ -33,8 +42,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material']
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled']
         }
       }
     }

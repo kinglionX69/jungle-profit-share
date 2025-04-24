@@ -4,10 +4,15 @@ import { createRoot } from 'react-dom/client';
 import { CssBaseline } from '@mui/material';
 import App from './App.tsx';
 
-// Ensure React is properly initialized before rendering
+// Get the root element
 const rootElement = document.getElementById("root");
+
+// Make sure rootElement exists before rendering
 if (rootElement) {
-  createRoot(rootElement).render(
+  const root = createRoot(rootElement);
+  
+  // Render the app
+  root.render(
     <React.StrictMode>
       <CssBaseline />
       <App />
