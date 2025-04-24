@@ -24,7 +24,7 @@ export async function tryDirectCollectionEndpoint(
     if (v2Tokens.length > 0) return v2Tokens;
     
     // If no V2 tokens found, try GraphQL
-    const graphqlTokens = await fetchNFTsWithGraphQL(walletAddress, false);
+    const graphqlTokens = await fetchNFTsWithGraphQL(walletAddress, collectionName);
     if (graphqlTokens.length > 0) return graphqlTokens;
     
     // If still no tokens found, return empty array

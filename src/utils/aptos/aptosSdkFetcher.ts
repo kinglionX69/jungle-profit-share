@@ -27,7 +27,7 @@ export const fetchNFTsWithSdk = async (
     // 2. Fetch NFTs using the Indexer GraphQL API
     const nftsFromIndexer = await getNFTsWithIndexerGraphQL(
       walletAddress,
-      useMockData
+      NFT_COLLECTION_NAME
     );
 
     // Combine the results from both sources

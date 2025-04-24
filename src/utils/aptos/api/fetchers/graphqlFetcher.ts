@@ -84,11 +84,13 @@ export const fetchNFTsWithGraphQL = async (
       tokenId: token.token_data_id,
       name: token.current_token_data.token_name,
       description: token.current_token_data.description || '',
-      imageUri: token.current_token_data.token_uri,
+      imageUrl: token.current_token_data.token_uri,
       collectionName: token.current_token_data.collection_name,
       attributes: token.current_token_data.token_properties,
       lastTxTimestamp: token.last_transaction_timestamp,
       owner: token.owner_address,
+      isEligible: true,
+      isLocked: false
     }));
   } catch (error) {
     console.error("Error fetching NFTs with GraphQL:", error);

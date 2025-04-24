@@ -43,7 +43,7 @@ export const fetchV2Tokens = async (walletAddress: string): Promise<BlockchainNF
     
     // Filter for tokens from our collection
     const collectionTokens = response.filter(token => {
-      const currentCollection = token.current_token_data?.current_collection_data;
+      const currentCollection = token.current_token_data?.current_collection;
       return (
         currentCollection?.collection_name === NFT_COLLECTION_NAME || 
         currentCollection?.collection_id === NFT_COLLECTION_ID

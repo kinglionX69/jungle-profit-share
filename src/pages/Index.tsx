@@ -5,7 +5,7 @@ import {
   Box, 
   Typography, 
   Button, 
-  Grid, 
+  Grid as MuiGrid,
   Paper, 
   Container,
   Card,
@@ -22,6 +22,9 @@ import Header from '@/components/Layout/Header';
 import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/WalletContext';
 
+// Create a Grid component that properly handles the MUI v7 Grid props
+const Grid = MuiGrid;
+
 const Index = () => {
   const { connected } = useWallet();
 
@@ -37,7 +40,7 @@ const Index = () => {
       <Container maxWidth="lg">
         {/* Hero Section */}
         <Grid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
-          <Grid xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Box sx={{ mb: 4 }}>
               <Typography 
                 component="h1" 
@@ -83,7 +86,7 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Paper 
               elevation={6} 
               sx={{ 
@@ -135,7 +138,7 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <Grid xs={12} md={4} key={index}>
+              <Grid item xs={12} md={4} key={index}>
                 <Card 
                   sx={{ 
                     height: '100%',
