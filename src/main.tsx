@@ -12,7 +12,7 @@ if (rootElement) {
   // Create a root
   const root = createRoot(rootElement);
   
-  // Render the app with explicit React import
+  // Render the app
   root.render(
     <React.StrictMode>
       <CssBaseline />

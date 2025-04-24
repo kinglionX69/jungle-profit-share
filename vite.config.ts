@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => ({
       '@emotion/react',
       '@emotion/styled',
       '@mui/system',
-      'prop-types'
+      'prop-types',
+      'notistack'
     ],
     esbuildOptions: {
       target: 'es2020'
@@ -43,9 +44,16 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'prop-types'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/system']
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('scheduler') || id.includes('prop-types')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'mui-vendor';
+            }
+            return 'vendor';
+          }
         }
       }
     },
