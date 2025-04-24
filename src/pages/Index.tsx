@@ -10,7 +10,7 @@ import {
   Card,
   CardContent,
   CardActions,
-  Grid as MuiGrid
+  Grid,
 } from '@mui/material';
 import { 
   ArrowForward as ArrowForwardIcon,
@@ -36,72 +36,68 @@ const Index = () => {
       
       <Container maxWidth="lg">
         {/* Hero Section */}
-        <MuiGrid container spacing={6} sx={{ py: 8, alignItems: 'center' }}>
-          <MuiGrid xs={12} md={6}>
-            <Box sx={{ mb: 4 }}>
-              <Typography 
-                component="h1" 
-                variant="h2"
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 6, py: 8, alignItems: 'center' }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography 
+              component="h1" 
+              variant="h2"
+              sx={{ 
+                mb: 2, 
+                background: 'linear-gradient(90deg, #4CAF50 0%, #FFC107 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' }
+              }}
+            >
+              JUNGLE NFT REWARDS
+            </Typography>
+            
+            <Typography variant="h5" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
+              Connect your wallet to claim rewards with your Jungle NFTs
+            </Typography>
+            
+            {connected ? (
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="large" 
+                endIcon={<ArrowForwardIcon />}
+                component={RouterLink}
+                to="/dashboard"
                 sx={{ 
-                  mb: 2, 
-                  background: 'linear-gradient(90deg, #4CAF50 0%, #FFC107 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' }
+                  py: 1.5, 
+                  px: 4,
+                  borderRadius: 3,
+                  fontSize: '1.1rem'
                 }}
               >
-                JUNGLE NFT REWARDS
+                View Dashboard
+              </Button>
+            ) : (
+              <Typography variant="body1" color="text.secondary">
+                Connect your wallet to get started with Jungle NFT Rewards
               </Typography>
-              
-              <Typography variant="h5" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
-                Connect your wallet to claim rewards with your Jungle NFTs
-              </Typography>
-              
-              {connected ? (
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  size="large" 
-                  endIcon={<ArrowForwardIcon />}
-                  component={RouterLink}
-                  to="/dashboard"
-                  sx={{ 
-                    py: 1.5, 
-                    px: 4,
-                    borderRadius: 3,
-                    fontSize: '1.1rem'
-                  }}
-                >
-                  View Dashboard
-                </Button>
-              ) : (
-                <Typography variant="body1" color="text.secondary">
-                  Connect your wallet to get started with Jungle NFT Rewards
-                </Typography>
-              )}
-            </Box>
-          </MuiGrid>
+            )}
+          </Box>
           
-          <MuiGrid xs={12} md={6}>
-            <Box display="flex" justifyContent="center" width="100%">
-              <Paper 
-                elevation={6} 
-                sx={{ 
-                  p: 4,
-                  borderRadius: 4,
-                  maxWidth: 400,
-                  width: '100%',
-                  backgroundColor: 'rgba(22, 32, 25, 0.8)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                }}
-              >
-                <WalletConnect />
-              </Paper>
-            </Box>
-          </MuiGrid>
-        </MuiGrid>
+          <Box display="flex" justifyContent="center" width="100%">
+            <Paper 
+              elevation={6} 
+              sx={{ 
+                p: 4,
+                borderRadius: 4,
+                maxWidth: 400,
+                width: '100%',
+                backgroundColor: 'rgba(22, 32, 25, 0.8)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <WalletConnect />
+            </Paper>
+          </Box>
+        </Box>
         
         {/* Features Section */}
         <Box sx={{ py: 8 }}>
@@ -119,7 +115,7 @@ const Index = () => {
             How It Works
           </Typography>
           
-          <MuiGrid container spacing={4}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 4 }}>
             {[
               {
                 icon: <LandscapeIcon sx={{ fontSize: 48, color: 'primary.main' }} />,
@@ -137,36 +133,35 @@ const Index = () => {
                 description: 'Your rewards are securely stored and easily accessible anytime'
               }
             ].map((feature, index) => (
-              <MuiGrid xs={12} md={4} key={index}>
-                <Card 
-                  sx={{ 
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'transform 0.3s',
-                    '&:hover': {
-                      transform: 'translateY(-8px)'
-                    }
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                    <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                    <Typography variant="h5" component="h3" sx={{ mb: 1 }}>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
-                    <Button size="small" color="primary" endIcon={<ArrowForwardIcon />}>
-                      Learn More
-                    </Button>
-                  </CardActions>
-                </Card>
-              </MuiGrid>
+              <Card 
+                key={index}
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'transform 0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-8px)'
+                  }
+                }}
+              >
+                <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+                  <Box sx={{ mb: 2 }}>{feature.icon}</Box>
+                  <Typography variant="h5" component="h3" sx={{ mb: 1 }}>
+                    {feature.title}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    {feature.description}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
+                  <Button size="small" color="primary" endIcon={<ArrowForwardIcon />}>
+                    Learn More
+                  </Button>
+                </CardActions>
+              </Card>
             ))}
-          </MuiGrid>
+          </Box>
         </Box>
       </Container>
       
