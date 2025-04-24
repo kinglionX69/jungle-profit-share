@@ -13,8 +13,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react({
       jsxImportSource: 'react',
-      // Enable fast refresh
-      fastRefresh: true,
     }),
     mode === 'development' &&
     componentTagger(),
