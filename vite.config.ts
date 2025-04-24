@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['react', 'react-dom', 'react-router-dom']
   },
   optimizeDeps: {
+    force: true,
     include: [
       'react', 
       'react-dom', 
@@ -48,19 +49,21 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler') || id.includes('prop-types')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@mui') || id.includes('@emotion')) {
-              return 'mui-vendor';
-            }
-            if (id.includes('notistack')) {
-              return 'notistack-vendor';
-            }
-            return 'vendor';
-          }
+        manualChunks: {
+          'react-vendor': [
+            'react',
+            'react-dom',
+            'scheduler',
+            'prop-types'
+          ],
+          'mui-vendor': [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+            '@mui/system'
+          ],
+          'notistack-vendor': ['notistack']
         }
       }
     },
