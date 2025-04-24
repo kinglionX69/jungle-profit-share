@@ -1,99 +1,49 @@
 
-import { toast } from "sonner";
-import { TransactionResult } from "../types";
-import { toStructTag } from "../helpers";
-import { getAptosClient } from "../client";
-import { APTOS_TOKEN_ADDRESS } from "../constants";
-import { AccountAddress } from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, Network, AccountAddress } from '@aptos-labs/ts-sdk';
+import { TransactionResult } from '../types';
+import { IS_TESTNET } from '../constants/network';
+import { toStructTag } from '../helpers';
 
-/**
- * Check if a coin store exists for a given wallet
- * @param walletAddress The wallet address to check
- * @param coinType The coin type to check for
- * @returns Whether the coin store exists
- */
-export const checkCoinStoreExists = async (
-  walletAddress: string,
-  coinType: string
-): Promise<boolean> => {
-  try {
-    console.log(`Checking if coin store exists for ${walletAddress} with type ${coinType}`);
-    
-    // Format the coin store type for exact matching
-    const formattedCoinType = toStructTag(coinType);
-    const coinStoreType = `0x1::coin::CoinStore<${formattedCoinType}>`;
-    
-    // Get Aptos client
-    const aptos = getAptosClient();
-    
-    // Get all the resources for the account
-    const accountAddress = AccountAddress.fromString(walletAddress);
-    const accountResources = await aptos.getAccountResources({
-      accountAddress
-    });
-    
-    console.log(`Found ${accountResources.length} resources for account ${walletAddress}`);
-    
-    // Check if the coin store exists in the resources
-    const coinStore = accountResources.find((resource) => resource.type === coinStoreType);
-    
-    const exists = !!coinStore;
-    console.log(`Coin store for ${formattedCoinType} ${exists ? "exists" : "does not exist"}`);
-    
-    return exists;
-  } catch (error) {
-    console.error("Error checking coin store:", error);
-    return false;
-  }
-};
-
-/**
- * Register a coin store for a wallet if it doesn't already exist
- * @param walletAddress The wallet address to register for
- * @param coinType The coin type to register (defaults to AptosCoin)
- * @param signTransaction Function to sign and submit transaction
- * @returns Result of the registration transaction
- */
 export const registerCoinStoreIfNeeded = async (
   walletAddress: string,
-  coinType: string = APTOS_TOKEN_ADDRESS,
+  coinType: string,
   signTransaction: (payload: any) => Promise<{ hash: string }>
 ): Promise<TransactionResult> => {
   try {
-    // Check if the coin store already exists
-    const coinStoreExists = await checkCoinStoreExists(walletAddress, coinType);
+    // Set up Aptos client
+    const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
+    const config = new AptosConfig({ network });
+    const aptos = new Aptos(config);
     
-    if (coinStoreExists) {
-      console.log(`Coin store for ${coinType} already exists for ${walletAddress}`);
-      return { success: true, transactionHash: null };
+    // Check if coin store exists
+    const accountAddress = AccountAddress.fromString(walletAddress);
+    const resources = await aptos.getAccountResources({ accountAddress });
+    
+    const coinTypeStr = toStructTag(coinType);
+    const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
+    
+    if (resources.find(r => r.type === coinStoreType)) {
+      return { success: true };
     }
     
-    console.log(`Registering coin store for ${coinType}`);
-    
-    // Create the transaction payload using the simpler object format
-    const registerPayload = {
+    // Register coin store
+    const payload = {
       function: "0x1::managed_coin::register",
-      type_arguments: [toStructTag(coinType)],
+      type_arguments: [coinTypeStr],
       arguments: [],
     };
     
-    // Sign and submit the transaction
-    const { hash } = await signTransaction(registerPayload);
-    
-    console.log(`Coin store registration transaction submitted: ${hash}`);
-    toast.success("Coin store registration successful");
+    const result = await signTransaction(payload);
     
     return {
       success: true,
-      transactionHash: hash,
+      transactionHash: result.hash
     };
   } catch (error) {
     console.error("Error registering coin store:", error);
-    toast.error("Failed to register coin store");
-    
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 };

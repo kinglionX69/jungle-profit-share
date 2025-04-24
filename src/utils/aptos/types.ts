@@ -16,6 +16,7 @@ export interface BlockchainNFT {
   properties?: string;
   collectionName?: string;
   collectionId?: string;
+  description?: string;
 }
 
 /**
