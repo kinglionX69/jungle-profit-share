@@ -4,10 +4,10 @@ import { BlockchainNFT } from './types';
 import { 
   CREATOR_ADDRESS, 
   NFT_COLLECTION_NAME, 
-  IS_TESTNET, 
   NFT_COLLECTION_ID,
   NFT_IMAGE_BASE_URL
 } from './constants/collection';
+import { IS_TESTNET } from './constants/network';
 
 export const fetchWithAptosSdk = async (walletAddress: string): Promise<BlockchainNFT[]> => {
   try {
