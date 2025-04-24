@@ -1,8 +1,6 @@
 
-import { Aptos, AptosConfig, Network, AccountAddress } from '@aptos-labs/ts-sdk';
-import { TransactionResult } from '../types';
-import { IS_TESTNET } from '../constants/network';
-import { toStructTag } from '../helpers';
+import { TransactionResult } from "../types";
+import { getAptosClient } from "../client";
 
 export const registerCoinStoreIfNeeded = async (
   walletAddress: string,
@@ -10,40 +8,46 @@ export const registerCoinStoreIfNeeded = async (
   signTransaction: (payload: any) => Promise<{ hash: string }>
 ): Promise<TransactionResult> => {
   try {
-    // Set up Aptos client
-    const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
-    const config = new AptosConfig({ network });
-    const aptos = new Aptos(config);
+    console.log(`Checking coin store registration for ${walletAddress} with coin type ${coinType}`);
     
-    // Check if coin store exists
-    const accountAddress = AccountAddress.fromString(walletAddress);
-    const resources = await aptos.getAccountResources({ accountAddress });
+    // Get client
+    const aptos = getAptosClient();
     
-    const coinTypeStr = toStructTag(coinType);
-    const coinStoreType = `0x1::coin::CoinStore<${coinTypeStr}>`;
+    // Check if coin store is already registered
+    const accountResources = await aptos.getAccountResources({
+      accountAddress: walletAddress
+    });
     
-    if (resources.find(r => r.type === coinStoreType)) {
+    const coinStoreType = `0x1::coin::CoinStore<${coinType}>`;
+    const coinStoreResource = accountResources.find(
+      (r) => r.type === coinStoreType
+    );
+    
+    if (coinStoreResource) {
+      console.log("Coin store already registered");
       return { success: true };
     }
     
-    // Register coin store
+    // Prepare transaction to register coin store
     const payload = {
       function: "0x1::managed_coin::register",
-      type_arguments: [coinTypeStr],
+      type_arguments: [coinType],
       arguments: [],
     };
     
+    // Sign and submit transaction
     const result = await signTransaction(payload);
+    console.log("Coin store registration result:", result);
     
     return {
       success: true,
-      transactionHash: result.hash
+      transactionHash: result.hash,
     };
   } catch (error) {
     console.error("Error registering coin store:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error registering coin store"
     };
   }
 };

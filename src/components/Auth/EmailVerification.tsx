@@ -15,7 +15,7 @@ const emailSchema = z.object({
 });
 
 const EmailVerification = () => {
-  const { email, isVerified, setEmail, setIsVerified, fetchUserData } = useUser();
+  const { email, isVerified, setEmail, setIsVerified } = useUser();
   const { address } = useWallet();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,76 +28,36 @@ const EmailVerification = () => {
   });
   
   useEffect(() => {
-    const checkExistingEmail = async () => {
-      if (address) {
-        try {
-          setLoading(true);
-          const userData = await getUserData(address);
-          console.log("Fetched user data:", userData);
-          
-          if (userData) {
-            if (userData.email) {
-              setEmail(userData.email);
-              emailForm.setValue('email', userData.email);
-            }
-            
-            if (userData.email_verified) {
-              console.log("Email is verified:", userData.email);
-              setIsVerified(true);
-            }
-          }
-        } catch (error) {
-          console.error("Error checking for existing email:", error);
-        } finally {
-          setLoading(false);
+    const checkVerificationStatus = async () => {
+      if (!address) return;
+      
+      try {
+        setLoading(true);
+        const userData = await getUserData(address);
+        console.log("Fetched user verification status:", userData);
+        
+        // If user exists and has verified email, set verified state
+        if (userData?.email_verified) {
+          setEmail(userData.email);
+          setIsVerified(true);
+          emailForm.setValue('email', userData.email || '');
         }
+      } catch (error) {
+        console.error("Error checking verification status:", error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    checkExistingEmail();
+    checkVerificationStatus();
   }, [address]);
   
-  useEffect(() => {
-    if (email) {
-      emailForm.setValue('email', email);
-    }
-  }, [email]);
-  
-  const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
-    if (!address) {
-      toast.error('Wallet not connected');
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      setEmail(values.email);
-      
-      console.log(`Saving email ${values.email} for wallet ${address}`);
-      
-      const success = await updateUserEmail(address, values.email);
-      
-      if (success) {
-        setIsVerified(true);
-        toast.success('Email saved successfully');
-        await fetchUserData();
-      } else {
-        toast.error('Failed to save email. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error saving email:', error);
-      toast.error('An unexpected error occurred. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-  
+  // Don't show the form if user is already verified
   if (loading) {
     return (
       <div className="flex items-center p-4 text-sm rounded-lg border bg-card">
         <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse mr-2"></div>
-        <span className="font-bungee">Checking email verification status...</span>
+        <span className="font-bungee">Checking verification status...</span>
       </div>
     );
   }
@@ -111,6 +71,7 @@ const EmailVerification = () => {
     );
   }
   
+  // Only show email form if not verified
   return (
     <div className="rounded-lg border p-4 bg-card">
       <h3 className="text-lg font-luckiest mb-4">Add Your Email</h3>
@@ -118,6 +79,7 @@ const EmailVerification = () => {
       <p className="text-sm text-muted-foreground mb-4 font-bungee">
         Add Email to verify Claim
       </p>
+      
       <Form {...emailForm}>
         <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
           <FormField
