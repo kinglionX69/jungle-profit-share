@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Clock, ImageOff } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Chip, Box, Typography } from '@mui/material';
 import { NFT } from '@/api/types/nft.types';
 import { NFT_COLLECTION_NAME, NFT_IMAGE_BASE_URL } from '@/utils/aptos/constants';
 
@@ -26,22 +25,49 @@ const formatTimeRemaining = (unlockDate?: Date) => {
 };
 
 const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
-  if (!nft.isLocked) return null;
-  
-  return (
-    <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center backdrop-blur-sm bg-destructive/10">
-      {nft.unlockDate && (
-        <div className="flex flex-col items-center p-4 glass rounded-xl shadow-md">
-          <p className="text-xs text-muted-foreground mb-1 font-nunito">Unlocks in</p>
-          <p className="text-lg font-mono font-semibold mb-2">{formatTimeRemaining(nft.unlockDate)}</p>
-          <p className="text-xs text-muted-foreground font-nunito">Days:Hours:Mins</p>
-        </div>
-      )}
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      if (!nft.lockEndTime) return;
       
-      <div className="absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium font-nunito bg-destructive/20 text-destructive">
-        Locked
-      </div>
-    </div>
+      const endTime = new Date(nft.lockEndTime).getTime();
+      const now = new Date().getTime();
+      const difference = endTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft('Lock expired');
+        setIsLoading(false);
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+
+      setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      setIsLoading(false);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [nft.lockEndTime]);
+
+  return (
+    <Box className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+      <Box className="flex items-center gap-2 mb-2">
+        <Clock className="w-4 h-4 text-amber-400" />
+        <Typography variant="body2" color="amber.400" className="font-medium">
+          {isLoading ? 'Calculating...' : timeLeft}
+        </Typography>
+      </Box>
+      <Typography variant="caption" color="text.secondary" className="text-center">
+        NFT is locked for claiming
+      </Typography>
+    </Box>
   );
 };
 
@@ -169,19 +195,19 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
   };
   
   return (
-    <div className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
-      <div className="relative w-full h-48">
+    <Box className="nft-card glass border border-jungle-700/20 overflow-hidden hover:shadow-glow transition-all hover:translate-y-[-2px]">
+      <Box className="relative w-full h-48">
         {(isMetadataLoading || (!imageLoaded && !imageError)) && (
-          <div className="w-full h-48 flex items-center justify-center bg-jungle-700/10">
-            <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-          </div>
+          <Box className="w-full h-48 flex items-center justify-center bg-jungle-700/10">
+            <Box className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></Box>
+          </Box>
         )}
         
         {imageError && (
-          <div className="w-full h-48 flex flex-col items-center justify-center bg-jungle-700/10 gap-2">
+          <Box className="w-full h-48 flex flex-col items-center justify-center bg-jungle-700/10 gap-2">
             <ImageOff className="w-10 h-10 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Image unavailable</p>
-          </div>
+            <Typography variant="caption" color="text.secondary">Image unavailable</Typography>
+          </Box>
         )}
         
         {imageUrl && (
@@ -197,14 +223,24 @@ const NFTCard: React.FC<NFTCardProps> = ({ nft }) => {
         
         {/* Only show the overlay if the NFT is locked */}
         {nft.isLocked && <NFTCardOverlay nft={nft} />}
-      </div>
+      </Box>
       
-      <div className="p-4 font-nunito text-center">
-        <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20">
-          {NFT_COLLECTION_NAME}
-        </Badge>
-      </div>
-    </div>
+      <Box className="p-4 font-nunito text-center">
+        <Chip 
+          label={NFT_COLLECTION_NAME}
+          size="small"
+          sx={{
+            bgcolor: 'amber.500',
+            color: 'amber.400',
+            '&:hover': {
+              bgcolor: 'amber.600',
+            },
+            fontSize: '0.75rem',
+            fontFamily: "'Nunito', sans-serif"
+          }}
+        />
+      </Box>
+    </Box>
   );
 };
 
