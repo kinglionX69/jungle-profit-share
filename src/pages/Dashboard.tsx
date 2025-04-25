@@ -9,7 +9,8 @@ import {
   AlertTitle,
   Grid,
   Container,
-  CircularProgress
+  CircularProgress,
+  Paper
 } from '@mui/material';
 import { Refresh as RefreshIcon, Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
@@ -23,6 +24,7 @@ import ClaimHistory from '@/components/Claim/ClaimHistory';
 import { useUser } from '@/context/UserContext';
 import { IS_TESTNET } from '@/utils/aptos/constants';
 import { useSnackbar } from 'notistack';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { connected, address, connecting } = useWallet();
@@ -31,9 +33,15 @@ const Dashboard = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isLoading, setIsLoading] = useState(true);
   
+  // Debug information
+  console.log("Dashboard Rendering - Connection Status:", { connected, address, connecting });
+  console.log("User Context Data:", { isVerified, nftCount: nfts?.length, loadingNfts });
+  
   // Check connection status and load data
   useEffect(() => {
     const checkConnection = async () => {
+      console.log("Dashboard - Checking connection status");
+      
       // Wait to confirm connection status
       setTimeout(() => {
         setIsLoading(false);
@@ -60,6 +68,7 @@ const Dashboard = () => {
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
       enqueueSnackbar("Refreshing NFT data...", { variant: 'info' });
+      toast.info("Refreshing NFTs...");
       fetchUserData();
     }
   };
@@ -100,10 +109,12 @@ const Dashboard = () => {
             justifyContent: 'center',
             minHeight: 'calc(100vh - 80px)'
           }}>
-            <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
-              Connect your wallet to access your dashboard
-            </Typography>
-            <WalletConnect />
+            <Paper sx={{ p: 4, maxWidth: 500, width: '100%', textAlign: 'center' }}>
+              <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
+                Connect your wallet to access your dashboard
+              </Typography>
+              <WalletConnect />
+            </Paper>
           </Box>
         </PageContainer>
       </>
@@ -167,19 +178,25 @@ const Dashboard = () => {
         
         <Grid container spacing={4} sx={{ mb: 4 }}>
           <Grid item xs={12} lg={8}>
-            <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-              Eligible NFTs for Claim
-            </Typography>
-            <NFTGrid filterEligible={true} />
+            <Paper sx={{ p: 3, height: '100%' }}>
+              <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
+                Eligible NFTs for Claim
+              </Typography>
+              <NFTGrid filterEligible={true} />
+            </Paper>
           </Grid>
           
           <Grid item xs={12} lg={4}>
-            <ClaimCard />
+            <Paper sx={{ p: 3, height: '100%' }}>
+              <ClaimCard />
+            </Paper>
           </Grid>
         </Grid>
         
         <Box sx={{ mt: 4 }}>
-          <ClaimHistory />
+          <Paper sx={{ p: 3 }}>
+            <ClaimHistory />
+          </Paper>
         </Box>
       </PageContainer>
     </>

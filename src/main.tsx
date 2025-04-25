@@ -11,8 +11,10 @@ if (typeof window !== 'undefined') {
     return false; // Let default handler run
   };
   
+  // Add more detailed console logs for debugging
   console.log('Environment:', import.meta.env.MODE);
   console.log('Running outside sandbox:', window.location.hostname !== 'lovableproject.com');
+  console.log('Browser:', navigator.userAgent);
 }
 
 // Get the root element
@@ -31,6 +33,7 @@ if (rootElement) {
         <App />
       </React.StrictMode>
     );
+    console.log('App successfully rendered');
   } catch (error) {
     console.error('Failed to render application:', error);
     // Add fallback display if rendering fails

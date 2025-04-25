@@ -32,14 +32,20 @@ const Admin = () => {
   const adminWalletAddress = "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500";
   const isAdminWallet = isAdmin || (address === adminWalletAddress);
   
+  // Debug logging
+  console.log("Admin Page - Rendering with:", { 
+    connected, 
+    address, 
+    isAdmin, 
+    isAdminWallet,
+    connecting
+  });
+  
   // Check connection and admin status
   useEffect(() => {
-    console.log("Admin Page - Connected:", connected);
-    console.log("Admin Page - Address:", address);
-    console.log("Admin Page - isAdmin:", isAdmin);
-    console.log("Admin Page - isAdminWallet:", isAdminWallet);
-    
     const checkAccess = async () => {
+      console.log("Admin - Checking connection and admin status");
+      
       // Wait to confirm connection status
       setTimeout(() => {
         setIsLoading(false);
@@ -97,10 +103,12 @@ const Admin = () => {
             justifyContent: 'center',
             minHeight: 'calc(100vh - 80px)'
           }}>
-            <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
-              Connect your wallet to access admin panel
-            </Typography>
-            <WalletConnect />
+            <Paper sx={{ p: 4, maxWidth: 500, width: '100%', textAlign: 'center' }}>
+              <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
+                Connect your wallet to access admin panel
+              </Typography>
+              <WalletConnect />
+            </Paper>
           </Box>
         </PageContainer>
       </>
@@ -170,7 +178,9 @@ const Admin = () => {
         </Grid>
         
         <Box sx={{ mt: 4 }}>
-          <ClaimStatistics />
+          <Paper sx={{ p: 3 }}>
+            <ClaimStatistics />
+          </Paper>
         </Box>
       </PageContainer>
     </>

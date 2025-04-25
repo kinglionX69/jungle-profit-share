@@ -24,11 +24,6 @@ const queryClient = new QueryClient({
       gcTime: 60000,
     },
   },
-  logger: {
-    log: (...args) => console.log(...args),
-    warn: (...args) => console.warn(...args),
-    error: (error) => console.error("Query error:", error),
-  },
 });
 
 // The application component with all providers
