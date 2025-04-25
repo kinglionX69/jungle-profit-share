@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Tooltip } from '@mui/material';
 import { useWallet } from '@/context/wallet';
@@ -7,6 +6,7 @@ import { useUser } from '@/context/UserContext';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { checkWalletInstalled } from '@/context/wallet/walletUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const WalletConnect: React.FC = () => {
   const { connected, connect, connectWallet } = useWallet();
@@ -16,16 +16,15 @@ const WalletConnect: React.FC = () => {
   const [isClaiming, setIsClaiming] = useState(false);
   const [walletInstalled, setWalletInstalled] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Check if Petra wallet is installed when component mounts
     const checkWallet = () => {
       const isPetraInstalled = window.aptos || window.petra;
       setWalletInstalled(!!isPetraInstalled);
     };
     
     checkWallet();
-    // Re-check wallet installation every 2 seconds in case user installs it
     const intervalId = setInterval(checkWallet, 2000);
     
     return () => clearInterval(intervalId);
@@ -37,16 +36,23 @@ const WalletConnect: React.FC = () => {
       
       if (!walletInstalled) {
         enqueueSnackbar(
-          'Wallet not found. Please install Petra wallet extension.',
+          'Wallet not found. Please install Petra wallet.',
           { variant: 'error', autoHideDuration: 5000 }
         );
         
-        // Open Petra wallet extension page
-        window.open('https://petra.app/', '_blank');
+        if (isMobile) {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          if (isIOS) {
+            window.open('https://apps.apple.com/us/app/petra-aptos-wallet/id6446259840', '_blank');
+          } else {
+            window.open('https://play.google.com/store/apps/details?id=com.aptoslabs.petra', '_blank');
+          }
+        } else {
+          window.open('https://petra.app/', '_blank');
+        }
         return;
       }
       
-      // Try to connect using the wallet
       await connectWallet('petra');
     } catch (error) {
       console.error('Error connecting wallet:', error);
@@ -86,7 +92,7 @@ const WalletConnect: React.FC = () => {
   }
 
   return (
-    <Tooltip title={!walletInstalled ? "Install Petra wallet browser extension to connect" : ""} arrow>
+    <Tooltip title={!walletInstalled ? `Install Petra wallet ${isMobile ? 'app' : 'browser extension'} to connect` : ""} arrow>
       <Button
         variant="contained"
         onClick={handleConnect}
