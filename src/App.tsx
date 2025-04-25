@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -21,12 +22,20 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 30000,
       gcTime: 60000,
-      onError: (error) => {
-        console.error('Query error:', error);
-        // Optional: Add global error handling logic
-      }
     },
+    mutations: {
+      // Optional: Configure mutation defaults if needed
+      retry: 1,
+    }
   },
+  logger: {
+    log: console.log,
+    warn: console.warn,
+    error: (error) => {
+      console.error('Query error:', error);
+      // Optional: Add global error handling logic here
+    }
+  }
 });
 
 // The application component with all providers
