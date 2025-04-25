@@ -10,9 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react({
-      jsxImportSource: 'react',
-    }),
+    react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -21,7 +19,6 @@ export default defineConfig(({ mode }) => ({
       "react": path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
-    dedupe: ['react', 'react-dom', 'react-router-dom']
   },
   optimizeDeps: {
     force: true,
@@ -38,9 +35,6 @@ export default defineConfig(({ mode }) => ({
       'notistack',
       '@tanstack/react-query'
     ],
-    esbuildOptions: {
-      target: 'es2020'
-    }
   },
   build: {
     commonjsOptions: {
@@ -49,18 +43,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom', 'scheduler'],
-          'mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/system'],
+          'vendor': ['react', 'react-dom'],
+          'mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
           'utils': ['notistack', '@tanstack/react-query']
         }
       }
     },
-    target: 'es2020'
   },
   define: {
     'process.env': {},
-  },
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
 }));
