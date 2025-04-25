@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -8,7 +9,8 @@ import {
   Grid,
   Tabs,
   Tab,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
@@ -18,32 +20,95 @@ import TokenDeposit from '@/components/Admin/TokenDeposit';
 import TokenWithdrawal from '@/components/Admin/TokenWithdrawal';
 import ClaimStatistics from '@/components/Admin/ClaimStatistics';
 import WalletBalance from '@/components/Admin/WalletBalance';
+import WalletConnect from '@/components/Auth/WalletConnect';
 
 const Admin = () => {
-  const { connected, address, isAdmin } = useWallet();
+  const { connected, address, isAdmin, connecting } = useWallet();
   const navigate = useNavigate();
   const [tabValue, setTabValue] = React.useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const isAdminWallet = isAdmin || (address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500");
+  // The hardcoded admin wallet address
+  const adminWalletAddress = "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500";
+  const isAdminWallet = isAdmin || (address === adminWalletAddress);
   
+  // Check connection and admin status
   useEffect(() => {
     console.log("Admin Page - Connected:", connected);
     console.log("Admin Page - Address:", address);
     console.log("Admin Page - isAdmin:", isAdmin);
     console.log("Admin Page - isAdminWallet:", isAdminWallet);
     
-    if (!connected) {
-      navigate('/');
-    } else if (!isAdminWallet) {
-      navigate('/dashboard');
-    }
-  }, [connected, isAdmin, address, isAdminWallet, navigate]);
+    const checkAccess = async () => {
+      // Wait to confirm connection status
+      setTimeout(() => {
+        setIsLoading(false);
+        
+        if (!connecting && !connected) {
+          console.log("Admin: Not connected, redirecting to home");
+          navigate('/');
+        } else if (!connecting && connected && !isAdminWallet) {
+          console.log("Admin: Not an admin wallet, redirecting to dashboard");
+          navigate('/dashboard');
+        }
+      }, 1000); // Give wallet connection a moment to establish
+    };
+    
+    checkAccess();
+  }, [connected, isAdmin, address, isAdminWallet, navigate, connecting]);
   
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
   
-  if (!connected || !isAdminWallet) {
+  // Show loading state
+  if (isLoading || connecting) {
+    return (
+      <>
+        <Header />
+        <PageContainer>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: 'calc(100vh - 80px)'
+          }}>
+            <CircularProgress />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Checking admin access...
+            </Typography>
+          </Box>
+        </PageContainer>
+      </>
+    );
+  }
+  
+  // Show connect wallet if not connected
+  if (!connected) {
+    return (
+      <>
+        <Header />
+        <PageContainer>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: 'calc(100vh - 80px)'
+          }}>
+            <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
+              Connect your wallet to access admin panel
+            </Typography>
+            <WalletConnect />
+          </Box>
+        </PageContainer>
+      </>
+    );
+  }
+  
+  // Show access restricted if not admin
+  if (!isAdminWallet) {
     return (
       <>
         <Header />
@@ -59,7 +124,6 @@ const Admin = () => {
               severity="error" 
               sx={{ maxWidth: 'md' }}
             >
-              <WarningIcon />
               <AlertTitle>Access Restricted</AlertTitle>
               <Typography>This page is only accessible to the admin wallet.</Typography>
             </Alert>

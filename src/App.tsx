@@ -13,8 +13,16 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
-// Create a new query client instance
-const queryClient = new QueryClient();
+// Create a new query client instance with retry settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
+    },
+  },
+});
 
 // The application component with all providers
 const App = () => (

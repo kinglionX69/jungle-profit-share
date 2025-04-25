@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -7,12 +8,13 @@ import {
   Alert, 
   AlertTitle,
   Grid,
-  Container
+  Container,
+  CircularProgress
 } from '@mui/material';
 import { Refresh as RefreshIcon, Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
-import { useWallet } from '@/context/WalletContext';
+import { useWallet } from '@/context/wallet';
 import WalletConnect from '@/components/Auth/WalletConnect';
 import EmailVerification from '@/components/Auth/EmailVerification';
 import NFTGrid from '@/components/NFT/NFTGrid';
@@ -23,17 +25,37 @@ import { IS_TESTNET } from '@/utils/aptos/constants';
 import { useSnackbar } from 'notistack';
 
 const Dashboard = () => {
-  const { connected, address } = useWallet();
+  const { connected, address, connecting } = useWallet();
   const { isVerified, nfts, fetchUserData, loadingNfts } = useUser();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Redirect to home if not connected
+  // Check connection status and load data
   useEffect(() => {
-    if (!connected) {
-      navigate('/');
+    const checkConnection = async () => {
+      // Wait to confirm connection status
+      setTimeout(() => {
+        setIsLoading(false);
+        
+        // Only redirect if we're confirmed not connected
+        if (!connecting && !connected) {
+          console.log("Dashboard: Not connected, redirecting to home");
+          navigate('/');
+        }
+      }, 1000); // Give wallet connection a moment to establish
+    };
+    
+    checkConnection();
+  }, [connected, connecting, navigate]);
+
+  // Load user data when connected
+  useEffect(() => {
+    if (connected && address && fetchUserData) {
+      console.log("Dashboard: Connected, fetching user data");
+      fetchUserData();
     }
-  }, [connected, navigate]);
+  }, [connected, address, fetchUserData]);
 
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
@@ -42,6 +64,30 @@ const Dashboard = () => {
     }
   };
   
+  // Show loading state
+  if (isLoading || connecting) {
+    return (
+      <>
+        <Header />
+        <PageContainer>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: 'calc(100vh - 80px)'
+          }}>
+            <CircularProgress />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Checking wallet connection...
+            </Typography>
+          </Box>
+        </PageContainer>
+      </>
+    );
+  }
+  
+  // Show connect wallet if not connected
   if (!connected) {
     return (
       <>
@@ -54,6 +100,9 @@ const Dashboard = () => {
             justifyContent: 'center',
             minHeight: 'calc(100vh - 80px)'
           }}>
+            <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
+              Connect your wallet to access your dashboard
+            </Typography>
             <WalletConnect />
           </Box>
         </PageContainer>
@@ -79,7 +128,16 @@ const Dashboard = () => {
             size="small" 
             onClick={handleRefreshNFTs} 
             disabled={loadingNfts}
-            startIcon={<RefreshIcon className={loadingNfts ? 'animate-spin' : ''} />}
+            startIcon={<RefreshIcon />}
+            sx={{
+              '& .MuiSvgIcon-root': {
+                animation: loadingNfts ? 'spin 2s linear infinite' : 'none',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }
+            }}
           >
             {loadingNfts ? 'Refreshing...' : 'Refresh NFTs'}
           </Button>
@@ -94,7 +152,6 @@ const Dashboard = () => {
               borderColor: 'rgba(255, 167, 38, 0.2)'
             }}
           >
-            <WarningIcon />
             <AlertTitle>Testnet Mode</AlertTitle>
             <Typography>
               Application is running in testnet mode. NFTs and transactions will be on the Aptos testnet.

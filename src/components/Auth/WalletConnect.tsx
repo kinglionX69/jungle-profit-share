@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Tooltip } from '@mui/material';
 import { useWallet } from '@/context/wallet';
@@ -53,6 +54,8 @@ const WalletConnect: React.FC = () => {
         return;
       }
       
+      // Connect directly to Petra wallet
+      console.log("Attempting to connect to Petra wallet...");
       await connectWallet('petra');
     } catch (error) {
       console.error('Error connecting wallet:', error);
