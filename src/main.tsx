@@ -6,15 +6,35 @@ import App from './App';
 
 // Globally catch and log errors to help with debugging outside the sandbox
 if (typeof window !== 'undefined') {
+  // Set up comprehensive error handling
   window.onerror = (message, source, lineno, colno, error) => {
-    console.error('Global error:', { message, source, lineno, colno, error });
+    console.error('Global error caught:', { message, source, lineno, colno, error });
+    // Detailed logging for specific error types
+    if (error && error.name === 'TypeError') {
+      console.error('Type Error Details:', error.message, error.stack);
+    }
     return false; // Let default handler run
   };
+  
+  // React error handling
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Promise Rejection:', event.reason);
+  });
   
   // Add more detailed console logs for debugging
   console.log('Environment:', import.meta.env.MODE);
   console.log('Running outside sandbox:', window.location.hostname !== 'lovableproject.com');
   console.log('Browser:', navigator.userAgent);
+  console.log('Initial page load timestamp:', new Date().toISOString());
+  
+  // Check for wallet extension presence
+  const walletExtensions = {
+    petra: !!window.aptos || !!window.petra,
+    martian: !!window.martian,
+    pontem: !!window.pontem,
+    rise: !!window.rise
+  };
+  console.log('Wallet extensions detected:', walletExtensions);
 }
 
 // Get the root element

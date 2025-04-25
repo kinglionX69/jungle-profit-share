@@ -57,24 +57,39 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [loadingClaimHistory, setLoadingClaimHistory] = useState(false);
   const [claimableAmount, setClaimableAmount] = useState(0);
   
+  // Debug logging for UserContext initialization
+  console.log("UserContext initializing with wallet state:", { connected, address, walletType });
+  
   // Load user data when wallet connects
   useEffect(() => {
+    console.log("UserContext useEffect triggered - wallet connection state:", { connected, address });
+    
     if (connected && address) {
       console.log(`Wallet connected (${walletType}), fetching user data...`);
       // Ensure the user record exists first
-      upsertUser(address).then(() => {
-        fetchUserData();
-      });
+      upsertUser(address)
+        .then(() => {
+          console.log("User record created/updated successfully");
+          return fetchUserData();
+        })
+        .catch(error => {
+          console.error("Error creating user record:", error);
+          toast.error("Failed to initialize user data");
+        });
     } else {
       // Reset user data when disconnected
+      console.log("Wallet not connected, resetting user data");
       setEmail(null);
       setIsVerified(false);
       setNfts([]);
       setClaimHistory([]);
+      setClaimableAmount(0);
     }
   }, [connected, address, walletType]);
   
   const fetchUserData = async () => {
+    console.log("Fetching user data for address:", address);
+    
     if (!address) {
       console.error("Cannot fetch user data: No wallet address available");
       return;
@@ -82,6 +97,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     
     try {
       // Fetch user data
+      console.log("Fetching user profile data");
       const userData = await getUserData(address);
       
       if (userData) {
@@ -103,9 +119,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       // Set a timeout to show loading state for at least 1 second
       setTimeout(async () => {
         try {
+          console.log("Starting NFT fetch");
           const userNfts = await getUserNfts(address);
+          console.log(`Fetched ${userNfts.length} NFTs`);
           setNfts(userNfts);
           
+          console.log("Calculating claimable amount");
           const claimable = await calculateClaimableAmount(userNfts);
           // Ensure claimable amount is fixed to 2 decimal places
           setClaimableAmount(parseFloat(claimable.toFixed(2)));
@@ -116,14 +135,21 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           toast.error("Failed to fetch NFTs");
         } finally {
           setLoadingNfts(false);
+          console.log("NFT loading complete");
         }
       }, 1000);
       
       // Fetch claim history
-      const history = await fetchClaimHistory(address);
-      setClaimHistory(history);
-      
-      setLoadingClaimHistory(false);
+      try {
+        console.log("Fetching claim history");
+        const history = await fetchClaimHistory(address);
+        console.log(`Fetched ${history.length} claim history records`);
+        setClaimHistory(history);
+      } catch (error) {
+        console.error("Error fetching claim history:", error);
+      } finally {
+        setLoadingClaimHistory(false);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast.error("Failed to load user data");
@@ -187,6 +213,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       toast.error("Failed to process claim. Please try again.");
     }
   };
+  
+  // Debug the context values before providing them
+  console.log("UserContext providing values:", {
+    hasEmail: !!email,
+    isVerified,
+    nftCount: nfts.length,
+    claimHistoryCount: claimHistory.length,
+    claimableAmount,
+    loadingNfts,
+    loadingClaimHistory
+  });
   
   return (
     <UserContext.Provider

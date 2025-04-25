@@ -24,13 +24,21 @@ const queryClient = new QueryClient({
       gcTime: 60000,
     },
   },
+  logger: {
+    log: (...args) => console.log(...args),
+    warn: (...args) => console.warn(...args),
+    error: (err) => {
+      console.error('Query error:', err);
+      // We can add additional error handling here if needed
+    }
+  },
 });
 
 // The application component with all providers
 const App = () => {
   // Add error boundary to catch and handle errors
   React.useEffect(() => {
-    const handleGlobalError = (event) => {
+    const handleGlobalError = (event: ErrorEvent) => {
       console.error('Global error caught:', event.error);
       // Prevent the error from crashing the app
       event.preventDefault();

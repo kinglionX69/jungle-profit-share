@@ -39,6 +39,7 @@ const Dashboard = () => {
   
   // Check connection status and load data
   useEffect(() => {
+    console.log("Dashboard - Initial useEffect running");
     const checkConnection = async () => {
       console.log("Dashboard - Checking connection status");
       
@@ -59,17 +60,25 @@ const Dashboard = () => {
 
   // Load user data when connected
   useEffect(() => {
+    console.log("Dashboard - Data load useEffect running with state:", { connected, address });
+    
     if (connected && address && fetchUserData) {
       console.log("Dashboard: Connected, fetching user data");
-      fetchUserData();
+      fetchUserData().catch(error => {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load your data");
+      });
     }
   }, [connected, address, fetchUserData]);
 
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
+      console.log("Manual refresh of NFT data requested");
       enqueueSnackbar("Refreshing NFT data...", { variant: 'info' });
       toast.info("Refreshing NFTs...");
-      fetchUserData();
+      fetchUserData().catch(error => {
+        console.error("Error refreshing data:", error);
+      });
     }
   };
   

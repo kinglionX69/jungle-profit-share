@@ -11,7 +11,7 @@ import { checkWalletInstalled } from '@/context/wallet/walletUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const WalletConnect: React.FC = () => {
-  const { connected, connect, connectWallet } = useWallet();
+  const { connected, connect, connectWallet, connecting: walletConnecting } = useWallet();
   const { enqueueSnackbar } = useSnackbar();
   const { claim, claimableAmount, isVerified } = useUser();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -20,6 +20,8 @@ const WalletConnect: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
+  console.log("WalletConnect rendering - connected status:", connected);
+  
   // Enhanced wallet checking with more robust detection
   useEffect(() => {
     const checkWallet = () => {
@@ -47,9 +49,11 @@ const WalletConnect: React.FC = () => {
 
   const handleConnect = async () => {
     try {
+      console.log("Initiating wallet connect...");
       setIsConnecting(true);
       
       if (!walletInstalled) {
+        console.log("Wallet not installed, showing instructions");
         // Use both notification systems for redundancy
         enqueueSnackbar(
           'Wallet not found. Please install Petra wallet.',
@@ -68,6 +72,7 @@ const WalletConnect: React.FC = () => {
         } else {
           window.open('https://petra.app/', '_blank');
         }
+        setIsConnecting(false);
         return;
       }
       
@@ -76,6 +81,7 @@ const WalletConnect: React.FC = () => {
       try {
         await connectWallet('petra');
         toast.success('Successfully connected to wallet');
+        console.log("Connection successful");
       } catch (walletError) {
         console.error('Specific error connecting wallet:', walletError);
         toast.error('Could not connect to wallet. Please make sure it is unlocked and try again.');
@@ -93,9 +99,20 @@ const WalletConnect: React.FC = () => {
   };
 
   const handleClaim = async () => {
-    if (!connected) return;
+    if (!connected) {
+      console.log("Not connected, cannot claim");
+      return;
+    }
+    console.log("Navigating to dashboard for claim");
     navigate('/dashboard');
   };
+
+  console.log("WalletConnect rendering with state:", {
+    connected,
+    walletConnecting,
+    isConnecting,
+    walletInstalled
+  });
 
   if (connected) {
     return (
@@ -124,7 +141,7 @@ const WalletConnect: React.FC = () => {
       <Button
         variant="contained"
         onClick={handleConnect}
-        disabled={isConnecting}
+        disabled={isConnecting || walletConnecting}
         sx={{
           fontFamily: "'Nunito', sans-serif",
           fontWeight: 600,
@@ -134,7 +151,7 @@ const WalletConnect: React.FC = () => {
           minWidth: '160px'
         }}
       >
-        {isConnecting ? (
+        {(isConnecting || walletConnecting) ? (
           <>
             <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
             Connecting...

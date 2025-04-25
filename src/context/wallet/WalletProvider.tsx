@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -59,6 +60,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
   });
 
   const connectWallet = async (walletName: WalletName) => {
+    console.log(`Attempting to connect ${walletName} wallet...`);
     setConnecting(true);
     try {
       let account;
@@ -93,7 +95,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
           throw new Error(`Wallet "${walletName}" is not supported or not installed`);
       }
 
+      console.log("Wallet connection response:", account);
+      
       if (account?.address) {
+        console.log(`Successfully connected to address: ${account.address}`);
         setAddress(account.address);
         setConnected(true);
         setWalletType(walletName);
@@ -118,11 +123,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
           } catch (error) {
             console.error("Error checking admin status:", error);
           }
-        }
-        
-        // Additional logging for debugging admin status
-        if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
-          console.log("This is the specified admin wallet, admin status should be true");
         }
       } else {
         throw new Error("Failed to get wallet address");
