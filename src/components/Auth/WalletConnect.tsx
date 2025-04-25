@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button, Typography, Tooltip } from '@mui/material';
 import { useWallet } from '@/context/wallet';
 import { useSnackbar } from 'notistack';
 import { useUser } from '@/context/UserContext';
 import { ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const WalletConnect: React.FC = () => {
   const { connected, connect } = useWallet();
@@ -12,6 +12,7 @@ const WalletConnect: React.FC = () => {
   const { claim, claimableAmount, isVerified } = useUser();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const navigate = useNavigate();
 
   const handleConnect = async () => {
     try {
@@ -29,19 +30,8 @@ const WalletConnect: React.FC = () => {
   };
 
   const handleClaim = async () => {
-    if (!connected || claimableAmount <= 0 || !isVerified) return;
-    
-    setIsClaiming(true);
-    try {
-      await claim();
-    } catch (error) {
-      console.error('Error claiming rewards:', error);
-      enqueueSnackbar('Failed to claim rewards. Please try again.', { 
-        variant: 'error' 
-      });
-    } finally {
-      setIsClaiming(false);
-    }
+    if (!connected) return;
+    navigate('/dashboard');
   };
 
   if (connected) {
@@ -49,7 +39,6 @@ const WalletConnect: React.FC = () => {
       <Button
         variant="contained"
         onClick={handleClaim}
-        disabled={isClaiming || claimableAmount <= 0 || !isVerified}
         sx={{
           fontFamily: "'Nunito', sans-serif",
           fontWeight: 600,
@@ -58,14 +47,10 @@ const WalletConnect: React.FC = () => {
           py: 1
         }}
       >
-        {isClaiming ? (
-          'Processing...'
-        ) : (
-          <>
-            Claim Now
-            <ChevronRight style={{ marginLeft: 4, width: 16, height: 16 }} />
-          </>
-        )}
+        <>
+          Claim Now
+          <ChevronRight style={{ marginLeft: 4, width: 16, height: 16 }} />
+        </>
       </Button>
     );
   }
