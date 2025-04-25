@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -70,7 +69,7 @@ const ClaimStatistics = () => {
       return (
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Grid xs={12} sm={6} md={4} key={item}>
+            <Grid item component="div" xs={12} sm={6} md={4} key={item}>
               <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <Skeleton variant="text" width="60%" height={30} />
                 <Skeleton variant="text" width="40%" height={40} />
@@ -84,7 +83,7 @@ const ClaimStatistics = () => {
     return (
       <Grid container spacing={3}>
         {statistics.map((stat) => (
-          <Grid xs={12} sm={6} md={4} key={stat.id}>
+          <Grid item component="div" xs={12} sm={6} md={4} key={stat.id}>
             <StatsCard
               title={stat.title}
               value={stat.value}
@@ -107,7 +106,7 @@ const ClaimStatistics = () => {
       </Box>
       
       <Grid container spacing={3}>
-        <Grid xs={12}>
+        <Grid item component="div" xs={12}>
           <WeeklyClaimsChart data={weeklyClaimsData} />
         </Grid>
       </Grid>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -28,11 +27,9 @@ const Admin = () => {
   const [tabValue, setTabValue] = React.useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
-  // The hardcoded admin wallet address
   const adminWalletAddress = "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500";
   const isAdminWallet = isAdmin || (address === adminWalletAddress);
   
-  // Debug logging
   console.log("Admin Page - Rendering with:", { 
     connected, 
     address, 
@@ -41,12 +38,10 @@ const Admin = () => {
     connecting
   });
   
-  // Check connection and admin status
   useEffect(() => {
     const checkAccess = async () => {
       console.log("Admin - Checking connection and admin status");
       
-      // Wait to confirm connection status
       setTimeout(() => {
         setIsLoading(false);
         
@@ -57,7 +52,7 @@ const Admin = () => {
           console.log("Admin: Not an admin wallet, redirecting to dashboard");
           navigate('/dashboard');
         }
-      }, 1000); // Give wallet connection a moment to establish
+      }, 1000);
     };
     
     checkAccess();
@@ -67,7 +62,6 @@ const Admin = () => {
     setTabValue(newValue);
   };
   
-  // Show loading state
   if (isLoading || connecting) {
     return (
       <>
@@ -90,7 +84,6 @@ const Admin = () => {
     );
   }
   
-  // Show connect wallet if not connected
   if (!connected) {
     return (
       <>
@@ -115,7 +108,6 @@ const Admin = () => {
     );
   }
   
-  // Show access restricted if not admin
   if (!isAdminWallet) {
     return (
       <>
@@ -155,7 +147,7 @@ const Admin = () => {
         </Box>
         
         <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid xs={12} md={8}>
+          <Grid item component="div" xs={12} md={8}>
             <Paper sx={{ p: 3 }}>
               <Tabs 
                 value={tabValue} 
@@ -172,7 +164,7 @@ const Admin = () => {
               </Box>
             </Paper>
           </Grid>
-          <Grid xs={12} md={4}>
+          <Grid item component="div" xs={12} md={4}>
             <WalletBalance />
           </Grid>
         </Grid>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -33,32 +32,27 @@ const Dashboard = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isLoading, setIsLoading] = useState(true);
   
-  // Debug information
   console.log("Dashboard Rendering - Connection Status:", { connected, address, connecting });
   console.log("User Context Data:", { isVerified, nftCount: nfts?.length, loadingNfts });
   
-  // Check connection status and load data
   useEffect(() => {
     console.log("Dashboard - Initial useEffect running");
     const checkConnection = async () => {
       console.log("Dashboard - Checking connection status");
       
-      // Wait to confirm connection status
       setTimeout(() => {
         setIsLoading(false);
         
-        // Only redirect if we're confirmed not connected
         if (!connecting && !connected) {
           console.log("Dashboard: Not connected, redirecting to home");
           navigate('/');
         }
-      }, 1000); // Give wallet connection a moment to establish
+      }, 1000);
     };
     
     checkConnection();
   }, [connected, connecting, navigate]);
 
-  // Load user data when connected
   useEffect(() => {
     console.log("Dashboard - Data load useEffect running with state:", { connected, address });
     
@@ -82,7 +76,6 @@ const Dashboard = () => {
     }
   };
   
-  // Show loading state
   if (isLoading || connecting) {
     return (
       <>
@@ -105,7 +98,6 @@ const Dashboard = () => {
     );
   }
   
-  // Show connect wallet if not connected
   if (!connected) {
     return (
       <>
@@ -186,7 +178,7 @@ const Dashboard = () => {
         )}
         
         <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12} lg={8}>
+          <Grid item component="div" xs={12} lg={8}>
             <Paper sx={{ p: 3, height: '100%' }}>
               <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
                 Eligible NFTs for Claim
@@ -195,7 +187,7 @@ const Dashboard = () => {
             </Paper>
           </Grid>
           
-          <Grid item xs={12} lg={4}>
+          <Grid item component="div" xs={12} lg={4}>
             <Paper sx={{ p: 3, height: '100%' }}>
               <ClaimCard />
             </Paper>
