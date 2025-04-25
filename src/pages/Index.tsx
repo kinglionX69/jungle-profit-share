@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Typography, Container, Grid, Paper } from '@mui/material';
@@ -103,17 +102,27 @@ const Index = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
             >
               <Box
                 component="img"
-                src="/placeholder.svg"
-                alt="Jungle NFT"
+                src="https://i.imgur.com/h9BRbuE.gif"
+                alt="Jungle NFT Rewards"
                 sx={{
                   width: '100%',
-                  maxWidth: 400,
+                  maxWidth: 450,
                   height: 'auto',
                   borderRadius: 4,
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                  border: '4px solid rgba(76, 175, 80, 0.2)',
+                  transition: 'transform 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                  }
                 }}
               />
             </Box>
