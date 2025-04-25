@@ -23,7 +23,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { useWallet } from '@/context/wallet';
+import { useWallet } from '@/context/WalletContext';
 import { IS_TESTNET } from '@/utils/aptos/constants/network';
 
 const Header = () => {

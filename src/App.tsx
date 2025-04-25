@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import { WalletProvider } from "./context/wallet";
+import { WalletProvider } from "./context/WalletContext";
 import { UserProvider } from "./context/UserContext";
 import theme from './theme/theme';
 import Index from "./pages/Index";
