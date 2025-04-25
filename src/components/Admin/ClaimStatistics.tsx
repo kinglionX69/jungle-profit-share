@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -117,13 +118,13 @@ const ClaimStatistics: React.FC = () => {
   
   if (isLoading) {
     return (
-      <Grid container spacing={3}>
+      <Grid container component="div" spacing={3}>
         {[1, 2, 3, 4].map((item) => (
-          <Grid item xs={12} sm={6} md={3} key={item}>
+          <Grid component="div" item xs={12} sm={6} md={3} key={item}>
             <Skeleton variant="rectangular" height={118} />
           </Grid>
         ))}
-        <Grid item xs={12}>
+        <Grid component="div" item xs={12}>
           <Skeleton variant="rectangular" height={300} />
         </Grid>
       </Grid>
@@ -132,8 +133,8 @@ const ClaimStatistics: React.FC = () => {
   
   return (
     <Box sx={{ width: '100%' }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container component="div" spacing={3}>
+        <Grid component="div" item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -152,7 +153,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -171,7 +172,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -190,7 +191,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -209,7 +210,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid component="div" item xs={12}>
           <Paper sx={{ 
             p: 3,
             backgroundImage: 'none',
