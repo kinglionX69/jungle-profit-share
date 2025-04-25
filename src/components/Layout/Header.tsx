@@ -31,7 +31,7 @@ const Header = () => {
   const { connected, address, isAdmin, disconnect } = useWallet();
   const location = useLocation();
 
-  // Navigation items
+  // Navigation items with conditional admin access
   const navItems = [
     ...(connected ? [
       {
