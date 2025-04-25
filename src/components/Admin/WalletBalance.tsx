@@ -54,7 +54,7 @@ const WalletBalance: React.FC = () => {
         
         <Grid container spacing={2}>
           {balances.map((balance) => (
-            <Grid key={balance.symbol} item component="div" xs={12} sm={6}>
+            <Grid key={balance.symbol} item xs={12} sm={6}>
               <Paper 
                 sx={{ 
                   p: 2, 

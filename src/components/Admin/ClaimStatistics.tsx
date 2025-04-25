@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { 
   Box, 
   Typography, 
-  Grid, 
-  Skeleton
+  Grid
 } from '@mui/material';
 import StatsCard from './Stats/StatsCard';
 import WeeklyClaimsChart from './Stats/WeeklyClaimsChart';
@@ -37,14 +36,10 @@ const ClaimStatistics = () => {
     { id: 'claim-rate', title: 'Claim Success Rate', value: '0%' }
   ]);
   
-  // Fetch statistics data
   useEffect(() => {
     const fetchStatistics = async () => {
       try {
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Update with mock data
         setStatistics([
           { id: 'total-claims', title: 'Total Claims', value: 457 },
           { id: 'unique-wallets', title: 'Unique Wallets', value: 328 },
@@ -53,7 +48,6 @@ const ClaimStatistics = () => {
           { id: 'last-claim', title: 'Last Claim', value: '2 hours ago' },
           { id: 'claim-rate', title: 'Claim Success Rate', value: '98%' }
         ]);
-        
         setLoading(false);
       } catch (error) {
         console.error('Error fetching claim statistics:', error);
@@ -69,7 +63,7 @@ const ClaimStatistics = () => {
       return (
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Grid item component="div" xs={12} sm={6} md={4} key={item}>
+            <Grid xs={12} sm={6} md={4} key={item}>
               <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <Skeleton variant="text" width="60%" height={30} />
                 <Skeleton variant="text" width="40%" height={40} />
@@ -83,7 +77,7 @@ const ClaimStatistics = () => {
     return (
       <Grid container spacing={3}>
         {statistics.map((stat) => (
-          <Grid item component="div" xs={12} sm={6} md={4} key={stat.id}>
+          <Grid xs={12} sm={6} md={4} key={stat.id}>
             <StatsCard
               title={stat.title}
               value={stat.value}
@@ -106,7 +100,7 @@ const ClaimStatistics = () => {
       </Box>
       
       <Grid container spacing={3}>
-        <Grid item component="div" xs={12}>
+        <Grid xs={12}>
           <WeeklyClaimsChart data={weeklyClaimsData} />
         </Grid>
       </Grid>
