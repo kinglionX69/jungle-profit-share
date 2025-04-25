@@ -1,82 +1,53 @@
-
-import * as React from 'react';
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { SnackbarProvider } from 'notistack';
 import { Toaster } from 'sonner';
-import { WalletProvider } from "./context/wallet/WalletProvider";
-import { UserProvider } from "./context/UserContext";
-import { LazyMotion, domAnimation } from "framer-motion";
-import theme from './theme/theme';
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
+import { LazyMotion, domAnimation } from 'framer-motion';
+import { theme } from '@/theme';
+import { WalletProvider } from '@/context/WalletContext';
+import { UserProvider } from '@/context/UserContext';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from '@/routes';
 
-// Create a new query client instance with enhanced resilience settings
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 30000,
-      gcTime: 60000
+      retry: 1,
     },
-    mutations: {
-      // Optional: Configure mutation defaults if needed
-      retry: 1
-    }
-  }
+  },
 });
 
-// The application component with all providers
-const App = () => {
-  // Add error boundary to catch and handle errors
-  React.useEffect(() => {
-    const handleGlobalError = (event: ErrorEvent) => {
-      console.error('Global error caught:', event.error);
-      // Prevent the error from crashing the app
-      event.preventDefault();
-    };
-
-    window.addEventListener('error', handleGlobalError);
-    return () => window.removeEventListener('error', handleGlobalError);
-  }, []);
-
+function App() {
   return (
-    <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <QueryClientProvider client={queryClient}>
-          <SnackbarProvider 
-            maxSnack={3} 
-            autoHideDuration={5000}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right'
-            }}
-          >
-            <Toaster position="top-right" richColors />
-            <LazyMotion features={domAnimation}>
-              <BrowserRouter>
-                <WalletProvider>
-                  <UserProvider>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </UserProvider>
-                </WalletProvider>
-              </BrowserRouter>
-            </LazyMotion>
-          </SnackbarProvider>
-        </QueryClientProvider>
+        <SnackbarProvider
+          maxSnack={3}
+          autoHideDuration={5000}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <Toaster position="top-right" richColors />
+          <LazyMotion features={domAnimation}>
+            <WalletProvider>
+              <UserProvider>
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </UserProvider>
+            </WalletProvider>
+          </LazyMotion>
+        </SnackbarProvider>
       </ThemeProvider>
-    </React.StrictMode>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;
