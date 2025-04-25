@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, ImageOff } from 'lucide-react';
 import { Chip, Box, Typography } from '@mui/material';
@@ -29,10 +30,14 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!nft.unlockDate) {
+      setTimeLeft('Unknown');
+      setIsLoading(false);
+      return;
+    }
+    
     const calculateTimeLeft = () => {
-      if (!nft.lockEndTime) return;
-      
-      const endTime = new Date(nft.lockEndTime).getTime();
+      const endTime = nft.unlockDate ? new Date(nft.unlockDate).getTime() : 0;
       const now = new Date().getTime();
       const difference = endTime - now;
 
@@ -54,7 +59,7 @@ const NFTCardOverlay: React.FC<NFTCardProps> = ({ nft }) => {
     const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
 
     return () => clearInterval(interval);
-  }, [nft.lockEndTime]);
+  }, [nft.unlockDate]);
 
   return (
     <Box className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-4">
