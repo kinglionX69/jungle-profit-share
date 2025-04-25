@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Tooltip } from '@mui/material';
+import { Button, Typography, Tooltip, CircularProgress } from '@mui/material';
 import { useWallet } from '@/context/wallet';
 import { useSnackbar } from 'notistack';
+import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -19,10 +20,23 @@ const WalletConnect: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
+  // Enhanced wallet checking with more robust detection
   useEffect(() => {
     const checkWallet = () => {
-      const isPetraInstalled = window.aptos || window.petra;
-      setWalletInstalled(!!isPetraInstalled);
+      try {
+        // Check for Petra wallet
+        const isPetraInstalled = window.aptos || window.petra;
+        setWalletInstalled(!!isPetraInstalled);
+        
+        if (isPetraInstalled) {
+          console.log("Petra wallet detected");
+        } else {
+          console.log("Petra wallet not detected");
+        }
+      } catch (error) {
+        console.error("Error checking wallet installation:", error);
+        setWalletInstalled(false);
+      }
     };
     
     checkWallet();
@@ -36,10 +50,13 @@ const WalletConnect: React.FC = () => {
       setIsConnecting(true);
       
       if (!walletInstalled) {
+        // Use both notification systems for redundancy
         enqueueSnackbar(
           'Wallet not found. Please install Petra wallet.',
           { variant: 'error', autoHideDuration: 5000 }
         );
+        
+        toast.error('Petra wallet not detected. Redirecting to installation page.');
         
         if (isMobile) {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -54,11 +71,18 @@ const WalletConnect: React.FC = () => {
         return;
       }
       
-      // Connect directly to Petra wallet
+      // Connect directly to Petra wallet with enhanced error handling
       console.log("Attempting to connect to Petra wallet...");
-      await connectWallet('petra');
+      try {
+        await connectWallet('petra');
+        toast.success('Successfully connected to wallet');
+      } catch (walletError) {
+        console.error('Specific error connecting wallet:', walletError);
+        toast.error('Could not connect to wallet. Please make sure it is unlocked and try again.');
+        throw walletError;
+      }
     } catch (error) {
-      console.error('Error connecting wallet:', error);
+      console.error('General error connecting wallet:', error);
       enqueueSnackbar(
         'Failed to connect wallet. Please try again.',
         { variant: 'error', autoHideDuration: 5000 }
@@ -78,6 +102,7 @@ const WalletConnect: React.FC = () => {
       <Button
         variant="contained"
         onClick={handleClaim}
+        disabled={isClaiming}
         sx={{
           fontFamily: "'Nunito', sans-serif",
           fontWeight: 600,
@@ -105,10 +130,16 @@ const WalletConnect: React.FC = () => {
           fontWeight: 600,
           textTransform: 'none',
           px: 3,
-          py: 1
+          py: 1,
+          minWidth: '160px'
         }}
       >
-        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        {isConnecting ? (
+          <>
+            <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+            Connecting...
+          </>
+        ) : 'Connect Wallet'}
       </Button>
     </Tooltip>
   );
