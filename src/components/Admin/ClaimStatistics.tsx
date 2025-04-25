@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
@@ -40,7 +39,6 @@ const ClaimStatistics: React.FC = () => {
       try {
         setIsLoading(true);
         
-        // Fetch overall claim statistics
         const { data: claimHistory, error: historyError } = await supabase
           .from('claim_history')
           .select('*');
@@ -61,7 +59,6 @@ const ClaimStatistics: React.FC = () => {
           return;
         }
         
-        // Calculate overall stats
         const totalClaims = claimHistory.length;
         const totalAmount = claimHistory.reduce((sum, claim) => sum + Number(claim.amount), 0);
         const uniqueWallets = new Set(claimHistory.map(claim => claim.wallet_address)).size;
@@ -74,11 +71,9 @@ const ClaimStatistics: React.FC = () => {
           avgPerClaim
         });
         
-        // Calculate weekly data for the chart
         const now = new Date();
         const weeklyStats: Record<string, number> = {};
         
-        // Initialize 6 weeks of data
         for (let i = 0; i < 6; i++) {
           const weekStart = new Date(now);
           weekStart.setDate(now.getDate() - (i * 7));
@@ -86,7 +81,6 @@ const ClaimStatistics: React.FC = () => {
           weeklyStats[weekName] = 0;
         }
         
-        // Fill in actual claim data
         claimHistory.forEach(claim => {
           const claimDate = new Date(claim.claim_date);
           const diffDays = Math.floor((now.getTime() - claimDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -98,7 +92,6 @@ const ClaimStatistics: React.FC = () => {
           }
         });
         
-        // Convert to array format for chart
         const weeklyDataArray = Object.entries(weeklyStats).map(([name, claims]) => ({
           name,
           claims
@@ -118,13 +111,13 @@ const ClaimStatistics: React.FC = () => {
   
   if (isLoading) {
     return (
-      <Grid container component="div" spacing={3}>
-        {[1, 2, 3, 4].map((item) => (
-          <Grid component="div" item xs={12} sm={6} md={3} key={item}>
+      <Grid container spacing={3}>
+        {[1, 2, 3, 4].map((index) => (
+          <Grid key={index} item xs={12} sm={6} md={3}>
             <Skeleton variant="rectangular" height={118} />
           </Grid>
         ))}
-        <Grid component="div" item xs={12}>
+        <Grid item xs={12}>
           <Skeleton variant="rectangular" height={300} />
         </Grid>
       </Grid>
@@ -133,8 +126,8 @@ const ClaimStatistics: React.FC = () => {
   
   return (
     <Box sx={{ width: '100%' }}>
-      <Grid container component="div" spacing={3}>
-        <Grid component="div" item xs={12} sm={6} md={3}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -153,7 +146,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid component="div" item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -172,7 +165,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid component="div" item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -191,7 +184,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid component="div" item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -210,7 +203,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid component="div" item xs={12}>
+        <Grid item xs={12}>
           <Paper sx={{ 
             p: 3,
             backgroundImage: 'none',
