@@ -53,9 +53,9 @@ const WalletBalance: React.FC = () => {
           Escrow Wallet Balance
         </Typography>
         
-        <Grid container spacing={2}>
+        <Grid container spacing={2} component="div">
           {balances.map((balance) => (
-            <Grid item xs={12} sm={6} key={balance.symbol}>
+            <Grid component="div" key={balance.symbol} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
               <Paper 
                 sx={{ 
                   p: 2, 

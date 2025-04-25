@@ -147,8 +147,8 @@ const Admin = () => {
           </Typography>
         </Box>
         
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={8}>
+        <Grid container spacing={4} sx={{ mb: 4 }} component="div">
+          <Grid component="div" sx={{ gridColumn: { xs: 'span 12', md: 'span 8' } }}>
             <Paper sx={{ p: 3 }}>
               <Tabs 
                 value={tabValue} 
@@ -165,7 +165,7 @@ const Admin = () => {
               </Box>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid component="div" sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
             <WalletBalance />
           </Grid>
         </Grid>

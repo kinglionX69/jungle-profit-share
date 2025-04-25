@@ -6,9 +6,9 @@ const NFTGridSkeleton: React.FC = () => {
   const placeholders = Array.from({ length: 6 }, (_, i) => i);
   
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} component="div">
       {placeholders.map((index) => (
-        <Grid item xs={12} sm={6} md={4} key={index}>
+        <Grid component="div" key={index} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}>
           <Box 
             sx={{ 
               backgroundImage: 'none',

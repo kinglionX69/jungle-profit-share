@@ -63,9 +63,9 @@ const ClaimStatistics = () => {
   const renderStatCards = () => {
     if (loading) {
       return (
-        <Grid container spacing={3}>
+        <Grid container spacing={3} component="div">
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item}>
+            <Grid component="div" key={item} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}>
               <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <Skeleton variant="text" width="60%" height={30} />
                 <Skeleton variant="text" width="40%" height={40} />
@@ -77,9 +77,9 @@ const ClaimStatistics = () => {
     }
     
     return (
-      <Grid container spacing={3}>
+      <Grid container spacing={3} component="div">
         {statistics.map((stat) => (
-          <Grid item xs={12} sm={6} md={4} key={stat.id}>
+          <Grid component="div" key={stat.id} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}>
             <StatsCard
               title={stat.title}
               value={stat.value}
@@ -101,8 +101,8 @@ const ClaimStatistics = () => {
         {renderStatCards()}
       </Box>
       
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+      <Grid container spacing={3} component="div">
+        <Grid component="div" sx={{ gridColumn: 'span 12' }}>
           <WeeklyClaimsChart data={weeklyClaimsData} />
         </Grid>
       </Grid>
