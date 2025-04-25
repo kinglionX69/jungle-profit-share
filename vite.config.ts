@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -10,7 +11,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
+    react({
+      jsxImportSource: 'react',
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -47,28 +50,25 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Create separate chunks for React-related packages
-          if (id.includes('node_modules/react/') || 
-              id.includes('node_modules/react-dom/') || 
-              id.includes('node_modules/scheduler/')) {
-            return 'react-vendor';
-          }
-          
-          // MUI and related packages
-          if (id.includes('node_modules/@mui/') || 
-              id.includes('node_modules/@emotion/')) {
-            return 'mui-vendor';
-          }
-          
-          // Other major dependencies
-          if (id.includes('node_modules/notistack/')) {
-            return 'notistack-vendor';
-          }
-          
-          if (id.includes('node_modules/@tanstack/react-query/')) {
-            return 'query-vendor';
-          }
+        manualChunks: {
+          'react-vendor': [
+            'react',
+            'react-dom',
+            'scheduler'
+          ],
+          'mui-vendor': [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+            '@mui/system'
+          ],
+          'notistack-vendor': [
+            'notistack'
+          ],
+          'query-vendor': [
+            '@tanstack/react-query'
+          ]
         }
       }
     },
