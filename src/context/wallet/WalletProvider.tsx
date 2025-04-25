@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -67,10 +66,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
       switch (walletName) {
         case "petra":
           if (window.petra) {
+            console.log("Connecting with Petra wallet (new API)");
             account = await window.petra.connect();
           } else if (window.aptos) {
+            console.log("Connecting with Petra wallet (legacy API)");
             account = await window.aptos.connect();
           } else {
+            console.error("Petra wallet not detected in window object");
             throw new Error("Petra wallet not installed");
           }
           break;
@@ -122,6 +124,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
           console.log("This is the specified admin wallet, admin status should be true");
         }
+      } else {
+        throw new Error("Failed to get wallet address");
       }
     } catch (error: any) {
       console.error("Failed to connect wallet:", error);

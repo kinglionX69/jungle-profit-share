@@ -8,9 +8,14 @@ import { upsertUser } from "@/api/userApi";
 export const checkWalletInstalled = (walletName: string): boolean => {
   const walletNameLower = walletName.toLowerCase();
   
+  if (typeof window === 'undefined') return false;
+  
   // Use window.aptos as a fallback for older implementations
   if (walletNameLower === 'petra') {
-    return !!window.aptos || !!window.petra;
+    const hasPetra = !!window.petra;
+    const hasAptos = !!window.aptos;
+    console.log("Wallet detection - Petra:", hasPetra, "Aptos:", hasAptos);
+    return hasPetra || hasAptos;
   } else if (walletNameLower === 'martian') {
     return !!window.martian;
   } else if (walletNameLower === 'pontem') {
