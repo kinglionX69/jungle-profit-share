@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { Paper, Typography, Box, Divider } from '@mui/material';
 
 interface TokenDepositSummaryProps {
   amount: string;
@@ -15,24 +15,47 @@ const TokenDepositSummary: React.FC<TokenDepositSummaryProps> = ({
   isTestnet
 }) => {
   return (
-    <div className="bg-muted rounded-md p-4 text-sm space-y-2">
-      <div className="flex justify-between">
-        <span className="text-muted-foreground">Deposit amount:</span>
-        <span className="font-medium">{amount || '0'} {isTestnet ? 'APT' : tokenName.toUpperCase()}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-muted-foreground">Payout per NFT:</span>
-        <span className="font-medium">{payoutPerNft.toFixed(2)} {isTestnet ? 'APT' : tokenName.toUpperCase()}</span>
-      </div>
-      <div className="flex justify-between border-t pt-2 mt-2">
-        <span className="text-muted-foreground">Expected claims:</span>
-        <span className="font-medium">
-          {amount && Number(amount) > 0
-            ? Math.floor(Number(amount) / payoutPerNft)
-            : '0'} NFTs
-        </span>
-      </div>
-    </div>
+    <Paper sx={{ 
+      p: 2,
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+          <Typography color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+            Deposit amount:
+          </Typography>
+          <Typography sx={{ fontFamily: "'Nunito', sans-serif", fontWeight: 500 }}>
+            {amount || '0'} {isTestnet ? 'APT' : tokenName.toUpperCase()}
+          </Typography>
+        </Box>
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+          <Typography color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+            Payout per NFT:
+          </Typography>
+          <Typography sx={{ fontFamily: "'Nunito', sans-serif", fontWeight: 500 }}>
+            {payoutPerNft.toFixed(2)} {isTestnet ? 'APT' : tokenName.toUpperCase()}
+          </Typography>
+        </Box>
+        
+        <Divider sx={{ my: 2 }} />
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+            Expected claims:
+          </Typography>
+          <Typography sx={{ fontFamily: "'Nunito', sans-serif", fontWeight: 500 }}>
+            {amount && Number(amount) > 0
+              ? Math.floor(Number(amount) / payoutPerNft)
+              : '0'} NFTs
+          </Typography>
+        </Box>
+      </Box>
+    </Paper>
   );
 };
 

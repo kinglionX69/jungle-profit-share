@@ -1,19 +1,20 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Grid
+} from '@mui/material';
+import { RefreshCw } from 'lucide-react';
 import { WalletBalance as WalletBalanceType } from '@/api/adminApi';
 import { toast } from 'sonner';
 import { IS_TESTNET, SUPPORTED_TOKENS, TESTNET_ESCROW_WALLET, MAINNET_ESCROW_WALLET } from '@/utils/aptos/constants';
 import { useWallet } from '@/context/WalletContext';
 import { getCoinBalance, getAptosClient } from '@/utils/aptos/client';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
 const getAptosPrice = async (): Promise<number> => {
@@ -98,51 +99,19 @@ const WalletBalance: React.FC = () => {
         return;
       }
       
-      console.log(`Using escrow wallet: ${escrowWalletAddress}`);
+      const aptosPrice = await getAptosPrice();
+      const newBalances: WalletBalanceType[] = [];
       
-      await fetchPayoutConfiguration();
+      // Fetch APT balance
+      const aptBalance = await getCoinBalance(escrowWalletAddress, SUPPORTED_TOKENS.APT);
+      newBalances.push({
+        symbol: 'APT',
+        balance: aptBalance,
+        usdValue: aptBalance * aptosPrice,
+        payoutPerNft: payoutsInfo['apt'] || 0.1
+      });
       
-      const aptPrice = await getAptosPrice();
-      console.log(`Current APT price: $${aptPrice}`);
-      
-      const aptBalance = await getCoinBalance(
-        escrowWalletAddress,
-        SUPPORTED_TOKENS.APT,
-        IS_TESTNET ? 'testnet' : 'mainnet'
-      );
-      console.log(`APT balance: ${aptBalance}`);
-      
-      const balancesData: WalletBalanceType[] = [
-        {
-          token: 'Aptos',
-          symbol: 'APT',
-          amount: aptBalance,
-          value: aptBalance * aptPrice,
-        }
-      ];
-      
-      if (!IS_TESTNET) {
-        try {
-          const emojiCoinBalance = await getCoinBalance(
-            escrowWalletAddress,
-            SUPPORTED_TOKENS.EMOJICOIN,
-            'mainnet'
-          );
-          
-          if (emojiCoinBalance > 0) {
-            balancesData.push({
-              token: 'EmojiCoin',
-              symbol: 'EMOJI',
-              amount: emojiCoinBalance,
-              value: emojiCoinBalance,
-            });
-          }
-        } catch (emojiError) {
-          console.log("EMOJICOIN not available or not registered");
-        }
-      }
-      
-      setBalances(balancesData);
+      setBalances(newBalances);
     } catch (error) {
       console.error("Error fetching balances:", error);
       toast.error("Failed to fetch wallet balances");
@@ -153,93 +122,98 @@ const WalletBalance: React.FC = () => {
   };
   
   useEffect(() => {
-    fetchBalances();
+    fetchPayoutConfiguration();
   }, []);
   
-  const totalValue = balances.reduce((acc, item) => acc + item.value, 0);
+  useEffect(() => {
+    if (payoutsInfo['apt']) {
+      fetchBalances();
+    }
+  }, [payoutsInfo]);
   
   const getMaxClaimableNfts = (symbol: string, amount: number) => {
-    const payoutKey = symbol.toLowerCase();
-    const payout = payoutsInfo[payoutKey];
-    
-    if (payout && payout > 0) {
-      return Math.floor(amount / payout);
-    }
-    
-    return 'N/A';
+    const payoutPerNft = payoutsInfo[symbol.toLowerCase()] || 0.1;
+    return Math.floor(amount / payoutPerNft);
   };
   
+  if (isLoading) {
+    return (
+      <Card sx={{ 
+        backgroundImage: 'none',
+        backgroundColor: 'transparent',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2
+      }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle>Escrow Wallet Balance</CardTitle>
-          <CardDescription>Current token balances available for payouts</CardDescription>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={fetchBalances}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
-      </CardHeader>
+    <Card sx={{ 
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">
-            <div className="h-12 bg-muted animate-pulse rounded"></div>
-            <div className="h-12 bg-muted animate-pulse rounded"></div>
-            <div className="h-12 bg-muted animate-pulse rounded"></div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {balances.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                No tokens found in escrow wallet
-              </div>
-            ) : (
-              balances.map((item) => (
-                <div key={item.symbol} className="flex items-center justify-between border-b pb-2">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                      <span className="text-xs font-semibold text-primary">{item.symbol}</span>
-                    </div>
-                    <div>
-                      <div className="font-medium">{item.token}</div>
-                      <div className="text-sm text-muted-foreground">{item.amount.toFixed(4)} {item.symbol}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">${item.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                    <div className="text-sm text-muted-foreground flex flex-col items-end">
-                      <span>{totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : '0'}%</span>
-                      {payoutsInfo[item.symbol.toLowerCase()] ? (
-                        <span className="text-xs mt-1">
-                          Max NFTs: {getMaxClaimableNfts(item.symbol, item.amount)}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Total Value</span>
-            <span className="text-xl font-bold">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-          <div className="text-xs text-muted-foreground mt-2 flex flex-col space-y-1">
-            {Object.entries(payoutsInfo).map(([token, payout]) => (
-              <div key={token} className="flex justify-between">
-                <span>Payout per NFT ({token.toUpperCase()}):</span>
-                <span>{payout.toFixed(2)} {token.toUpperCase()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontFamily: "'Poppins', sans-serif" }}>
+            Escrow Wallet Balance
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={fetchBalances}
+            disabled={isRefreshing}
+            startIcon={<RefreshCw style={{ width: 16, height: 16 }} />}
+            sx={{ 
+              fontFamily: "'Nunito', sans-serif",
+              '&.Mui-disabled': {
+                color: 'text.secondary'
+              }
+            }}
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </Box>
+        
+        <Grid container spacing={2}>
+          {balances.map((balance) => (
+            <Grid item xs={12} sm={6} key={balance.symbol}>
+              <Paper sx={{ 
+                p: 2,
+                backgroundImage: 'none',
+                backgroundColor: 'transparent',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2
+              }}>
+                <Typography color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                  {balance.symbol} Balance
+                </Typography>
+                <Typography variant="h4" sx={{ fontFamily: "'Bungee', cursive", my: 1 }}>
+                  {balance.balance.toFixed(2)}
+                </Typography>
+                <Typography color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                  ${balance.usdValue.toFixed(2)} USD
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontFamily: "'Nunito', sans-serif" }}>
+                  Max Claimable NFTs: {getMaxClaimableNfts(balance.symbol, balance.balance)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                  Payout per NFT: {balance.payoutPerNft} {balance.symbol}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
       </CardContent>
     </Card>
   );

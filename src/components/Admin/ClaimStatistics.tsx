@@ -1,12 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Typography,
+  Box,
+  Grid,
+  Skeleton,
+  Paper
+} from '@mui/material';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -104,87 +105,152 @@ const ClaimStatistics: React.FC = () => {
         
         setWeeklyData(weeklyDataArray);
       } catch (error) {
-        console.error("Error fetching claim statistics:", error);
-        toast.error("Failed to load claim statistics");
+        console.error("Error in fetchClaimStats:", error);
+        toast.error("Failed to fetch claim statistics");
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchClaimStats();
-    
-    // Refresh data every 30 seconds
-    const intervalId = setInterval(fetchClaimStats, 30000);
-    
-    return () => clearInterval(intervalId);
   }, []);
   
+  if (isLoading) {
+    return (
+      <Grid container spacing={3}>
+        {[1, 2, 3, 4].map((item) => (
+          <Grid item xs={12} sm={6} md={3} key={item}>
+            <Skeleton variant="rectangular" height={118} />
+          </Grid>
+        ))}
+        <Grid item xs={12}>
+          <Skeleton variant="rectangular" height={300} />
+        </Grid>
+      </Grid>
+    );
+  }
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Claim Statistics</CardTitle>
-        <CardDescription>Claims processed over time</CardDescription>
-      </CardHeader>
-      <CardContent className="px-2">
-        {isLoading ? (
-          <div className="h-[300px] flex items-center justify-center">
-            <div className="animate-pulse text-muted-foreground">Loading statistics...</div>
-          </div>
-        ) : (
-          <>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+    <Box sx={{ width: '100%' }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+          }}>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                Total Claims
+              </Typography>
+              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
+                {claimStats.totalClaims}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+          }}>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                Total Amount
+              </Typography>
+              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
+                {claimStats.totalAmount.toFixed(2)} APT
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+          }}>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                Unique Wallets
+              </Typography>
+              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
+                {claimStats.uniqueWallets}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ 
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+          }}>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                Average per Claim
+              </Typography>
+              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
+                {claimStats.avgPerClaim.toFixed(2)} APT
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12}>
+          <Paper sx={{ 
+            p: 3,
+            backgroundImage: 'none',
+            backgroundColor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Poppins', sans-serif" }}>
+              Weekly Claims
+            </Typography>
+            <Box sx={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer>
                 <BarChart data={weeklyData}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontFamily: "'Nunito', sans-serif" }}
                   />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}`}
+                  <YAxis 
+                    tick={{ fontFamily: "'Nunito', sans-serif" }}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                      boxShadow: "var(--shadow)",
+                  <Tooltip 
+                    contentStyle={{ 
+                      fontFamily: "'Nunito', sans-serif",
+                      backgroundColor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider'
                     }}
-                    formatter={(value) => [`${value} claims`, 'Claims']}
-                    labelFormatter={(label) => `${label}`}
                   />
-                  <Bar dataKey="claims" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="claims" 
+                    fill="var(--mui-palette-primary-main)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="border rounded-md p-3">
-                <div className="text-sm text-muted-foreground">Total claims</div>
-                <div className="text-2xl font-bold">{claimStats.totalClaims}</div>
-              </div>
-              <div className="border rounded-md p-3">
-                <div className="text-sm text-muted-foreground">Unique wallets</div>
-                <div className="text-2xl font-bold">{claimStats.uniqueWallets}</div>
-              </div>
-              <div className="border rounded-md p-3">
-                <div className="text-sm text-muted-foreground">Total amount</div>
-                <div className="text-2xl font-bold">{claimStats.totalAmount.toFixed(2)}</div>
-              </div>
-              <div className="border rounded-md p-3">
-                <div className="text-sm text-muted-foreground">Avg. per claim</div>
-                <div className="text-2xl font-bold">{claimStats.avgPerClaim.toFixed(2)}</div>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

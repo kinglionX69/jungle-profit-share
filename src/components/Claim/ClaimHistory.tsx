@@ -1,90 +1,265 @@
-
-import React from 'react';
-import { useUser } from '@/context/UserContext';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
   TableCell, 
   TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+  TableRow,
+  TableContainer,
+  Paper,
+  Box,
+  Typography,
+  Skeleton,
+  Chip,
+  Avatar
+} from '@mui/material';
+import { useUser } from '@/context/UserContext';
+import { supabase } from '@/integrations/supabase/client';
+import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
+import { formatDistanceToNow } from 'date-fns';
+
+interface ClaimHistory {
+  id: string;
+  created_at: string;
+  amount: number;
+  token_name: string;
+  status: 'pending' | 'completed' | 'failed';
+  transaction_hash?: string;
+}
 
 const ClaimHistory: React.FC = () => {
-  const { claimHistory, loadingClaimHistory } = useUser();
+  const { user } = useUser();
+  const [history, setHistory] = useState<ClaimHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  if (loadingClaimHistory) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/4" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-  
-  if (claimHistory.length === 0) {
-    return (
-      <div className="rounded-lg border bg-card p-6 text-center">
-        <h3 className="text-lg font-medium font-luckiest">No Claim History</h3>
-        <p className="text-muted-foreground mt-2 mb-4 font-bungee">
-          You haven't made any claims yet. Claims will appear here once processed.
-        </p>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium font-luckiest">Claim History</h3>
+  useEffect(() => {
+    const fetchClaimHistory = async () => {
+      if (!user?.id) return;
       
-      <div className="rounded-lg border overflow-hidden">
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error } = await supabase
+          .from('claim_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+          
+        if (error) throw error;
+        
+        setHistory(data || []);
+      } catch (error) {
+        console.error('Error fetching claim history:', error);
+        setError('Failed to load claim history');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchClaimHistory();
+  }, [user?.id]);
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'error';
+      default:
+        return 'warning';
+    }
+  };
+  
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'Completed';
+      case 'failed':
+        return 'Failed';
+      default:
+        return 'Pending';
+    }
+  };
+  
+  if (loading) {
+    return (
+      <TableContainer component={Paper} sx={{ 
+        backgroundImage: 'none',
+        backgroundColor: 'transparent',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2
+      }}>
         <Table>
-          <TableHeader>
+          <TableHead>
             <TableRow>
-              <TableHead className="font-luckiest">Date</TableHead>
-              <TableHead className="font-luckiest">Amount</TableHead>
-              <TableHead className="hidden md:table-cell font-luckiest">NFTs Used</TableHead>
-              <TableHead className="text-right font-luckiest">Status</TableHead>
+              <TableCell>
+                <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Date</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Amount</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Status</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Transaction</Typography>
+              </TableCell>
             </TableRow>
-          </TableHeader>
+          </TableHead>
           <TableBody>
-            {claimHistory.map((claim) => (
-              <TableRow key={claim.id}>
-                <TableCell className="font-bungee">
-                  {claim.date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton variant="text" width={120} />
                 </TableCell>
-                <TableCell className="font-bungee">
-                  {claim.amount} {claim.tokenName}
+                <TableCell>
+                  <Skeleton variant="text" width={80} />
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <div className="flex flex-wrap gap-1">
-                    {claim.nfts.slice(0, 2).map((nft, index) => (
-                      <Badge key={index} variant="outline" className="truncate max-w-[150px] font-bungee">
-                        {nft}
-                      </Badge>
-                    ))}
-                    {claim.nfts.length > 2 && (
-                      <Badge variant="outline" className="font-bungee">+{claim.nfts.length - 2} more</Badge>
-                    )}
-                  </div>
+                <TableCell>
+                  <Skeleton variant="text" width={100} />
                 </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="secondary" className="bg-success/20 text-success hover:bg-success/20 font-bungee">
-                    Completed
-                  </Badge>
+                <TableCell>
+                  <Skeleton variant="text" width={200} />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
-    </div>
+      </TableContainer>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Box sx={{ 
+        p: 3, 
+        bgcolor: 'error.light', 
+        color: 'error.main',
+        borderRadius: 2,
+        textAlign: 'center'
+      }}>
+        <Typography sx={{ fontFamily: "'Nunito', sans-serif" }}>
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
+  
+  if (history.length === 0) {
+    return (
+      <Box sx={{ 
+        p: 3, 
+        bgcolor: 'background.default', 
+        borderRadius: 2,
+        textAlign: 'center'
+      }}>
+        <Typography 
+          variant="body1" 
+          color="text.secondary"
+          sx={{ fontFamily: "'Nunito', sans-serif" }}
+        >
+          No claim history found
+        </Typography>
+      </Box>
+    );
+  }
+  
+  return (
+    <TableContainer component={Paper} sx={{ 
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>
+              <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Date</Typography>
+            </TableCell>
+            <TableCell>
+              <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Amount</Typography>
+            </TableCell>
+            <TableCell>
+              <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Status</Typography>
+            </TableCell>
+            <TableCell>
+              <Typography sx={{ fontFamily: "'Poppins', sans-serif" }}>Transaction</Typography>
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {history.map((claim) => (
+            <TableRow key={claim.id}>
+              <TableCell>
+                <Typography sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                  {formatDistanceToNow(new Date(claim.created_at), { addSuffix: true })}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar 
+                    src="/lovable-uploads/0f0cffbe-c021-49b7-b714-c4cec03f0893.png" 
+                    alt="Proud Lion Logo"
+                    sx={{ 
+                      width: 24, 
+                      height: 24,
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }}
+                  />
+                  <Typography sx={{ fontFamily: "'Bungee', cursive" }}>
+                    {claim.amount.toFixed(2)} {claim.token_name}
+                  </Typography>
+                </Box>
+              </TableCell>
+              <TableCell>
+                <Chip 
+                  label={getStatusLabel(claim.status)}
+                  color={getStatusColor(claim.status)}
+                  size="small"
+                  sx={{ 
+                    fontFamily: "'Nunito', sans-serif",
+                    fontWeight: 500
+                  }}
+                />
+              </TableCell>
+              <TableCell>
+                {claim.transaction_hash ? (
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontFamily: "'Nunito', sans-serif",
+                      color: 'primary.main',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                    onClick={() => window.open(`https://explorer.aptoslabs.com/txn/${claim.transaction_hash}`, '_blank')}
+                  >
+                    View on Explorer
+                  </Typography>
+                ) : (
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    -
+                  </Typography>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 

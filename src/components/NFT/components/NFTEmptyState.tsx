@@ -1,8 +1,15 @@
-
 import React from 'react';
 import { Search, PackageOpen, RefreshCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Card, 
+  CardContent, 
+  Button, 
+  Box, 
+  Typography, 
+  List, 
+  ListItem, 
+  ListItemText
+} from '@mui/material';
 import { useUser } from '@/context/UserContext';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 
@@ -14,50 +21,131 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible = false })
   const { fetchUserData } = useUser();
   
   return (
-    <Card className="glass border border-jungle-700/20">
-      <CardContent className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="p-4 bg-amber-500/10 text-amber-400 rounded-full mb-4">
+    <Card sx={{ 
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
+      <CardContent sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        py: 6, 
+        px: 2 
+      }}>
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: 'warning.light', 
+          color: 'warning.main', 
+          borderRadius: '50%', 
+          mb: 2 
+        }}>
           {filterEligible ? (
-            <Search className="h-10 w-10" />
+            <Search sx={{ fontSize: 40 }} />
           ) : (
-            <PackageOpen className="h-10 w-10" />
+            <PackageOpen sx={{ fontSize: 40 }} />
           )}
-        </div>
+        </Box>
         
-        <h3 className="text-xl font-semibold mb-2 font-poppins">
+        <Typography variant="h6" sx={{ 
+          fontWeight: 600, 
+          mb: 1,
+          fontFamily: "'Poppins', sans-serif"
+        }}>
           {filterEligible 
             ? 'No Eligible NFTs Found' 
             : `No ${NFT_COLLECTION_NAME} NFTs Found`}
-        </h3>
+        </Typography>
         
-        <p className="text-muted-foreground text-center max-w-md mb-6 font-nunito">
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            textAlign: 'center', 
+            maxWidth: 'md', 
+            mb: 3,
+            fontFamily: "'Nunito', sans-serif"
+          }}
+        >
           {filterEligible
             ? 'You don\'t have any NFTs eligible for claiming rewards at this time.'
             : `We couldn't find any ${NFT_COLLECTION_NAME} NFTs in your wallet.`}
-        </p>
+        </Typography>
         
-        <div className="space-y-2 w-full max-w-xs">
+        <Box sx={{ width: '100%', maxWidth: 'xs', spaceY: 2 }}>
           <Button 
-            variant="outline" 
-            className="w-full justify-center border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+            variant="outlined" 
             onClick={() => fetchUserData()}
+            sx={{ 
+              width: '100%',
+              justifyContent: 'center',
+              borderColor: 'warning.main',
+              color: 'warning.main',
+              '&:hover': {
+                bgcolor: 'warning.light',
+                borderColor: 'warning.main'
+              }
+            }}
           >
-            <RefreshCcw className="mr-2 h-4 w-4" />
+            <RefreshCcw style={{ marginRight: 8, width: 16, height: 16 }} />
             Refresh NFTs
           </Button>
           
           {!filterEligible && (
-            <div className="text-sm text-muted-foreground mt-4 space-y-2 text-left">
-              <p className="font-semibold font-poppins">Troubleshooting Tips:</p>
-              <ul className="list-disc pl-5 space-y-1 text-xs font-nunito">
-                <li>Make sure your wallet contains Proud Lions Club NFTs</li>
-                <li>Check that you're connected with the correct wallet</li>
-                <li>Try refreshing your browser and reconnecting</li>
-                <li>The blockchain network might be congested, try again later</li>
-              </ul>
-            </div>
+            <Box sx={{ mt: 2, textAlign: 'left' }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif"
+                }}
+              >
+                Troubleshooting Tips:
+              </Typography>
+              <List dense sx={{ pl: 2 }}>
+                <ListItem sx={{ pl: 2 }}>
+                  <ListItemText 
+                    primary="Make sure your wallet contains Proud Lions Club NFTs"
+                    primaryTypographyProps={{ 
+                      variant: 'body2',
+                      fontFamily: "'Nunito', sans-serif"
+                    }}
+                  />
+                </ListItem>
+                <ListItem sx={{ pl: 2 }}>
+                  <ListItemText 
+                    primary="Check that you're connected with the correct wallet"
+                    primaryTypographyProps={{ 
+                      variant: 'body2',
+                      fontFamily: "'Nunito', sans-serif"
+                    }}
+                  />
+                </ListItem>
+                <ListItem sx={{ pl: 2 }}>
+                  <ListItemText 
+                    primary="Try refreshing your browser and reconnecting"
+                    primaryTypographyProps={{ 
+                      variant: 'body2',
+                      fontFamily: "'Nunito', sans-serif"
+                    }}
+                  />
+                </ListItem>
+                <ListItem sx={{ pl: 2 }}>
+                  <ListItemText 
+                    primary="The blockchain network might be congested, try again later"
+                    primaryTypographyProps={{ 
+                      variant: 'body2',
+                      fontFamily: "'Nunito', sans-serif"
+                    }}
+                  />
+                </ListItem>
+              </List>
+            </Box>
           )}
-        </div>
+        </Box>
       </CardContent>
     </Card>
   );

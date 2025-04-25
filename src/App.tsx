@@ -1,7 +1,6 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import { WalletProvider } from "./context/wallet";
 import { UserProvider } from "./context/UserContext";
@@ -17,6 +16,7 @@ const queryClient = new QueryClient();
 // The application component with all providers
 const App = () => (
   <ThemeProvider theme={theme}>
+    <CssBaseline />
     <QueryClientProvider client={queryClient}>
       <SnackbarProvider 
         maxSnack={3} 

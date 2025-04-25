@@ -1,6 +1,16 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Alert, 
+  AlertTitle, 
+  AlertDescription,
+  Grid,
+  Container
+} from '@mui/material';
+import { Refresh as RefreshIcon, AlertCircle as AlertCircleIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import { useWallet } from '@/context/WalletContext';
@@ -10,16 +20,14 @@ import NFTGrid from '@/components/NFT/NFTGrid';
 import ClaimCard from '@/components/Claim/ClaimCard';
 import ClaimHistory from '@/components/Claim/ClaimHistory';
 import { useUser } from '@/context/UserContext';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { IS_TESTNET } from '@/utils/aptos/constants';
+import { useSnackbar } from 'notistack';
 
 const Dashboard = () => {
   const { connected, address } = useWallet();
   const { isVerified, nfts, fetchUserData, loadingNfts } = useUser();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   
   // Redirect to home if not connected
   useEffect(() => {
@@ -30,7 +38,7 @@ const Dashboard = () => {
 
   const handleRefreshNFTs = () => {
     if (fetchUserData) {
-      toast.info("Refreshing NFT data...");
+      enqueueSnackbar("Refreshing NFT data...", { variant: 'info' });
       fetchUserData();
     }
   };
@@ -39,8 +47,16 @@ const Dashboard = () => {
     return (
       <>
         <Header />
-        <PageContainer className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
-          <WalletConnect />
+        <PageContainer>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: 'calc(100vh - 80px)'
+          }}>
+            <WalletConnect />
+          </Box>
         </PageContainer>
       </>
     );
@@ -50,49 +66,65 @@ const Dashboard = () => {
     <>
       <Header />
       <PageContainer>
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+              Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
               View your eligible NFTs and claim your rewards
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleRefreshNFTs} disabled={loadingNfts}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loadingNfts ? 'animate-spin' : ''}`} />
+            </Typography>
+          </Box>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={handleRefreshNFTs} 
+            disabled={loadingNfts}
+            startIcon={<RefreshIcon className={loadingNfts ? 'animate-spin' : ''} />}
+          >
             {loadingNfts ? 'Refreshing...' : 'Refresh NFTs'}
           </Button>
-        </div>
+        </Box>
         
         {IS_TESTNET && (
-          <Alert className="mb-4 bg-amber-500/10 border-amber-500/20">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <AlertTitle className="text-amber-500">Testnet Mode</AlertTitle>
-            <AlertDescription className="text-amber-400/80">
+          <Alert 
+            severity="warning" 
+            sx={{ 
+              mb: 4,
+              backgroundColor: 'rgba(255, 167, 38, 0.1)',
+              borderColor: 'rgba(255, 167, 38, 0.2)'
+            }}
+          >
+            <AlertCircleIcon />
+            <AlertTitle>Testnet Mode</AlertTitle>
+            <AlertDescription>
               Application is running in testnet mode. NFTs and transactions will be on the Aptos testnet.
             </AlertDescription>
           </Alert>
         )}
         
         {!isVerified && (
-          <div className="mb-8 max-w-md">
+          <Box sx={{ mb: 4, maxWidth: 'md' }}>
             <EmailVerification />
-          </div>
+          </Box>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-          <div className="lg:col-span-2">
-            <h2 className="text-xl font-medium mb-4">Eligible NFTs for Claim</h2>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12} lg={8}>
+            <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
+              Eligible NFTs for Claim
+            </Typography>
             <NFTGrid filterEligible={true} />
-          </div>
+          </Grid>
           
-          <div>
+          <Grid item xs={12} lg={4}>
             <ClaimCard />
-          </div>
-        </div>
+          </Grid>
+        </Grid>
         
-        <div className="mt-10">
+        <Box sx={{ mt: 4 }}>
           <ClaimHistory />
-        </div>
+        </Box>
       </PageContainer>
     </>
   );

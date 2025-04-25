@@ -1,5 +1,41 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Luckiest+Guy&family=Nunito:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Base styles */
+:root {
+  font-family: 'Nunito', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Material UI overrides */
+.MuiButton-root {
+  text-transform: none !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #162019;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4CAF50;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #388E3C;
+}
 
 @tailwind base;
 @tailwind components;

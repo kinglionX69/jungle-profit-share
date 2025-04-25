@@ -1,14 +1,12 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress
+} from '@mui/material';
 import { Coins, Loader, Upload } from 'lucide-react';
 import { IS_TESTNET } from '@/utils/aptos/constants';
 import TokenDepositForm from './TokenDepositForm';
@@ -29,51 +27,62 @@ const TokenDepositCard: React.FC = () => {
   const { address, isAdmin } = useWallet();
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Upload className="h-5 w-5" />
-          Deposit Tokens
-        </CardTitle>
-        <CardDescription>
-          Add tokens to the escrow wallet for NFT holder rewards
-          {IS_TESTNET && <span className="text-amber-500 ml-1">(Testnet mode: only APT supported)</span>}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <TokenDepositForm
-          amount={amount}
-          setAmount={setAmount}
-          selectedToken={selectedToken}
-          handleTokenChange={handleTokenChange}
-        />
+    <Card sx={{ 
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Upload style={{ width: 20, height: 20 }} />
+          <Typography variant="h6" sx={{ fontFamily: "'Poppins', sans-serif" }}>
+            Deposit Tokens
+          </Typography>
+        </Box>
         
-        <TokenDepositSummary
-          amount={amount}
-          tokenName={selectedToken}
-          payoutPerNft={FIXED_PAYOUT_PER_NFT}
-          isTestnet={IS_TESTNET}
-        />
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handleDeposit} 
-          className="w-full"
-          disabled={!amount || processing || !address || !isAdmin}
-        >
-          {processing ? (
-            <>
-              <Loader className="mr-2 h-4 w-4 animate-spin" />
-              Processing Deposit...
-            </>
-          ) : (
-            <>
-              <Coins className="mr-2 h-4 w-4" />
-              Deposit to Escrow Wallet
-            </>
+        <Typography color="text.secondary" sx={{ mb: 3, fontFamily: "'Nunito', sans-serif" }}>
+          Add tokens to the escrow wallet for NFT holder rewards
+          {IS_TESTNET && (
+            <Typography component="span" sx={{ color: 'warning.main', ml: 0.5, fontFamily: "'Nunito', sans-serif" }}>
+              (Testnet mode: only APT supported)
+            </Typography>
           )}
+        </Typography>
+        
+        <Box sx={{ mb: 3 }}>
+          <TokenDepositForm
+            amount={amount}
+            setAmount={setAmount}
+            selectedToken={selectedToken}
+            handleTokenChange={handleTokenChange}
+          />
+        </Box>
+        
+        <Box sx={{ mb: 3 }}>
+          <TokenDepositSummary
+            amount={amount}
+            tokenName={selectedToken}
+            payoutPerNft={FIXED_PAYOUT_PER_NFT}
+            isTestnet={IS_TESTNET}
+          />
+        </Box>
+        
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={handleDeposit}
+          disabled={!amount || processing || !address || !isAdmin}
+          startIcon={processing ? <Loader style={{ width: 16, height: 16 }} /> : <Coins style={{ width: 16, height: 16 }} />}
+          sx={{ 
+            py: 1.5,
+            fontFamily: "'Bungee', cursive"
+          }}
+        >
+          {processing ? 'Processing Deposit...' : 'Deposit to Escrow Wallet'}
         </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };

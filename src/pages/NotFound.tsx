@@ -1,8 +1,12 @@
-
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
+import { 
+  Box, 
+  Typography, 
+  Button,
+  Container
+} from '@mui/material';
+import { Home as HomeIcon } from '@mui/icons-material';
 
 const NotFound = () => {
   const location = useLocation();
@@ -16,19 +20,49 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30">
-      <div className="text-center max-w-md px-4">
-        <h1 className="text-8xl font-bold text-primary mb-4">404</h1>
-        <p className="text-2xl font-medium mb-6">Page Not Found</p>
-        <p className="text-muted-foreground mb-8">
-          The page you are looking for doesn't exist or has been moved.
-        </p>
-        <Button onClick={() => navigate("/")} size="lg">
-          <Home className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-      </div>
-    </div>
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'background.default'
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box sx={{ textAlign: 'center', px: 2 }}>
+          <Typography 
+            variant="h1" 
+            sx={{ 
+              fontSize: '8rem',
+              fontWeight: 'bold',
+              color: 'primary.main',
+              mb: 2
+            }}
+          >
+            404
+          </Typography>
+          <Typography variant="h4" component="h2" sx={{ mb: 3 }}>
+            Page Not Found
+          </Typography>
+          <Typography 
+            variant="body1" 
+            color="text.secondary" 
+            sx={{ mb: 4 }}
+          >
+            The page you are looking for doesn't exist or has been moved.
+          </Typography>
+          <Button 
+            variant="contained" 
+            size="large"
+            onClick={() => navigate("/")}
+            startIcon={<HomeIcon />}
+          >
+            Back to Home
+          </Button>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

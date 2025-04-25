@@ -1,6 +1,17 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  Typography, 
+  Alert, 
+  AlertTitle, 
+  AlertDescription,
+  Grid,
+  Tabs,
+  Tab,
+  Paper
+} from '@mui/material';
+import { Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import { useWallet } from '@/context/WalletContext';
@@ -8,13 +19,11 @@ import TokenDeposit from '@/components/Admin/TokenDeposit';
 import TokenWithdrawal from '@/components/Admin/TokenWithdrawal';
 import ClaimStatistics from '@/components/Admin/ClaimStatistics';
 import WalletBalance from '@/components/Admin/WalletBalance';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Admin = () => {
   const { connected, isAdmin } = useWallet();
   const navigate = useNavigate();
+  const [tabValue, setTabValue] = React.useState(0);
   
   // Redirect if not connected or not admin
   useEffect(() => {
@@ -25,18 +34,33 @@ const Admin = () => {
     }
   }, [connected, isAdmin, navigate]);
   
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+  
   if (!connected || !isAdmin) {
     return (
       <>
         <Header />
-        <PageContainer className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
-          <Alert variant="destructive" className="max-w-md">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>
-              This page is only accessible to the admin wallet.
-            </AlertDescription>
-          </Alert>
+        <PageContainer>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: 'calc(100vh - 80px)'
+          }}>
+            <Alert 
+              severity="error" 
+              sx={{ maxWidth: 'md' }}
+            >
+              <WarningIcon />
+              <AlertTitle>Access Restricted</AlertTitle>
+              <AlertDescription>
+                This page is only accessible to the admin wallet.
+              </AlertDescription>
+            </Alert>
+          </Box>
         </PageContainer>
       </>
     );
@@ -46,34 +70,41 @@ const Admin = () => {
     <>
       <Header />
       <PageContainer>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground mt-1">
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            Admin Panel
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
             Manage token deposits and monitor claim activity
-          </p>
-        </div>
+          </Typography>
+        </Box>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div className="space-y-6">
-            <Tabs defaultValue="deposit" className="w-full">
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="deposit">Deposit</TabsTrigger>
-                <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
-              </TabsList>
-              <TabsContent value="deposit">
-                <TokenDeposit />
-              </TabsContent>
-              <TabsContent value="withdraw">
-                <TokenWithdrawal />
-              </TabsContent>
-            </Tabs>
-          </div>
-          <WalletBalance />
-        </div>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 3 }}>
+              <Tabs 
+                value={tabValue} 
+                onChange={handleTabChange}
+                sx={{ mb: 3 }}
+              >
+                <Tab label="Deposit" />
+                <Tab label="Withdraw" />
+              </Tabs>
+              
+              <Box sx={{ mt: 2 }}>
+                {tabValue === 0 && <TokenDeposit />}
+                {tabValue === 1 && <TokenWithdrawal />}
+              </Box>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <WalletBalance />
+          </Grid>
+        </Grid>
         
-        <div className="mt-8">
+        <Box sx={{ mt: 4 }}>
           <ClaimStatistics />
-        </div>
+        </Box>
       </PageContainer>
     </>
   );

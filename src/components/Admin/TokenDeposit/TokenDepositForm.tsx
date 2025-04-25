@@ -1,8 +1,13 @@
-
 import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  TextField,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Box
+} from '@mui/material';
 import { IS_TESTNET } from '@/utils/aptos/constants';
 
 interface TokenDepositFormProps {
@@ -19,42 +24,67 @@ const TokenDepositForm: React.FC<TokenDepositFormProps> = ({
   handleTokenChange
 }) => {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="token-amount">Amount</Label>
-      <div className="flex gap-2">
-        <Input
-          id="token-amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
-          min="0"
-          step="0.01"
-          className="flex-1"
-        />
-        {/* On testnet, only show APT option - on mainnet, show both options */}
-        {IS_TESTNET ? (
-          <div className="flex items-center px-3 py-2 bg-muted rounded-md font-medium">
-            APT
-          </div>
-        ) : (
-          <RadioGroup 
-            value={selectedToken}
-            onValueChange={handleTokenChange}
-            className="flex gap-2"
-          >
-            <div className="flex items-center space-x-1">
-              <RadioGroupItem value="apt" id="apt" />
-              <Label htmlFor="apt" className="cursor-pointer">APT</Label>
-            </div>
-            <div className="flex items-center space-x-1">
-              <RadioGroupItem value="emojicoin" id="emojicoin" />
-              <Label htmlFor="emojicoin" className="cursor-pointer">EMOJICOIN</Label>
-            </div>
-          </RadioGroup>
-        )}
-      </div>
-    </div>
+    <Box sx={{ mb: 3 }}>
+      <FormControl component="fieldset" fullWidth>
+        <FormLabel component="legend" sx={{ mb: 1, fontFamily: "'Nunito', sans-serif" }}>
+          Amount
+        </FormLabel>
+        
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            inputProps={{ min: 0, step: 0.01 }}
+            sx={{ 
+              '& .MuiInputLabel-root': {
+                fontFamily: "'Nunito', sans-serif"
+              },
+              '& .MuiInputBase-input': {
+                fontFamily: "'Nunito', sans-serif"
+              }
+            }}
+          />
+          
+          {IS_TESTNET ? (
+            <Box
+              sx={{
+                px: 2,
+                py: 1,
+                bgcolor: 'background.default',
+                borderRadius: 1,
+                fontFamily: "'Nunito', sans-serif",
+                fontWeight: 500
+              }}
+            >
+              APT
+            </Box>
+          ) : (
+            <RadioGroup
+              row
+              value={selectedToken}
+              onChange={(e) => handleTokenChange(e.target.value)}
+              sx={{ ml: 1 }}
+            >
+              <FormControlLabel
+                value="apt"
+                control={<Radio />}
+                label="APT"
+                sx={{ fontFamily: "'Nunito', sans-serif" }}
+              />
+              <FormControlLabel
+                value="emojicoin"
+                control={<Radio />}
+                label="EMOJICOIN"
+                sx={{ fontFamily: "'Nunito', sans-serif" }}
+              />
+            </RadioGroup>
+          )}
+        </Box>
+      </FormControl>
+    </Box>
   );
 };
 

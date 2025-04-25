@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button, TextField, Box, CircularProgress, Alert } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
 import { useWallet } from '@/context/WalletContext';
@@ -37,7 +34,6 @@ const EmailVerification = () => {
         const userData = await getUserData(address);
         console.log("Fetched user verification status:", userData);
         
-        // If user exists and has verified email, set verified state
         if (userData?.email_verified) {
           setEmail(userData.email);
           setIsVerified(true);
@@ -53,7 +49,6 @@ const EmailVerification = () => {
     checkVerificationStatus();
   }, [address]);
   
-  // Add the missing onEmailSubmit function
   const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
     if (!address) {
       toast.error("Wallet not connected");
@@ -81,54 +76,42 @@ const EmailVerification = () => {
     }
   };
   
-  // Don't show the form if user is already verified
   if (loading) {
     return (
-      <div className="flex items-center p-4 text-sm rounded-lg border bg-card">
-        <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse mr-2"></div>
-        <span className="font-bungee">Checking verification status...</span>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+        <CircularProgress size={16} sx={{ mr: 1 }} />
+        <span style={{ fontFamily: 'Bungee' }}>Checking verification status...</span>
+      </Box>
     );
   }
   
   if (isVerified && email) {
     return (
-      <div className="flex items-center p-4 text-sm rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
-        <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-        <span className="font-bungee">Email: <span className="font-medium">{email}</span></span>
-      </div>
+      <Alert severity="success" sx={{ fontFamily: 'Bungee' }}>
+        Email: <span style={{ fontWeight: 500 }}>{email}</span>
+      </Alert>
     );
   }
   
-  // Only show email form if not verified
   return (
-    <div className="rounded-lg border p-4 bg-card">
-      <h3 className="text-lg font-luckiest mb-4">Add Your Email</h3>
-      
-      <p className="text-sm text-muted-foreground mb-4 font-bungee">
-        Add Email to verify Claim
-      </p>
-      
-      <Form {...emailForm}>
-        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-          <FormField
-            control={emailForm.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input placeholder="Enter your email" {...field} className="font-bungee" />
-                </FormControl>
-                <FormMessage className="font-bungee" />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={submitting} className="font-bungee">
-            {submitting ? 'Saving...' : 'Save Email'}
-          </Button>
-        </form>
-      </Form>
-    </div>
+    <Box component="form" onSubmit={emailForm.handleSubmit(onEmailSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <TextField
+        {...emailForm.register('email')}
+        label="Email"
+        type="email"
+        error={!!emailForm.formState.errors.email}
+        helperText={emailForm.formState.errors.email?.message}
+        fullWidth
+      />
+      <Button
+        type="submit"
+        variant="contained"
+        disabled={submitting}
+        sx={{ fontFamily: 'Bungee' }}
+      >
+        {submitting ? 'Verifying...' : 'Verify Email'}
+      </Button>
+    </Box>
   );
 };
 

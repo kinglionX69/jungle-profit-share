@@ -1,9 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { useUser } from '@/context/UserContext';
+import { 
+  Button, 
+  Box, 
+  Typography, 
+  Divider, 
+  Card, 
+  CardContent,
+  CircularProgress
+} from '@mui/material';
 import { Coins, History, ChevronRight, Loader, Clock } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,115 +96,207 @@ const ClaimCard: React.FC = () => {
   const formattedClaimableAmount = claimableAmount.toFixed(2);
   
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="bg-muted p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Claimable Rewards</h3>
+    <Card sx={{ 
+      backgroundImage: 'none',
+      backgroundColor: 'transparent',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2,
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ 
+        bgcolor: 'background.default',
+        p: 3
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          mb: 2
+        }}>
+          <Typography variant="h6" sx={{ fontFamily: "'Poppins', sans-serif" }}>
+            Claimable Rewards
+          </Typography>
           <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground text-sm"
+            variant="text"
+            size="small"
             onClick={() => navigate('/dashboard/history')}
+            startIcon={<History style={{ width: 16, height: 16 }} />}
+            sx={{ 
+              color: 'text.secondary',
+              fontFamily: "'Nunito', sans-serif"
+            }}
           >
-            <History className="h-4 w-4 mr-1" />
             History
           </Button>
-        </div>
+        </Box>
         
-        <div className="mt-4 flex items-center justify-between">
-          <div>
-            <div className="text-4xl font-bold">{formattedClaimableAmount} {payoutToken}</div>
-            <div className="text-sm text-muted-foreground mt-1">
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          mt: 2
+        }}>
+          <Box>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontFamily: "'Bungee', cursive",
+                fontWeight: 700
+              }}
+            >
+              {formattedClaimableAmount} {payoutToken}
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                mt: 1,
+                fontFamily: "'Nunito', sans-serif"
+              }}
+            >
               From {eligibleCount} eligible NFT{eligibleCount !== 1 ? 's' : ''}
-            </div>
-          </div>
-          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Coins className="h-8 w-8 text-primary" />
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+          <Box sx={{ 
+            width: 64, 
+            height: 64, 
+            bgcolor: 'primary.light', 
+            borderRadius: '50%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center'
+          }}>
+            <Coins style={{ width: 32, height: 32, color: 'primary.main' }} />
+          </Box>
+        </Box>
+      </Box>
       
-      <div className="p-6">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Reward rate:</span>
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Reward rate:
+            </Typography>
             {isLoading ? (
-              <div className="h-4 w-16 bg-muted animate-pulse rounded"></div>
+              <Box sx={{ width: 64, height: 16, bgcolor: 'background.default', borderRadius: 1 }} />
             ) : (
-              <span className="font-medium">{FIXED_PAYOUT_PER_NFT.toFixed(2)} {payoutToken} per NFT</span>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {FIXED_PAYOUT_PER_NFT.toFixed(2)} {payoutToken} per NFT
+              </Typography>
             )}
-          </div>
+          </Box>
           
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Collection:</span>
-            <span className="font-medium">{NFT_COLLECTION_NAME}</span>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Collection:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {NFT_COLLECTION_NAME}
+            </Typography>
+          </Box>
           
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Eligible NFTs:</span>
-            <span className="font-medium">{eligibleCount} NFT{eligibleCount !== 1 ? 's' : ''}</span>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Eligible NFTs:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {eligibleCount} NFT{eligibleCount !== 1 ? 's' : ''}
+            </Typography>
+          </Box>
           
           {lockedCount > 0 && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Locked NFTs:</span>
-              <span className="font-medium">{lockedCount} NFT{lockedCount !== 1 ? 's' : ''}</span>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Locked NFTs:
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {lockedCount} NFT{lockedCount !== 1 ? 's' : ''}
+              </Typography>
+            </Box>
           )}
           
           {nextUnlock && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Next unlock:</span>
-              <span className="font-medium flex items-center">
-                <Clock className="h-3 w-3 mr-1 text-amber-400" />
-                {nextUnlock.toLocaleDateString()}
-              </span>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Next unlock:
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Clock style={{ width: 12, height: 12, color: 'warning.main' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {nextUnlock.toLocaleDateString()}
+                </Typography>
+              </Box>
+            </Box>
           )}
           
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Claim period:</span>
-            <span className="font-medium">30 days lock after claim</span>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Claim period:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              30 days lock after claim
+            </Typography>
+          </Box>
           
-          <Separator />
+          <Divider sx={{ my: 2 }} />
           
-          <div className="flex justify-between items-center">
-            <span className="font-medium">Total claimable:</span>
-            <span className="font-bold">{formattedClaimableAmount} {payoutToken}</span>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Total claimable:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {formattedClaimableAmount} {payoutToken}
+            </Typography>
+          </Box>
           
           <Button 
+            variant="contained"
             onClick={handleClaim}
             disabled={claimableAmount <= 0 || claiming || !isVerified}
-            className="w-full"
-            size="lg"
+            fullWidth
+            size="large"
+            sx={{ 
+              mt: 2,
+              py: 1.5,
+              fontFamily: "'Bungee', cursive"
+            }}
           >
             {claiming ? (
               <>
-                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                <CircularProgress size={16} sx={{ mr: 1 }} />
                 Processing...
               </>
             ) : (
               <>
                 Claim Now
-                <ChevronRight className="ml-1 h-4 w-4" />
+                <ChevronRight style={{ marginLeft: 4, width: 16, height: 16 }} />
               </>
             )}
           </Button>
           
           {claimableAmount <= 0 ? (
-            <p className="text-xs text-muted-foreground text-center">
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              align="center"
+              sx={{ fontFamily: "'Nunito', sans-serif" }}
+            >
               You don't have any rewards to claim at this time
-            </p>
+            </Typography>
           ) : !isVerified ? (
-            <p className="text-xs text-destructive text-center">
+            <Typography 
+              variant="body2" 
+              color="error.main" 
+              align="center"
+              sx={{ fontFamily: "'Nunito', sans-serif" }}
+            >
               Please verify your email before claiming rewards
-            </p>
+            </Typography>
           ) : null}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

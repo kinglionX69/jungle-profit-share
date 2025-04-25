@@ -1,30 +1,68 @@
-
 import React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton, Box, Grid } from '@mui/material';
 
 const NFTGridSkeleton: React.FC = () => {
   // Create an array of 6 placeholders
   const placeholders = Array.from({ length: 6 }, (_, i) => i);
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <Grid container spacing={3}>
       {placeholders.map((index) => (
-        <div 
-          key={index} 
-          className="glass border border-jungle-700/20 rounded-xl overflow-hidden animate-pulse shadow-md"
-        >
-          <Skeleton className="w-full h-48 bg-amber-500/10" />
-          <div className="p-4">
-            <Skeleton className="h-6 w-3/4 mb-2 bg-amber-500/10" />
-            <Skeleton className="h-4 w-1/2 mb-4 bg-amber-500/10" />
-            <div className="flex justify-between">
-              <Skeleton className="h-8 w-24 rounded-full bg-amber-500/10" />
-              <Skeleton className="h-8 w-20 rounded-full bg-amber-500/10" />
-            </div>
-          </div>
-        </div>
+        <Grid item xs={12} sm={6} md={4} key={index}>
+          <Box 
+            sx={{ 
+              backgroundImage: 'none',
+              backgroundColor: 'transparent',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              overflow: 'hidden',
+              animation: 'pulse 2s infinite',
+              '@keyframes pulse': {
+                '0%': { opacity: 0.6 },
+                '50%': { opacity: 1 },
+                '100%': { opacity: 0.6 }
+              }
+            }}
+          >
+            <Skeleton 
+              variant="rectangular" 
+              width="100%" 
+              height={192}
+              sx={{ bgcolor: 'warning.light' }}
+            />
+            <Box sx={{ p: 2 }}>
+              <Skeleton 
+                variant="text" 
+                width="75%" 
+                height={24}
+                sx={{ mb: 1, bgcolor: 'warning.light' }}
+              />
+              <Skeleton 
+                variant="text" 
+                width="50%" 
+                height={16}
+                sx={{ mb: 2, bgcolor: 'warning.light' }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Skeleton 
+                  variant="rectangular" 
+                  width={96} 
+                  height={32}
+                  sx={{ borderRadius: 4, bgcolor: 'warning.light' }}
+                />
+                <Skeleton 
+                  variant="rectangular" 
+                  width={80} 
+                  height={32}
+                  sx={{ borderRadius: 4, bgcolor: 'warning.light' }}
+                />
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
       ))}
-    </div>
+    </Grid>
   );
 };
 

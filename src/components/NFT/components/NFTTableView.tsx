@@ -1,10 +1,19 @@
-
 import React from 'react';
 import { NFT } from '@/api/types/nft.types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableRow,
+  TableContainer,
+  Paper,
+  Avatar,
+  Box,
+  Typography
+} from '@mui/material';
 import { NFT_COLLECTION_NAME } from '@/utils/aptos/constants';
 import NFTCountdownTimer from './NFTCountdownTimer';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface NFTTableViewProps {
   nfts: NFT[];
@@ -47,15 +56,28 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
   };
 
   return (
-    <div className="w-full overflow-auto">
+    <TableContainer component={Paper} sx={{ 
+      backgroundColor: 'transparent',
+      backgroundImage: 'none',
+      boxShadow: 'none',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 2
+    }}>
       <Table>
-        <TableHeader>
+        <TableHead>
           <TableRow>
-            <TableHead className="font-luckiest">NFT</TableHead>
-            <TableHead className="font-luckiest">Reward Amount</TableHead>
-            <TableHead className="font-luckiest">Status</TableHead>
+            <TableHead>
+              <Typography sx={{ fontFamily: "'Luckiest Guy', cursive" }}>NFT</Typography>
+            </TableHead>
+            <TableHead>
+              <Typography sx={{ fontFamily: "'Luckiest Guy', cursive" }}>Reward Amount</Typography>
+            </TableHead>
+            <TableHead>
+              <Typography sx={{ fontFamily: "'Luckiest Guy', cursive" }}>Status</Typography>
+            </TableHead>
           </TableRow>
-        </TableHeader>
+        </TableHead>
         <TableBody>
           {nfts.map((nft) => {
             // Get the NFT number using our helper function
@@ -63,26 +85,39 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
             
             return (
               <TableRow key={nft.tokenId}>
-                <TableCell className="font-medium font-bungee">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 border border-border">
-                      <AvatarImage 
-                        src="/lovable-uploads/0f0cffbe-c021-49b7-b714-c4cec03f0893.png" 
-                        alt="Proud Lion Logo" 
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        PL
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{NFT_COLLECTION_NAME} #{nftNumber}</span>
-                  </div>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar 
+                      src="/lovable-uploads/0f0cffbe-c021-49b7-b714-c4cec03f0893.png" 
+                      alt="Proud Lion Logo"
+                      sx={{ 
+                        width: 48, 
+                        height: 48,
+                        border: '1px solid',
+                        borderColor: 'divider'
+                      }}
+                    />
+                    <Typography sx={{ fontFamily: "'Bungee', cursive" }}>
+                      {NFT_COLLECTION_NAME} #{nftNumber}
+                    </Typography>
+                  </Box>
                 </TableCell>
-                <TableCell className="font-bungee">0.1 APT</TableCell>
+                <TableCell>
+                  <Typography sx={{ fontFamily: "'Bungee', cursive" }}>0.1 APT</Typography>
+                </TableCell>
                 <TableCell>
                   {nft.isLocked ? (
                     <NFTCountdownTimer unlockDate={nft.unlockDate} />
                   ) : (
-                    <span className="text-green-500 font-medium font-bungee">Available for Claim</span>
+                    <Typography 
+                      sx={{ 
+                        color: 'success.main',
+                        fontWeight: 500,
+                        fontFamily: "'Bungee', cursive"
+                      }}
+                    >
+                      Available for Claim
+                    </Typography>
                   )}
                 </TableCell>
               </TableRow>
@@ -90,7 +125,7 @@ const NFTTableView: React.FC<NFTTableViewProps> = ({ nfts }) => {
           })}
         </TableBody>
       </Table>
-    </div>
+    </TableContainer>
   );
 };
 
