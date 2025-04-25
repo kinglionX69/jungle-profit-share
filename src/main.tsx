@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CssBaseline } from '@mui/material';
-import App from './App.tsx';
+import App from './App';
 
 // Get the root element
 const rootElement = document.getElementById("root");

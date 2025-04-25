@@ -47,24 +47,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': [
-            'react',
-            'react-dom',
-            'scheduler'
-          ],
-          'mui-vendor': [
-            '@mui/material',
-            '@mui/icons-material',
-            '@emotion/react',
-            '@emotion/styled',
-            '@mui/system'
-          ],
-          'notistack-vendor': [
-            'notistack'
-          ],
-          'query-vendor': [
-            '@tanstack/react-query'
-          ]
+          'vendor': ['react', 'react-dom', 'scheduler'],
+          'mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/system'],
+          'utils': ['notistack', '@tanstack/react-query']
         }
       }
     },
