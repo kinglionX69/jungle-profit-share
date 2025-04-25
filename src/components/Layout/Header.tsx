@@ -25,11 +25,14 @@ import {
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useWallet } from '@/context/wallet';
 import { IS_TESTNET } from '@/utils/aptos/constants/network';
+import { checkWalletInstalled } from '@/context/wallet/walletUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { connected, address, isAdmin, disconnect } = useWallet();
+  const { connected, address, isAdmin, disconnect, connectWallet } = useWallet();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   // Debug output for admin status
   useEffect(() => {
@@ -65,6 +68,32 @@ const Header = () => {
   // Toggle mobile menu
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Handle wallet connect
+  const handleConnectWallet = async () => {
+    const walletInstalled = checkWalletInstalled('petra');
+    
+    if (!walletInstalled) {
+      if (isMobile) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          window.open('https://apps.apple.com/us/app/petra-aptos-wallet/id6446259840', '_blank');
+        } else {
+          window.open('https://play.google.com/store/apps/details?id=com.aptoslabs.petra', '_blank');
+        }
+      } else {
+        window.open('https://petra.app/', '_blank');
+      }
+      return;
+    }
+    
+    try {
+      await connectWallet('petra');
+      toggleMobileMenu();
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+    }
   };
 
   return (
@@ -136,8 +165,7 @@ const Header = () => {
               <Button
                 variant="outlined"
                 color="primary"
-                component={RouterLink}
-                to="/"
+                onClick={handleConnectWallet}
                 startIcon={<WalletIcon />}
                 sx={{ ml: 2 }}
               >
@@ -205,9 +233,7 @@ const Header = () => {
             </ListItem>
           ) : (
             <ListItem 
-              component={RouterLink} 
-              to="/"
-              onClick={toggleMobileMenu}
+              onClick={handleConnectWallet}
             >
               <ListItemIcon><WalletIcon /></ListItemIcon>
               <ListItemText primary="Connect Wallet" />
