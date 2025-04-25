@@ -3,11 +3,15 @@ import React, { useState } from 'react';
 import { Button, Typography, Tooltip } from '@mui/material';
 import { useWallet } from '@/context/wallet';
 import { useSnackbar } from 'notistack';
+import { useUser } from '@/context/UserContext';
+import { ChevronRight } from 'lucide-react';
 
 const WalletConnect: React.FC = () => {
-  const { connected, address, connect, disconnect } = useWallet();
+  const { connected, connect } = useWallet();
   const { enqueueSnackbar } = useSnackbar();
+  const { claim, claimableAmount, isVerified } = useUser();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const handleConnect = async () => {
     try {
@@ -24,11 +28,28 @@ const WalletConnect: React.FC = () => {
     }
   };
 
-  if (connected && address) {
+  const handleClaim = async () => {
+    if (!connected || claimableAmount <= 0 || !isVerified) return;
+    
+    setIsClaiming(true);
+    try {
+      await claim();
+    } catch (error) {
+      console.error('Error claiming rewards:', error);
+      enqueueSnackbar('Failed to claim rewards. Please try again.', { 
+        variant: 'error' 
+      });
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  if (connected) {
     return (
       <Button
         variant="contained"
-        onClick={disconnect}
+        onClick={handleClaim}
+        disabled={isClaiming || claimableAmount <= 0 || !isVerified}
         sx={{
           fontFamily: "'Nunito', sans-serif",
           fontWeight: 600,
@@ -37,7 +58,14 @@ const WalletConnect: React.FC = () => {
           py: 1
         }}
       >
-        {`${address.slice(0, 6)}...${address.slice(-4)}`}
+        {isClaiming ? (
+          'Processing...'
+        ) : (
+          <>
+            Claim Now
+            <ChevronRight style={{ marginLeft: 4, width: 16, height: 16 }} />
+          </>
+        )}
       </Button>
     );
   }
