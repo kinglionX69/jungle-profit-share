@@ -51,34 +51,17 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': [
-            'react',
-            'react-dom',
-            'scheduler'
-          ],
-          'mui-vendor': [
-            '@mui/material',
-            '@mui/icons-material',
-            '@emotion/react',
-            '@emotion/styled',
-            '@mui/system'
-          ],
-          'notistack-vendor': [
-            'notistack'
-          ],
-          'query-vendor': [
-            '@tanstack/react-query'
-          ]
+          'vendor': ['react', 'react-dom', 'scheduler'],
+          'mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/system'],
+          'utils': ['notistack', '@tanstack/react-query']
         }
       }
     },
     target: 'es2020'
   },
-  // Add these settings to help with module resolution
   define: {
     'process.env': {},
   },
-  // Ensure proper module resolution
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
