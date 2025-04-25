@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -22,15 +21,11 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 30000,
       gcTime: 60000,
+      onError: (error) => {
+        console.error('Query error:', error);
+        // Optional: Add global error handling logic
+      }
     },
-  },
-  logger: {
-    log: (...args) => console.log(...args),
-    warn: (...args) => console.warn(...args),
-    error: (err) => {
-      console.error('Query error:', err);
-      // We can add additional error handling here if needed
-    }
   },
 });
 
