@@ -1,12 +1,13 @@
+
 import { Network } from '@aptos-labs/ts-sdk';
 
-export type WalletName = 'petra';
+export type WalletName = 'petra' | 'martian' | 'pontem' | 'rise';
 
 export interface WalletContextType {
   connected: boolean;
   address: string | null;
   network: string;
-  walletType: WalletName;
+  walletType: WalletName | null;
   connecting: boolean;
   disconnecting: boolean;
   showWalletSelector: boolean;
@@ -18,3 +19,5 @@ export interface WalletContextType {
   isAdmin: boolean;
   aptosClient: any;
 }
+
+export { Network };

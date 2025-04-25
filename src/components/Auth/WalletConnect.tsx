@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@mui/material';
 import { useWallet } from '@/context/WalletContext';
@@ -43,7 +44,7 @@ const WalletConnect: React.FC = () => {
         py: 1
       }}
     >
-      Connect Petra
+      Connect Wallet
     </Button>
   );
 };

@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { IS_TESTNET } from '@/utils/aptos/constants';
-import { WalletContextType } from './wallet/types';
+import { WalletContextType, WalletName } from './wallet/types';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -11,6 +12,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [walletType, setWalletType] = useState<WalletName | null>('petra');
 
   // Initialize Aptos client
   const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
@@ -92,7 +94,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         connected,
         address,
         network: IS_TESTNET ? 'Testnet' : 'Mainnet',
-        walletType: 'petra',
+        walletType: walletType || 'petra',
         connecting,
         disconnecting,
         showWalletSelector: false,

@@ -1,7 +1,8 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { handleSuccessfulConnection, updateSupabaseHeaders } from './walletUtils';
 import { checkIsAdmin } from '@/api/adminApi';
+import { WalletName } from './types';
 
 export const useWalletConnection = () => {
   const [connected, setConnected] = useState(false);
@@ -9,7 +10,7 @@ export const useWalletConnection = () => {
   const [address, setAddress] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
-  const [walletType, setWalletType] = useState<string | null>(null);
+  const [walletType, setWalletType] = useState<WalletName | null>(null);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
   
   // Check if wallet is already connected

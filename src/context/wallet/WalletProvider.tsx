@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { toast } from "sonner";
-import { Network, WalletName, WalletContextType } from "./types";
+import { WalletName, WalletContextType } from "./types";
 import { IS_TESTNET } from "@/utils/aptos/constants";
 import { upsertUser } from "@/api/userApi";
 import { checkIsAdmin } from "@/api/adminApi";
@@ -46,7 +46,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     setWalletType
   } = useWalletConnection();
   
-  const [network] = useState<Network>(
+  const [network] = useState<string>(
     IS_TESTNET ? "Testnet" : "Mainnet"
   );
   const [disconnecting, setDisconnecting] = useState<boolean>(false);
