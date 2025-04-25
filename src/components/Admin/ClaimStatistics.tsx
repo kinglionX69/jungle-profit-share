@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Grid,
-  Skeleton,
-  Paper
-} from '@mui/material';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Box, Grid, Skeleton } from '@mui/material';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StatsCard from './Stats/StatsCard';
+import WeeklyClaimsChart from './Stats/WeeklyClaimsChart';
 
 interface ClaimStats {
   totalClaims: number;
@@ -111,137 +104,40 @@ const ClaimStatistics: React.FC = () => {
   
   if (isLoading) {
     return (
-      <Grid container spacing={3} component="div">
+      <Grid container spacing={3}>
         {[1, 2, 3, 4].map((index) => (
-          <Grid key={index} item xs={12} sm={6} md={3} component="div">
+          <Grid key={index} xs={12} sm={6} md={3}>
             <Skeleton variant="rectangular" height={118} />
           </Grid>
         ))}
-        <Grid item xs={12} component="div">
+        <Grid xs={12}>
           <Skeleton variant="rectangular" height={300} />
         </Grid>
       </Grid>
     );
   }
   
+  const statsData = [
+    { title: 'Total Claims', value: claimStats.totalClaims },
+    { title: 'Total Amount', value: claimStats.totalAmount.toFixed(2), suffix: 'APT' },
+    { title: 'Unique Wallets', value: claimStats.uniqueWallets },
+    { title: 'Average per Claim', value: claimStats.avgPerClaim.toFixed(2), suffix: 'APT' }
+  ];
+
   return (
     <Box sx={{ width: '100%' }}>
-      <Grid container spacing={3} component="div">
-        <Grid item xs={12} sm={6} md={3} component="div">
-          <Card sx={{ 
-            backgroundImage: 'none',
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
-                Total Claims
-              </Typography>
-              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
-                {claimStats.totalClaims}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} component="div">
-          <Card sx={{ 
-            backgroundImage: 'none',
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
-                Total Amount
-              </Typography>
-              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
-                {claimStats.totalAmount.toFixed(2)} APT
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} component="div">
-          <Card sx={{ 
-            backgroundImage: 'none',
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
-                Unique Wallets
-              </Typography>
-              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
-                {claimStats.uniqueWallets}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} component="div">
-          <Card sx={{ 
-            backgroundImage: 'none',
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom sx={{ fontFamily: "'Nunito', sans-serif" }}>
-                Average per Claim
-              </Typography>
-              <Typography variant="h4" component="div" sx={{ fontFamily: "'Bungee', cursive" }}>
-                {claimStats.avgPerClaim.toFixed(2)} APT
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} component="div">
-          <Paper sx={{ 
-            p: 3,
-            backgroundImage: 'none',
-            backgroundColor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2
-          }}>
-            <Typography variant="h6" gutterBottom sx={{ fontFamily: "'Poppins', sans-serif" }}>
-              Weekly Claims
-            </Typography>
-            <Box sx={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                <BarChart data={weeklyData}>
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontFamily: "'Nunito', sans-serif" }}
-                  />
-                  <YAxis 
-                    tick={{ fontFamily: "'Nunito', sans-serif" }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      fontFamily: "'Nunito', sans-serif",
-                      backgroundColor: 'background.paper',
-                      border: '1px solid',
-                      borderColor: 'divider'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="claims" 
-                    fill="var(--mui-palette-primary-main)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
+      <Grid container spacing={3}>
+        {statsData.map((stat, index) => (
+          <Grid key={index} xs={12} sm={6} md={3}>
+            <StatsCard
+              title={stat.title}
+              value={stat.value}
+              suffix={stat.suffix}
+            />
+          </Grid>
+        ))}
+        <Grid xs={12}>
+          <WeeklyClaimsChart data={weeklyData} />
         </Grid>
       </Grid>
     </Box>
