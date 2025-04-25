@@ -22,18 +22,14 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 30000,
       gcTime: 60000,
+      onError: (error) => {
+        console.error('Query error:', error);
+        // Optional: Add global error handling logic here
+      }
     },
     mutations: {
       // Optional: Configure mutation defaults if needed
       retry: 1,
-    }
-  },
-  logger: {
-    log: console.log,
-    warn: console.warn,
-    error: (error) => {
-      console.error('Query error:', error);
-      // Optional: Add global error handling logic here
     }
   }
 });
