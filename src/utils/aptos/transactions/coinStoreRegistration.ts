@@ -1,4 +1,3 @@
-
 import { TransactionResult } from "../types";
 import { getAptosClient } from "../client";
 import { toast } from "sonner";
@@ -34,9 +33,12 @@ export const registerCoinStoreIfNeeded = async (
     
     // Prepare transaction to register coin store
     const payload = {
-      function: "0x1::managed_coin::register",
-      type_arguments: [coinType],
-      arguments: [],
+      function: "0x1::aptos_account::transfer",
+      type_arguments: [],
+      arguments: [
+        walletAddress,
+        "0" // Amount of 0 to register the coin store
+      ]
     };
     
     // Sign and submit transaction

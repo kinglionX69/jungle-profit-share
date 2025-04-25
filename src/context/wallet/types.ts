@@ -1,15 +1,12 @@
+import { Network } from '@aptos-labs/ts-sdk';
 
-import { ReactNode } from 'react';
-import { Aptos } from '@aptos-labs/ts-sdk';
-
-export type Network = 'Mainnet' | 'Testnet';
-export type WalletName = 'petra' | 'martian' | 'pontem' | 'rise';
+export type WalletName = 'petra';
 
 export interface WalletContextType {
   connected: boolean;
   address: string | null;
-  network: Network;
-  walletType: string | null;
+  network: string;
+  walletType: WalletName;
   connecting: boolean;
   disconnecting: boolean;
   showWalletSelector: boolean;
@@ -19,5 +16,5 @@ export interface WalletContextType {
   connectWallet: (walletName: WalletName) => Promise<void>;
   signTransaction: (payload: any) => Promise<any>;
   isAdmin: boolean;
-  aptosClient: Aptos;
+  aptosClient: any;
 }
