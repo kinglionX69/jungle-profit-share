@@ -25,17 +25,19 @@ interface ClaimHistory {
   token_name: string;
   status: 'pending' | 'completed' | 'failed';
   transaction_hash?: string;
+  wallet_address: string;
+  token_ids?: string[];
 }
 
 const ClaimHistory: React.FC = () => {
-  const { user } = useUser();
+  const { email, isVerified } = useUser();
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchClaimHistory = async () => {
-      if (!user?.id) return;
+      if (!isVerified) return;
       
       setLoading(true);
       setError(null);
@@ -44,13 +46,23 @@ const ClaimHistory: React.FC = () => {
         const { data, error } = await supabase
           .from('claim_history')
           .select('*')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(50);
           
         if (error) throw error;
         
-        setHistory(data || []);
+        const formattedHistory: ClaimHistory[] = data?.map(item => ({
+          id: item.id,
+          created_at: item.claim_date,
+          amount: item.amount,
+          token_name: item.token_name,
+          status: item.transaction_hash ? 'completed' : 'pending',
+          transaction_hash: item.transaction_hash,
+          wallet_address: item.wallet_address,
+          token_ids: item.token_ids
+        })) || [];
+        
+        setHistory(formattedHistory);
       } catch (error) {
         console.error('Error fetching claim history:', error);
         setError('Failed to load claim history');
@@ -60,7 +72,7 @@ const ClaimHistory: React.FC = () => {
     };
     
     fetchClaimHistory();
-  }, [user?.id]);
+  }, [isVerified]);
   
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -15,6 +14,9 @@ export interface WalletBalance {
   symbol: string;
   amount: number;
   value: number;
+  balance: number;
+  usdValue: number;
+  payoutPerNft: number;
 }
 
 /**

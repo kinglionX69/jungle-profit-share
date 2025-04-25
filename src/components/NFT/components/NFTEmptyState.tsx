@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Search, PackageOpen, RefreshCcw } from 'lucide-react';
 import { 
@@ -44,9 +45,9 @@ const NFTEmptyState: React.FC<NFTEmptyStateProps> = ({ filterEligible = false })
           mb: 2 
         }}>
           {filterEligible ? (
-            <Search sx={{ fontSize: 40 }} />
+            <Search size={40} />
           ) : (
-            <PackageOpen sx={{ fontSize: 40 }} />
+            <PackageOpen size={40} />
           )}
         </Box>
         

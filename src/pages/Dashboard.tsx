@@ -5,12 +5,11 @@ import {
   Typography, 
   Button, 
   Alert, 
-  AlertTitle, 
-  AlertDescription,
+  AlertTitle,
   Grid,
   Container
 } from '@mui/material';
-import { Refresh as RefreshIcon, AlertCircle as AlertCircleIcon } from '@mui/icons-material';
+import { Refresh as RefreshIcon, Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
 import { useWallet } from '@/context/WalletContext';
@@ -95,11 +94,11 @@ const Dashboard = () => {
               borderColor: 'rgba(255, 167, 38, 0.2)'
             }}
           >
-            <AlertCircleIcon />
+            <WarningIcon />
             <AlertTitle>Testnet Mode</AlertTitle>
-            <AlertDescription>
+            <Typography>
               Application is running in testnet mode. NFTs and transactions will be on the Aptos testnet.
-            </AlertDescription>
+            </Typography>
           </Alert>
         )}
         

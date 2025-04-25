@@ -4,8 +4,7 @@ import {
   Box, 
   Typography, 
   Alert, 
-  AlertTitle, 
-  AlertDescription,
+  AlertTitle,
   Grid,
   Tabs,
   Tab,
@@ -25,7 +24,6 @@ const Admin = () => {
   const navigate = useNavigate();
   const [tabValue, setTabValue] = React.useState(0);
   
-  // Redirect if not connected or not admin
   useEffect(() => {
     if (!connected) {
       navigate('/');
@@ -56,9 +54,7 @@ const Admin = () => {
             >
               <WarningIcon />
               <AlertTitle>Access Restricted</AlertTitle>
-              <AlertDescription>
-                This page is only accessible to the admin wallet.
-              </AlertDescription>
+              <Typography>This page is only accessible to the admin wallet.</Typography>
             </Alert>
           </Box>
         </PageContainer>
