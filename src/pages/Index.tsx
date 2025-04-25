@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Typography, Container, Grid, Paper } from '@mui/material';
 import { Mountain, Package, Shield } from 'lucide-react';
 import Header from '@/components/Layout/Header';
@@ -8,7 +8,8 @@ import WalletConnect from '@/components/Auth/WalletConnect';
 import { useWallet } from '@/context/wallet';
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
-  <motion.div
+  <Box
+    component={motion.div}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.5 }}
@@ -46,7 +47,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
         {description}
       </Typography>
     </Paper>
-  </motion.div>
+  </Box>
 );
 
 const Index = () => {
@@ -60,7 +61,8 @@ const Index = () => {
         {/* Hero Section */}
         <Grid container spacing={6} alignItems="center" sx={{ mb: 12 }}>
           <Grid item xs={12} md={7}>
-            <motion.div
+            <Box
+              component={motion.div}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
@@ -92,11 +94,12 @@ const Index = () => {
               <Box sx={{ mt: 4 }}>
                 <WalletConnect />
               </Box>
-            </motion.div>
+            </Box>
           </Grid>
           
           <Grid item xs={12} md={5}>
-            <motion.div
+            <Box
+              component={motion.div}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -113,13 +116,14 @@ const Index = () => {
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                 }}
               />
-            </motion.div>
+            </Box>
           </Grid>
         </Grid>
 
         {/* Features Section */}
         <Box sx={{ mb: 12 }}>
-          <motion.div
+          <Box
+            component={motion.div}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -137,7 +141,7 @@ const Index = () => {
             >
               How It Works
             </Typography>
-          </motion.div>
+          </Box>
 
           <Grid container spacing={4}>
             <Grid item xs={12} md={4}>
