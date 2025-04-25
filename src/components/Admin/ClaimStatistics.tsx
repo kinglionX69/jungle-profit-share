@@ -4,7 +4,6 @@ import {
   Box, 
   Typography, 
   Grid, 
-  CircularProgress,
   Skeleton
 } from '@mui/material';
 import StatsCard from './Stats/StatsCard';
@@ -69,9 +68,9 @@ const ClaimStatistics = () => {
   const renderStatCards = () => {
     if (loading) {
       return (
-        <Grid container spacing={3} component="div">
+        <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item} component="div">
+            <Grid xs={12} sm={6} md={4} key={item}>
               <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <Skeleton variant="text" width="60%" height={30} />
                 <Skeleton variant="text" width="40%" height={40} />
@@ -83,9 +82,9 @@ const ClaimStatistics = () => {
     }
     
     return (
-      <Grid container spacing={3} component="div">
+      <Grid container spacing={3}>
         {statistics.map((stat) => (
-          <Grid item xs={12} sm={6} md={4} key={stat.id} component="div">
+          <Grid xs={12} sm={6} md={4} key={stat.id}>
             <StatsCard
               title={stat.title}
               value={stat.value}
@@ -107,8 +106,8 @@ const ClaimStatistics = () => {
         {renderStatCards()}
       </Box>
       
-      <Grid container spacing={3} component="div">
-        <Grid item xs={12} component="div">
+      <Grid container spacing={3}>
+        <Grid xs={12}>
           <WeeklyClaimsChart data={weeklyClaimsData} />
         </Grid>
       </Grid>

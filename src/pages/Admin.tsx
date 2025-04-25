@@ -155,7 +155,7 @@ const Admin = () => {
         </Box>
         
         <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Paper sx={{ p: 3 }}>
               <Tabs 
                 value={tabValue} 
@@ -172,7 +172,7 @@ const Admin = () => {
               </Box>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <WalletBalance />
           </Grid>
         </Grid>
