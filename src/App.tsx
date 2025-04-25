@@ -22,10 +22,12 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 30000,
       gcTime: 60000,
-      onError: (error) => {
-        console.error("Query error:", error);
-      }
     },
+  },
+  logger: {
+    log: (...args) => console.log(...args),
+    warn: (...args) => console.warn(...args),
+    error: (error) => console.error("Query error:", error),
   },
 });
 
