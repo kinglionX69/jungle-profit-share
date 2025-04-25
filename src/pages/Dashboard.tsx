@@ -179,7 +179,7 @@ const Dashboard = () => {
         )}
         
         <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid xs={12} lg={8}>
+          <Grid item xs={12} lg={8}>
             <Paper sx={{ p: 3, height: '100%' }}>
               <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
                 Eligible NFTs for Claim
@@ -188,7 +188,7 @@ const Dashboard = () => {
             </Paper>
           </Grid>
           
-          <Grid xs={12} lg={4}>
+          <Grid item xs={12} lg={4}>
             <Paper sx={{ p: 3, height: '100%' }}>
               <ClaimCard />
             </Paper>
