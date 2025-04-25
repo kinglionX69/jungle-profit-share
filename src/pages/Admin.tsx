@@ -13,30 +13,37 @@ import {
 import { Warning as WarningIcon } from '@mui/icons-material';
 import Header from '@/components/Layout/Header';
 import PageContainer from '@/components/Layout/PageContainer';
-import { useWallet } from '@/context/WalletContext';
+import { useWallet } from '@/context/wallet';
 import TokenDeposit from '@/components/Admin/TokenDeposit';
 import TokenWithdrawal from '@/components/Admin/TokenWithdrawal';
 import ClaimStatistics from '@/components/Admin/ClaimStatistics';
 import WalletBalance from '@/components/Admin/WalletBalance';
 
 const Admin = () => {
-  const { connected, isAdmin } = useWallet();
+  const { connected, address, isAdmin } = useWallet();
   const navigate = useNavigate();
   const [tabValue, setTabValue] = React.useState(0);
   
+  const isAdminWallet = isAdmin || (address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500");
+  
   useEffect(() => {
+    console.log("Admin Page - Connected:", connected);
+    console.log("Admin Page - Address:", address);
+    console.log("Admin Page - isAdmin:", isAdmin);
+    console.log("Admin Page - isAdminWallet:", isAdminWallet);
+    
     if (!connected) {
       navigate('/');
-    } else if (!isAdmin) {
+    } else if (!isAdminWallet) {
       navigate('/dashboard');
     }
-  }, [connected, isAdmin, navigate]);
+  }, [connected, isAdmin, address, isAdminWallet, navigate]);
   
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
   
-  if (!connected || !isAdmin) {
+  if (!connected || !isAdminWallet) {
     return (
       <>
         <Header />

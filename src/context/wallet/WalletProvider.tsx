@@ -103,14 +103,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         console.log("Creating user record for newly connected wallet");
         await upsertUser(account.address);
         
-        console.log("Checking if wallet is admin:", account.address);
-        const adminStatus = await checkIsAdmin(account.address);
-        console.log("Admin status result:", adminStatus);
-        setIsAdmin(adminStatus);
+        // Directly set admin status for the hardcoded wallet address
+        if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
+          console.log("Connected with hardcoded admin wallet, setting admin status to true");
+          setIsAdmin(true);
+        } else {
+          console.log("Checking if wallet is admin:", account.address);
+          try {
+            const adminStatus = await checkIsAdmin(account.address);
+            console.log("Admin status result:", adminStatus);
+            setIsAdmin(adminStatus);
+          } catch (error) {
+            console.error("Error checking admin status:", error);
+          }
+        }
         
         // Additional logging for debugging admin status
         if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
-          console.log("This is the specified admin wallet, admin status:", adminStatus);
+          console.log("This is the specified admin wallet, admin status should be true");
         }
       }
     } catch (error: any) {

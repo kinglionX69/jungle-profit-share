@@ -53,7 +53,7 @@ const Header = () => {
         icon: <DashboardIcon />
       }
     ] : []),
-    ...(isAdmin ? [
+    ...(isAdmin || (address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") ? [
       {
         label: 'Admin',
         to: '/admin',

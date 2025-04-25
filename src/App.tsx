@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import { WalletProvider } from "./context/wallet";
+import { WalletProvider } from "./context/wallet/WalletProvider";
 import { UserProvider } from "./context/UserContext";
 import { LazyMotion, domAnimation } from "framer-motion";
 import theme from './theme/theme';
