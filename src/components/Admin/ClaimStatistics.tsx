@@ -1,134 +1,91 @@
+
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Skeleton } from '@mui/material';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { 
+  Box, 
+  Typography, 
+  Grid, 
+  CircularProgress,
+  Skeleton
+} from '@mui/material';
 import StatsCard from './Stats/StatsCard';
 import WeeklyClaimsChart from './Stats/WeeklyClaimsChart';
 
-interface ClaimStats {
-  totalClaims: number;
-  totalAmount: number;
-  uniqueWallets: number;
-  avgPerClaim: number;
+// Mock data for weekly claims
+const weeklyClaimsData = [
+  { name: 'Week 1', claims: 65 },
+  { name: 'Week 2', claims: 59 },
+  { name: 'Week 3', claims: 80 },
+  { name: 'Week 4', claims: 81 },
+  { name: 'Week 5', claims: 56 },
+  { name: 'Week 6', claims: 55 },
+  { name: 'Week 7', claims: 78 }
+];
+
+interface StatData {
+  id: string;
+  title: string;
+  value: string | number;
+  suffix?: string;
 }
 
-interface WeeklyClaimData {
-  name: string;
-  claims: number;
-}
-
-const ClaimStatistics: React.FC = () => {
-  const [claimStats, setClaimStats] = useState<ClaimStats>({
-    totalClaims: 0,
-    totalAmount: 0,
-    uniqueWallets: 0,
-    avgPerClaim: 0
-  });
-  const [weeklyData, setWeeklyData] = useState<WeeklyClaimData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const ClaimStatistics = () => {
+  const [loading, setLoading] = useState(true);
+  const [statistics, setStatistics] = useState<StatData[]>([
+    { id: 'total-claims', title: 'Total Claims', value: 0 },
+    { id: 'unique-wallets', title: 'Unique Wallets', value: 0 },
+    { id: 'avg-claim', title: 'Avg. Claim', value: 0, suffix: 'APT' },
+    { id: 'claimed-nfts', title: 'NFTs Claimed', value: 0 },
+    { id: 'last-claim', title: 'Last Claim', value: '—' },
+    { id: 'claim-rate', title: 'Claim Success Rate', value: '0%' }
+  ]);
   
+  // Fetch statistics data
   useEffect(() => {
-    const fetchClaimStats = async () => {
+    const fetchStatistics = async () => {
       try {
-        setIsLoading(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        const { data: claimHistory, error: historyError } = await supabase
-          .from('claim_history')
-          .select('*');
+        // Update with mock data
+        setStatistics([
+          { id: 'total-claims', title: 'Total Claims', value: 457 },
+          { id: 'unique-wallets', title: 'Unique Wallets', value: 328 },
+          { id: 'avg-claim', title: 'Avg. Claim', value: 0.523, suffix: 'APT' },
+          { id: 'claimed-nfts', title: 'NFTs Claimed', value: 623 },
+          { id: 'last-claim', title: 'Last Claim', value: '2 hours ago' },
+          { id: 'claim-rate', title: 'Claim Success Rate', value: '98%' }
+        ]);
         
-        if (historyError) {
-          console.error("Error fetching claim history:", historyError);
-          throw historyError;
-        }
-        
-        if (!claimHistory || claimHistory.length === 0) {
-          setClaimStats({
-            totalClaims: 0,
-            totalAmount: 0,
-            uniqueWallets: 0,
-            avgPerClaim: 0
-          });
-          setWeeklyData([]);
-          return;
-        }
-        
-        const totalClaims = claimHistory.length;
-        const totalAmount = claimHistory.reduce((sum, claim) => sum + Number(claim.amount), 0);
-        const uniqueWallets = new Set(claimHistory.map(claim => claim.wallet_address)).size;
-        const avgPerClaim = totalClaims > 0 ? totalAmount / totalClaims : 0;
-        
-        setClaimStats({
-          totalClaims,
-          totalAmount,
-          uniqueWallets,
-          avgPerClaim
-        });
-        
-        const now = new Date();
-        const weeklyStats: Record<string, number> = {};
-        
-        for (let i = 0; i < 6; i++) {
-          const weekStart = new Date(now);
-          weekStart.setDate(now.getDate() - (i * 7));
-          const weekName = `Week ${i + 1}`;
-          weeklyStats[weekName] = 0;
-        }
-        
-        claimHistory.forEach(claim => {
-          const claimDate = new Date(claim.claim_date);
-          const diffDays = Math.floor((now.getTime() - claimDate.getTime()) / (1000 * 60 * 60 * 24));
-          const weekNum = Math.floor(diffDays / 7) + 1;
-          
-          if (weekNum <= 6) {
-            const weekName = `Week ${weekNum}`;
-            weeklyStats[weekName] = (weeklyStats[weekName] || 0) + 1;
-          }
-        });
-        
-        const weeklyDataArray = Object.entries(weeklyStats).map(([name, claims]) => ({
-          name,
-          claims
-        })).reverse();
-        
-        setWeeklyData(weeklyDataArray);
+        setLoading(false);
       } catch (error) {
-        console.error("Error in fetchClaimStats:", error);
-        toast.error("Failed to fetch claim statistics");
-      } finally {
-        setIsLoading(false);
+        console.error('Error fetching claim statistics:', error);
+        setLoading(false);
       }
     };
     
-    fetchClaimStats();
+    fetchStatistics();
   }, []);
-  
-  if (isLoading) {
-    return (
-      <Grid container spacing={3}>
-        {[1, 2, 3, 4].map((index) => (
-          <Grid key={index} xs={12} sm={6} md={3}>
-            <Skeleton variant="rectangular" height={118} />
-          </Grid>
-        ))}
-        <Grid xs={12}>
-          <Skeleton variant="rectangular" height={300} />
-        </Grid>
-      </Grid>
-    );
-  }
-  
-  const statsData = [
-    { title: 'Total Claims', value: claimStats.totalClaims },
-    { title: 'Total Amount', value: claimStats.totalAmount.toFixed(2), suffix: 'APT' },
-    { title: 'Unique Wallets', value: claimStats.uniqueWallets },
-    { title: 'Average per Claim', value: claimStats.avgPerClaim.toFixed(2), suffix: 'APT' }
-  ];
 
-  return (
-    <Box sx={{ width: '100%' }}>
-      <Grid container spacing={3}>
-        {statsData.map((stat, index) => (
-          <Grid key={index} xs={12} sm={6} md={3}>
+  const renderStatCards = () => {
+    if (loading) {
+      return (
+        <Grid container spacing={3} component="div">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <Grid item xs={12} sm={6} md={4} key={item} component="div">
+              <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                <Skeleton variant="text" width="60%" height={30} />
+                <Skeleton variant="text" width="40%" height={40} />
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      );
+    }
+    
+    return (
+      <Grid container spacing={3} component="div">
+        {statistics.map((stat) => (
+          <Grid item xs={12} sm={6} md={4} key={stat.id} component="div">
             <StatsCard
               title={stat.title}
               value={stat.value}
@@ -136,8 +93,23 @@ const ClaimStatistics: React.FC = () => {
             />
           </Grid>
         ))}
-        <Grid xs={12}>
-          <WeeklyClaimsChart data={weeklyData} />
+      </Grid>
+    );
+  };
+
+  return (
+    <Box>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        Claim Statistics
+      </Typography>
+      
+      <Box sx={{ mb: 4 }}>
+        {renderStatCards()}
+      </Box>
+      
+      <Grid container spacing={3} component="div">
+        <Grid item xs={12} component="div">
+          <WeeklyClaimsChart data={weeklyClaimsData} />
         </Grid>
       </Grid>
     </Box>
