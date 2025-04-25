@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button, Typography, Tooltip } from '@mui/material';
 import { useWallet } from '@/context/wallet';
@@ -7,7 +8,7 @@ import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const WalletConnect: React.FC = () => {
-  const { connected, connect } = useWallet();
+  const { connected, connect, connectWallet } = useWallet();
   const { enqueueSnackbar } = useSnackbar();
   const { claim, claimableAmount, isVerified } = useUser();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -17,7 +18,8 @@ const WalletConnect: React.FC = () => {
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
-      await connect();
+      // Instead of calling connect, directly call connectWallet with 'petra'
+      await connectWallet('petra');
     } catch (error) {
       console.error('Error connecting wallet:', error);
       enqueueSnackbar(
