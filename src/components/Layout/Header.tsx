@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   AppBar, 
   Box, 
@@ -23,13 +23,26 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { useWallet } from '@/context/WalletContext';
+import { useWallet } from '@/context/wallet';
 import { IS_TESTNET } from '@/utils/aptos/constants/network';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { connected, address, isAdmin, disconnect } = useWallet();
   const location = useLocation();
+
+  // Debug output for admin status
+  useEffect(() => {
+    if (connected && address) {
+      console.log("Header component - Connected wallet:", address);
+      console.log("Header component - Is admin:", isAdmin);
+      
+      // Check if this is the specified admin wallet
+      if (address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
+        console.log("Header component - This is the specified admin wallet");
+      }
+    }
+  }, [connected, address, isAdmin]);
 
   // Navigation items with conditional admin access
   const navItems = [

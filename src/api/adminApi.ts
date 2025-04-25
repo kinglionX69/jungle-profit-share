@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,6 +32,13 @@ export const checkIsAdmin = async (walletAddress: string): Promise<boolean> => {
     }
     
     console.log("Checking admin status for wallet:", walletAddress);
+    // Explicitly check the specified admin address
+    if (walletAddress === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
+      console.log("Hardcoded admin wallet detected");
+      return true;
+    }
+    
+    // Also check via the database function
     const { data, error } = await supabase.rpc('is_admin', { wallet_address: walletAddress });
     
     if (error) {

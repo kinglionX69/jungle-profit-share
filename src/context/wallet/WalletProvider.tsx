@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -106,6 +107,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
         const adminStatus = await checkIsAdmin(account.address);
         console.log("Admin status result:", adminStatus);
         setIsAdmin(adminStatus);
+        
+        // Additional logging for debugging admin status
+        if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
+          console.log("This is the specified admin wallet, admin status:", adminStatus);
+        }
       }
     } catch (error: any) {
       console.error("Failed to connect wallet:", error);

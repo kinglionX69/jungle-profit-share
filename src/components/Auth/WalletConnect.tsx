@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@mui/material';
-import { useWallet } from '@/context/WalletContext';
+import { useWallet } from '@/context/wallet';
 
 const WalletConnect: React.FC = () => {
   const { connected, address, connect, disconnect } = useWallet();
