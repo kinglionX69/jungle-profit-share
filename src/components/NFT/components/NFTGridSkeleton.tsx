@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Skeleton, Box, Grid } from '@mui/material';
 
@@ -5,9 +6,9 @@ const NFTGridSkeleton: React.FC = () => {
   const placeholders = Array.from({ length: 6 }, (_, i) => i);
   
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} component="div">
       {placeholders.map((index) => (
-        <Grid key={index} item xs={12} sm={6} md={4}>
+        <Grid key={index} item xs={12} sm={6} md={4} component="div">
           <Box 
             sx={{ 
               backgroundImage: 'none',

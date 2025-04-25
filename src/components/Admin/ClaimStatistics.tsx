@@ -111,13 +111,13 @@ const ClaimStatistics: React.FC = () => {
   
   if (isLoading) {
     return (
-      <Grid container spacing={3}>
+      <Grid container spacing={3} component="div">
         {[1, 2, 3, 4].map((index) => (
-          <Grid key={index} item xs={12} sm={6} md={3}>
+          <Grid key={index} item xs={12} sm={6} md={3} component="div">
             <Skeleton variant="rectangular" height={118} />
           </Grid>
         ))}
-        <Grid item xs={12}>
+        <Grid item xs={12} component="div">
           <Skeleton variant="rectangular" height={300} />
         </Grid>
       </Grid>
@@ -126,8 +126,8 @@ const ClaimStatistics: React.FC = () => {
   
   return (
     <Box sx={{ width: '100%' }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={3} component="div">
+        <Grid item xs={12} sm={6} md={3} component="div">
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -146,7 +146,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} component="div">
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -165,7 +165,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} component="div">
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -184,7 +184,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} component="div">
           <Card sx={{ 
             backgroundImage: 'none',
             backgroundColor: 'transparent',
@@ -203,7 +203,7 @@ const ClaimStatistics: React.FC = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid item xs={12} component="div">
           <Paper sx={{ 
             p: 3,
             backgroundImage: 'none',

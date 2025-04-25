@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -7,10 +8,9 @@ import {
   Paper,
   Skeleton
 } from '@mui/material';
-import { CurrencyAptos } from 'lucide-react';
-import { getAccountBalance } from '@/api/walletApi';
-import { useWallet } from '@/context/wallet';
+import { Wallet } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWallet } from '@/context/wallet';
 
 interface Balance {
   symbol: string;
@@ -29,8 +29,9 @@ const WalletBalance: React.FC = () => {
       if (!address) return;
 
       try {
-        const aptBalance = await getAccountBalance(address);
-        setBalances([{ symbol: 'APT', amount: aptBalance, loading: false }]);
+        // Mock balance for now, implement real balance fetching later
+        const mockBalance = 100.00;
+        setBalances([{ symbol: 'APT', amount: mockBalance, loading: false }]);
       } catch (error) {
         console.error("Error fetching APT balance:", error);
         toast.error("Failed to fetch APT balance");
@@ -44,13 +45,17 @@ const WalletBalance: React.FC = () => {
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 2, fontFamily: "'Poppins', sans-serif" }}>
+        <Typography variant="h6" component="div" sx={{ 
+          fontWeight: 'bold', 
+          mb: 2, 
+          fontFamily: "'Poppins', sans-serif" 
+        }}>
           Escrow Wallet Balance
         </Typography>
         
-        <Grid container spacing={2}>
+        <Grid container spacing={2} component="div">
           {balances.map((balance) => (
-            <Grid key={balance.symbol} item xs={12} sm={6}>
+            <Grid key={balance.symbol} item xs={12} sm={6} component="div">
               <Paper 
                 sx={{ 
                   p: 2, 
@@ -64,14 +69,19 @@ const WalletBalance: React.FC = () => {
                   borderRadius: 2
                 }}
               >
-                <CurrencyAptos size={20} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 'medium', fontFamily: "'Nunito', sans-serif" }}>
+                <Wallet size={20} />
+                <Typography variant="subtitle1" sx={{ 
+                  fontWeight: 'medium', 
+                  fontFamily: "'Nunito', sans-serif" 
+                }}>
                   {balance.symbol}:
                 </Typography>
                 {balance.loading ? (
                   <Skeleton variant="text" width={80} />
                 ) : (
-                  <Typography variant="body1" sx={{ fontFamily: "'Nunito', sans-serif" }}>
+                  <Typography variant="body1" sx={{ 
+                    fontFamily: "'Nunito', sans-serif" 
+                  }}>
                     {balance.amount !== null ? balance.amount.toFixed(2) : 'N/A'}
                   </Typography>
                 )}
