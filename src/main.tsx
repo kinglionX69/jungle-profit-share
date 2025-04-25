@@ -1,7 +1,15 @@
-
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
+import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SnackbarProvider } from 'notistack';
+import { Toaster } from 'sonner';
+import { LazyMotion, domAnimation } from 'framer-motion';
+import { theme } from '@/theme/index';
+import { WalletProvider } from '@/context/WalletContext';
+import { UserProvider } from '@/context/UserContext';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
 // Globally catch and log errors to help with debugging outside the sandbox
@@ -37,6 +45,16 @@ if (typeof window !== 'undefined') {
   console.log('Wallet extensions detected:', walletExtensions);
 }
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 // Get the root element
 const rootElement = document.getElementById("root");
 
@@ -49,8 +67,30 @@ if (rootElement) {
     // Render the app
     root.render(
       <React.StrictMode>
-        <CssBaseline />
-        <App />
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <SnackbarProvider
+              maxSnack={3}
+              autoHideDuration={5000}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <Toaster position="top-right" richColors />
+              <LazyMotion features={domAnimation}>
+                <WalletProvider>
+                  <UserProvider>
+                    <BrowserRouter>
+                      <App />
+                    </BrowserRouter>
+                  </UserProvider>
+                </WalletProvider>
+              </LazyMotion>
+            </SnackbarProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </React.StrictMode>
     );
     console.log('App successfully rendered');

@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useWallet } from "./wallet";
+import { useWallet } from "./WalletContext";
 import { toast } from "sonner";
 import { 
   updateUserEmail,

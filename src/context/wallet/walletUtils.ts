@@ -1,38 +1,43 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin } from "@/api/adminApi";
 import { upsertUser } from "@/api/userApi";
 
-// Check if a specific wallet is installed
+/**
+ * Checks if a specific wallet is installed in the browser.
+ * Currently only checks for Petra wallet.
+ * 
+ * @param walletName - The name of the wallet to check
+ * @returns boolean indicating if the wallet is installed
+ */
 export const checkWalletInstalled = (walletName: string): boolean => {
   const walletNameLower = walletName.toLowerCase();
   
   if (typeof window === 'undefined') return false;
   
-  // Use window.aptos as a fallback for older implementations
   if (walletNameLower === 'petra') {
-    const hasPetra = !!window.petra;
-    const hasAptos = !!window.aptos;
-    console.log("Wallet detection - Petra:", hasPetra, "Aptos:", hasAptos);
-    return hasPetra || hasAptos;
-  } else if (walletNameLower === 'martian') {
-    return !!window.martian;
-  } else if (walletNameLower === 'pontem') {
-    return !!window.pontem;
-  } else if (walletNameLower === 'rise') {
-    return !!window.rise;
+    return !!window.petra;
   }
   
   return false;
 };
 
-// Handler for successful wallet connections
-export const handleSuccessfulConnection = async (walletAddress: string, walletName: string) => {
-  // Update Supabase headers before inserting user
-  updateSupabaseHeaders(walletAddress);
-  
+/**
+ * Handles the successful connection of a wallet.
+ * Updates Supabase headers, creates/updates user record, and checks admin status.
+ * 
+ * @param walletAddress - The connected wallet's address
+ * @param walletName - The name of the connected wallet
+ * @returns Object containing admin status
+ */
+export const handleSuccessfulConnection = async (
+  walletAddress: string, 
+  walletName: string
+): Promise<{ adminStatus: boolean }> => {
   try {
+    // Update Supabase headers before inserting user
+    updateSupabaseHeaders(walletAddress);
+    
     // Insert user in database
     const userCreated = await upsertUser(walletAddress);
     if (!userCreated) {
@@ -42,52 +47,38 @@ export const handleSuccessfulConnection = async (walletAddress: string, walletNa
     // Check if the wallet is an admin
     const adminStatus = await checkIsAdmin(walletAddress);
     
-    // No toast here, we'll handle it in the parent component
-    console.log(`${walletName} wallet connected successfully`);
-    
     return { adminStatus };
   } catch (error) {
     console.error("Error during wallet connection:", error);
-    // Don't throw here, as we want to continue even if there's an error with user creation
     return { adminStatus: false };
   }
 };
 
-// Sign a transaction
-export const signTransaction = async (transaction: any, address: string | null, connected: boolean): Promise<any> => {
+/**
+ * Signs and submits a transaction using the connected wallet.
+ * 
+ * @param transaction - The transaction payload to sign
+ * @param address - The wallet address
+ * @param connected - Whether the wallet is connected
+ * @returns The signed transaction response
+ * @throws Error if wallet is not connected or transaction signing fails
+ */
+export const signTransaction = async (
+  transaction: any, 
+  address: string | null, 
+  connected: boolean
+): Promise<any> => {
   if (!connected || !address) {
     toast.error("Wallet not connected");
     throw new Error("Wallet not connected");
   }
   
   try {
-    // Petra wallet - Support both legacy and new API
-    if (window.petra) {
-      console.log("Signing transaction with Petra wallet (new API)");
-      return await window.petra.signAndSubmitTransaction(transaction);
+    if (!window.petra) {
+      throw new Error("Petra wallet not installed");
     }
-    else if (window.aptos) {
-      console.log("Signing transaction with Petra wallet (legacy API)");
-      return await window.aptos.signAndSubmitTransaction(transaction);
-    } 
-    // Martian wallet
-    else if (window.martian) {
-      console.log("Signing transaction with Martian wallet");
-      return await window.martian.signAndSubmitTransaction(transaction);
-    }
-    // Pontem wallet
-    else if (window.pontem) {
-      console.log("Signing transaction with Pontem wallet");
-      return await window.pontem.signAndSubmitTransaction(transaction);
-    }
-    // Rise wallet
-    else if (window.rise) {
-      console.log("Signing transaction with Rise wallet");
-      return await window.rise.signAndSubmitTransaction(transaction);
-    }
-    else {
-      throw new Error("No wallet provider available");
-    }
+    
+    return await window.petra.signAndSubmitTransaction(transaction);
   } catch (error: any) {
     console.error("Transaction signing error:", error);
     toast.error(error.message || "Failed to sign transaction");
@@ -95,23 +86,16 @@ export const signTransaction = async (transaction: any, address: string | null, 
   }
 };
 
-// Update Supabase headers with wallet address
-export const updateSupabaseHeaders = (address: string | null) => {
+/**
+ * Updates Supabase headers with the wallet address for authentication.
+ * 
+ * @param address - The wallet address to use for authentication
+ */
+export const updateSupabaseHeaders = (address: string | null): void => {
   if (address) {
-    // Set global auth for future requests
     supabase.auth.setSession({
       access_token: address,
-      refresh_token: '',
+      refresh_token: address
     });
-    
-    console.log("Updated Supabase headers with wallet address:", address);
-  } else {
-    // Clear authorization if address is null
-    supabase.auth.setSession({
-      access_token: null,
-      refresh_token: null,
-    });
-    
-    console.log("Cleared Supabase authorization headers");
   }
 };

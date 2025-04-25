@@ -14,15 +14,15 @@ import {
 } from '@mui/material';
 import { Wallet, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { WalletConnect } from '@/components/Auth/WalletConnect';
-import { PageContainer } from '@/components/Layout/PageContainer';
+import WalletConnect from '@/components/Auth/WalletConnect';
+import PageContainer from '@/components/Layout/PageContainer';
 import { useWallet } from '@/context/WalletContext';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { address, connected } = useWallet();
   const [showWalletConnect, setShowWalletConnect] = useState(false);
   
@@ -68,7 +68,7 @@ const Index = () => {
       
       <Box sx={{ py: { xs: 4, md: 8 } }}>
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} component="div">
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h2" component="h1" sx={{ mb: 2, fontWeight: 700 }}>
                 Proud Lions Club
@@ -100,7 +100,7 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} component="div">
             <Box 
               component="img"
               src="/placeholder.svg"
@@ -122,8 +122,8 @@ const Index = () => {
           How It Works
         </Typography>
         
-        <Grid container spacing={4} component="div">
-          <Grid component="div" sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4} component="div">
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h5" component="h3" gutterBottom>
@@ -136,7 +136,7 @@ const Index = () => {
             </Card>
           </Grid>
           
-          <Grid component="div" sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
+          <Grid item xs={12} md={4} component="div">
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h5" component="h3" gutterBottom>
@@ -149,7 +149,7 @@ const Index = () => {
             </Card>
           </Grid>
           
-          <Grid component="div" sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
+          <Grid item xs={12} md={4} component="div">
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h5" component="h3" gutterBottom>

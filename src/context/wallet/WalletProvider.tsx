@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -14,9 +13,17 @@ import { upsertUser } from "@/api/userApi";
 import { checkIsAdmin } from "@/api/adminApi";
 import { useWalletConnection } from "./useWalletConnection";
 import { Aptos, AptosConfig, Network as AptosNetwork } from "@aptos-labs/ts-sdk";
+import { handleSuccessfulConnection } from "./walletUtils";
 
+/**
+ * Context for wallet state and operations
+ */
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
+/**
+ * Hook to access wallet context
+ * @throws Error if used outside of WalletProvider
+ */
 export const useWallet = (): WalletContextType => {
   const context = useContext(WalletContext);
   if (!context) {
@@ -29,9 +36,14 @@ interface WalletProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Provider component for wallet context
+ * Manages wallet connection state and provides wallet operations
+ */
 export const WalletProvider: React.FC<WalletProviderProps> = ({
   children,
 }) => {
+  // Get wallet connection state and setters
   const {
     connected,
     setConnected,
@@ -47,11 +59,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     setWalletType
   } = useWalletConnection();
   
+  // Network state
   const [network] = useState<string>(
     IS_TESTNET ? "Testnet" : "Mainnet"
   );
   const [disconnecting, setDisconnecting] = useState<boolean>(false);
   
+  // Initialize Aptos client
   const [aptosClient] = useState(() => {
     const config = new AptosConfig({ 
       network: IS_TESTNET ? AptosNetwork.TESTNET : AptosNetwork.MAINNET
@@ -59,174 +73,149 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({
     return new Aptos(config);
   });
 
+  /**
+   * Connects to a specific wallet
+   * @param walletName - The name of the wallet to connect to
+   */
   const connectWallet = async (walletName: WalletName) => {
     console.log(`Attempting to connect ${walletName} wallet...`);
     setConnecting(true);
     try {
       let account;
       
-      switch (walletName) {
-        case "petra":
-          if (window.petra) {
-            console.log("Connecting with Petra wallet (new API)");
-            account = await window.petra.connect();
-          } else if (window.aptos) {
-            console.log("Connecting with Petra wallet (legacy API)");
-            account = await window.aptos.connect();
-          } else {
-            console.error("Petra wallet not detected in window object");
-            throw new Error("Petra wallet not installed");
-          }
-          break;
-        case "martian":
-          if (!window.martian) throw new Error("Martian wallet not installed");
-          account = await window.martian.connect();
-          break;
-        case "pontem":
-          if (!window.pontem) throw new Error("Pontem wallet not installed");
-          const address = await window.pontem.connect();
-          account = { address };
-          break;
-        case "rise":
-          if (!window.rise) throw new Error("Rise wallet not installed");
-          account = await window.rise.connect();
-          break;
-        default:
-          throw new Error(`Wallet "${walletName}" is not supported or not installed`);
+      if (window.petra) {
+        console.log("Connecting with Petra wallet (new API)");
+        account = await window.petra.connect();
+      } else if (window.aptos) {
+        console.log("Connecting with Petra wallet (legacy API)");
+        account = await window.aptos.connect();
+      } else {
+        console.error("Petra wallet not detected in window object");
+        throw new Error("Petra wallet not installed");
       }
 
       console.log("Wallet connection response:", account);
       
       if (account?.address) {
-        console.log(`Successfully connected to address: ${account.address}`);
         setAddress(account.address);
         setConnected(true);
-        setWalletType(walletName);
-        sessionStorage.setItem("connected", "true");
-        sessionStorage.setItem("address", account.address);
-        sessionStorage.setItem("walletType", walletName);
-        toast.success(`${walletName} Wallet connected!`);
+        setWalletType('petra');
         
-        console.log("Creating user record for newly connected wallet");
-        await upsertUser(account.address);
+        // Handle successful connection
+        const { adminStatus } = await handleSuccessfulConnection(account.address, walletName);
+        setIsAdmin(adminStatus);
         
-        // Directly set admin status for the hardcoded wallet address
-        if (account.address === "0xbaa4882c050dd32d2405e9c50eecd308afa1cf4f023e45371671a60a051ea500") {
-          console.log("Connected with hardcoded admin wallet, setting admin status to true");
-          setIsAdmin(true);
-        } else {
-          console.log("Checking if wallet is admin:", account.address);
-          try {
-            const adminStatus = await checkIsAdmin(account.address);
-            console.log("Admin status result:", adminStatus);
-            setIsAdmin(adminStatus);
-          } catch (error) {
-            console.error("Error checking admin status:", error);
-          }
-        }
+        toast.success("Wallet connected successfully");
       } else {
-        throw new Error("Failed to get wallet address");
+        throw new Error("No address returned from wallet");
       }
     } catch (error: any) {
-      console.error("Failed to connect wallet:", error);
-      toast.error(`Failed to connect wallet: ${error.message}`);
-      await disconnectWallet();
+      console.error("Error connecting wallet:", error);
+      toast.error(error.message || "Failed to connect wallet");
+      setConnected(false);
+      setAddress(null);
+      setWalletType(null);
     } finally {
       setConnecting(false);
-      setShowWalletSelector(false);
     }
   };
 
+  /**
+   * Connects to Petra wallet
+   */
   const connect = async (): Promise<void> => {
-    setShowWalletSelector(true);
-    return Promise.resolve();
+    await connectWallet('petra');
   };
 
+  /**
+   * Disconnects from the current wallet
+   */
   const disconnectWallet = async () => {
+    try {
+      if (window.petra) {
+        await window.petra.disconnect();
+      } else if (window.aptos) {
+        await window.aptos.disconnect();
+      }
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
+      throw error;
+    }
+  };
+
+  /**
+   * Handles wallet disconnection and state cleanup
+   */
+  const disconnect = async () => {
+    if (!connected) return;
+    
     setDisconnecting(true);
     try {
+      await disconnectWallet();
       setConnected(false);
       setAddress(null);
       setWalletType(null);
       setIsAdmin(false);
-      sessionStorage.removeItem("connected");
-      sessionStorage.removeItem("address");
-      sessionStorage.removeItem("walletType");
-      toast.success("Wallet disconnected!");
+      toast.success("Wallet disconnected");
     } catch (error: any) {
-      console.error("Failed to disconnect wallet:", error);
-      toast.error(`Failed to disconnect wallet: ${error.message}`);
+      console.error("Error during disconnect:", error);
+      toast.error(error.message || "Failed to disconnect wallet");
     } finally {
       setDisconnecting(false);
     }
   };
 
-  const disconnect = async () => {
-    await disconnectWallet();
+  /**
+   * Signs and submits a transaction
+   * @param payload - The transaction payload
+   * @returns The signed transaction response
+   */
+  const signTransaction = async (payload: any) => {
+    if (!connected || !address) {
+      throw new Error("Wallet not connected");
+    }
+    
+    try {
+      if (window.petra) {
+        return await window.petra.signAndSubmitTransaction(payload);
+      } else if (window.aptos) {
+        return await window.aptos.signAndSubmitTransaction(payload);
+      } else {
+        throw new Error("Petra wallet not installed");
+      }
+    } catch (error: any) {
+      console.error("Error signing transaction:", error);
+      throw error;
+    }
   };
 
-  const signTransaction = useCallback(
-    async (payload: any) => {
-      if (!walletType) {
-        throw new Error("No wallet connected");
-      }
-
-      try {
-        let response;
-        switch (walletType) {
-          case "petra":
-            if (window.petra) {
-              response = await window.petra.signAndSubmitTransaction(payload);
-            } else if (window.aptos) {
-              response = await window.aptos.signAndSubmitTransaction(payload);
-            } else {
-              throw new Error("Petra wallet not installed");
-            }
-            break;
-          case "martian":
-            if (!window.martian) throw new Error("Martian wallet not installed");
-            response = await window.martian.signAndSubmitTransaction(payload);
-            break;
-          case "pontem":
-            if (!window.pontem) throw new Error("Pontem wallet not installed");
-            response = await window.pontem.signAndSubmitTransaction(payload);
-            break;
-          case "rise":
-            if (!window.rise) throw new Error("Rise wallet not installed");
-            response = await window.rise.signAndSubmitTransaction(payload);
-            break;
-          default:
-            throw new Error(`Wallet "${walletType}" is not supported or not installed`);
-        }
-        return response;
-      } catch (error: any) {
-        console.error("Failed to sign transaction:", error);
-        toast.error(`Failed to sign transaction: ${error.message}`);
-        throw error;
-      }
-    },
-    [walletType]
-  );
+  // Context value
+  const contextValue: WalletContextType = {
+    // Connection state
+    connected,
+    address,
+    network,
+    walletType,
+    connecting,
+    disconnecting,
+    isAdmin,
+    
+    // UI state
+    showWalletSelector,
+    setShowWalletSelector,
+    
+    // Wallet operations
+    connect,
+    disconnect,
+    connectWallet,
+    signTransaction,
+    
+    // Aptos client
+    aptosClient,
+  };
 
   return (
-    <WalletContext.Provider
-      value={{
-        connected,
-        address,
-        network,
-        walletType,
-        connecting,
-        disconnecting,
-        showWalletSelector,
-        setShowWalletSelector,
-        connect,
-        disconnect,
-        connectWallet,
-        signTransaction,
-        isAdmin,
-        aptosClient
-      }}
-    >
+    <WalletContext.Provider value={contextValue}>
       {children}
     </WalletContext.Provider>
   );

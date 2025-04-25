@@ -1,19 +1,28 @@
-
 import { useState, useEffect } from 'react';
 import { handleSuccessfulConnection, updateSupabaseHeaders } from './walletUtils';
 import { checkIsAdmin } from '@/api/adminApi';
 import { WalletName } from './types';
 
+/**
+ * Custom hook for managing wallet connection state and operations.
+ * Handles connection status, address, admin status, and wallet type.
+ */
 export const useWalletConnection = () => {
+  // Connection state
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [walletType, setWalletType] = useState<WalletName | null>(null);
   const [connectionAttempted, setConnectionAttempted] = useState(false);
+
+  // UI state
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
   
-  // Check if wallet is already connected
+  /**
+   * Checks if a wallet is already connected on component mount.
+   * Supports both new and legacy Petra wallet APIs.
+   */
   useEffect(() => {
     const checkConnection = async () => {
       // If we already tried to connect or are already connected, don't try again
@@ -63,84 +72,24 @@ export const useWalletConnection = () => {
           } catch (error) {
             console.error("Error checking Petra connection (legacy API):", error);
           }
-        } 
-        // Check for Martian wallet
-        else if (window.martian) {
-          try {
-            const isConnected = await window.martian.isConnected();
-            if (isConnected) {
-              const { address } = await window.martian.getAccount();
-              if (address) {
-                console.log("Found connected Martian wallet:", address);
-                setAddress(address);
-                setConnected(true);
-                setWalletType('martian');
-                
-                // Check admin status
-                const adminStatus = await checkIsAdmin(address);
-                setIsAdmin(adminStatus);
-              }
-            }
-          } catch (error) {
-            console.error("Error checking Martian connection:", error);
-          }
-        }
-        // Check for Pontem wallet
-        else if (window.pontem) {
-          try {
-            const isConnected = await window.pontem.isConnected();
-            if (isConnected) {
-              const address = await window.pontem.connect();
-              if (address) {
-                console.log("Found connected Pontem wallet:", address);
-                setAddress(address);
-                setConnected(true);
-                setWalletType('pontem');
-                
-                // Check admin status
-                const adminStatus = await checkIsAdmin(address);
-                setIsAdmin(adminStatus);
-              }
-            }
-          } catch (error) {
-            console.error("Error checking Pontem connection:", error);
-          }
-        }
-        // Check for Rise wallet
-        else if (window.rise) {
-          try {
-            const isConnected = await window.rise.isConnected();
-            if (isConnected) {
-              const response = await window.rise.getAccount();
-              if (response && response.address) {
-                console.log("Found connected Rise wallet:", response.address);
-                setAddress(response.address);
-                setConnected(true);
-                setWalletType('rise');
-                
-                // Check admin status
-                const adminStatus = await checkIsAdmin(response.address);
-                setIsAdmin(adminStatus);
-              }
-            }
-          } catch (error) {
-            console.error("Error checking Rise connection:", error);
-          }
         }
       } catch (error) {
-        console.error("Error checking wallet connections:", error);
+        console.error("Error checking wallet connection:", error);
       }
     };
     
     checkConnection();
-  }, [connected, connecting, connectionAttempted]);
+  }, [connectionAttempted, connected, connecting]);
   
-  // When address changes, update Supabase headers
+  /**
+   * Updates Supabase headers when the wallet address changes
+   */
   useEffect(() => {
     updateSupabaseHeaders(address);
   }, [address]);
   
   return {
+    // Connection state
     connected,
     setConnected,
     connecting,
@@ -149,9 +98,11 @@ export const useWalletConnection = () => {
     setAddress,
     isAdmin,
     setIsAdmin,
-    showWalletSelector,
-    setShowWalletSelector,
     walletType,
-    setWalletType
+    setWalletType,
+    
+    // UI state
+    showWalletSelector,
+    setShowWalletSelector
   };
 };
