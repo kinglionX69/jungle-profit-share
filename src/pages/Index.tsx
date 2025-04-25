@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Box, 
@@ -67,8 +68,11 @@ const Index = () => {
       )}
       
       <Box sx={{ py: { xs: 4, md: 8 } }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6} component="div">
+        <Grid container spacing={4} component="div">
+          <Grid 
+            component="div"
+            sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}
+          >
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h2" component="h1" sx={{ mb: 2, fontWeight: 700 }}>
                 Proud Lions Club
@@ -100,7 +104,10 @@ const Index = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={6} component="div">
+          <Grid 
+            component="div"
+            sx={{ gridColumn: { xs: 'span 12', md: 'span 6' } }}
+          >
             <Box 
               component="img"
               src="/placeholder.svg"
