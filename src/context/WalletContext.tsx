@@ -1,8 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { IS_TESTNET } from '@/utils/aptos/constants';
 import { WalletContextType, WalletName } from './wallet/types';
+import { handleSuccessfulConnection } from './wallet/walletUtils';
+import { toast } from 'sonner';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -13,29 +14,82 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [disconnecting, setDisconnecting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [walletType, setWalletType] = useState<WalletName | null>('petra');
+  const [isWalletReady, setIsWalletReady] = useState(false);
 
   // Initialize Aptos client
   const network = IS_TESTNET ? Network.TESTNET : Network.MAINNET;
   const config = new AptosConfig({ network });
   const aptosClient = new Aptos(config);
 
+  // Check for Petra wallet availability
+  useEffect(() => {
+    const checkWallet = () => {
+      if (typeof window !== 'undefined') {
+        if (window.petra) {
+          setIsWalletReady(true);
+        } else {
+          const checkInterval = setInterval(() => {
+            if (window.petra) {
+              setIsWalletReady(true);
+              clearInterval(checkInterval);
+            }
+          }, 200);
+
+          // Clear interval after 5 seconds if wallet is not found
+          setTimeout(() => clearInterval(checkInterval), 5000);
+        }
+      }
+    };
+
+    checkWallet();
+  }, []);
+
+  // Check initial connection status
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (isWalletReady && window.petra) {
+        try {
+          const isConnected = await window.petra.isConnected();
+          if (isConnected) {
+            const { address } = await window.petra.account();
+            const { adminStatus } = await handleSuccessfulConnection(address, 'petra');
+            setAddress(address);
+            setConnected(true);
+            setWalletType('petra');
+            setIsAdmin(adminStatus);
+          }
+        } catch (error) {
+          console.error('Error checking connection:', error);
+        }
+      }
+    };
+
+    checkConnection();
+  }, [isWalletReady]);
+
   const connect = async () => {
     try {
       setConnecting(true);
       
-      if (!window.petra && !window.aptos) {
+      if (!isWalletReady || !window.petra) {
         throw new Error('Petra wallet not found. Please install Petra wallet.');
       }
 
-      const wallet = window.petra || window.aptos;
-      const { address } = await wallet.connect();
+      const { address } = await window.petra.connect();
+      
+      // Handle successful connection
+      const { adminStatus } = await handleSuccessfulConnection(address, 'petra');
+      setIsAdmin(adminStatus);
       
       setAddress(address);
       setConnected(true);
+      setWalletType('petra');
       setConnecting(false);
-    } catch (error) {
+      toast.success('Wallet connected successfully');
+    } catch (error: any) {
       console.error('Error connecting wallet:', error);
       setConnecting(false);
+      toast.error(error.message || 'Failed to connect wallet');
       throw error;
     }
   };
@@ -44,49 +98,40 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       setDisconnecting(true);
       
-      if (!window.petra && !window.aptos) {
+      if (!isWalletReady || !window.petra) {
         throw new Error('Petra wallet not found');
       }
 
-      const wallet = window.petra || window.aptos;
-      await wallet.disconnect();
+      await window.petra.disconnect();
       
       setAddress(null);
       setConnected(false);
+      setWalletType(null);
+      setIsAdmin(false);
       setDisconnecting(false);
-    } catch (error) {
+      toast.success('Wallet disconnected');
+    } catch (error: any) {
       console.error('Error disconnecting wallet:', error);
       setDisconnecting(false);
+      toast.error(error.message || 'Failed to disconnect wallet');
       throw error;
     }
   };
 
   const signTransaction = async (payload: any) => {
-    if (!window.petra && !window.aptos) {
+    if (!isWalletReady || !window.petra) {
       throw new Error('Petra wallet not found');
     }
 
-    const wallet = window.petra || window.aptos;
-    return wallet.signTransaction(payload);
+    return window.petra.signAndSubmitTransaction(payload);
   };
 
-  // Check admin status when address changes
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (address) {
-        try {
-          const response = await fetch(`/api/admin/check?address=${address}`);
-          const data = await response.json();
-          setIsAdmin(data.isAdmin);
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        }
-      }
-    };
-
-    checkAdminStatus();
-  }, [address]);
+  const connectWallet = async (walletName: WalletName) => {
+    if (walletName !== 'petra') {
+      throw new Error('Only Petra wallet is supported');
+    }
+    await connect();
+  };
 
   return (
     <WalletContext.Provider
@@ -97,14 +142,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         walletType: walletType || 'petra',
         connecting,
         disconnecting,
-        showWalletSelector: false,
-        setShowWalletSelector: () => {},
+        isAdmin,
         connect,
         disconnect,
-        connectWallet: connect,
+        connectWallet,
         signTransaction,
-        isAdmin,
-        aptosClient
+        aptosClient,
       }}
     >
       {children}
