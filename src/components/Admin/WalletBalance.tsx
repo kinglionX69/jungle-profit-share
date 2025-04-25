@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -54,7 +55,7 @@ const WalletBalance: React.FC = () => {
         
         <Grid container spacing={2}>
           {balances.map((balance) => (
-            <Grid key={balance.symbol} item xs={12} sm={6}>
+            <Grid xs={12} sm={6} key={balance.symbol}>
               <Paper 
                 sx={{ 
                   p: 2, 
